@@ -1,0 +1,15 @@
+# 預設讓 Git 自己判斷文字檔
+*               text=auto
+
+# Shell 腳本在 WSL／Linux 裡執行，一定要是 LF。
+# Windows 上 clone 若被轉成 CRLF，bash 會回報 $'\r': command not found
+*.sh            text eol=lf
+*.mjs           text eol=lf
+*.js            text eol=lf
+
+# Windows Script Host 讀這支檔案時用系統預設編碼，
+# 含中文註解時必須是 UTF-16 LE + BOM。當成二進位避免 Git 動到任何位元組。
+*.vbs           binary
+
+# 圖檔
+*.png           binary

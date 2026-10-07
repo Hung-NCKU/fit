@@ -1,0 +1,27 @@
+# ───── 絕對不能進版控：真人資料與金鑰 ─────
+
+# API key、ngrok token、VAPID 私鑰都在這
+server/.env
+
+# 真實的健康紀錄：飲食、訓練、體重、對話、餐點照片（BLOB）
+# 兩位使用者的個人資料，連 -wal / -shm 一起排除
+server/data/
+backups/
+
+# ───── 可重建的產物 ─────
+
+node_modules/
+web/dist/
+.logs/
+
+# 可攜工具鏈：Node 執行檔、ngrok/cloudflared、Android SDK（約 4GB）
+# 由 start.sh 自動下載，不該進版控
+.tools/
+
+# ───── 雜項 ─────
+
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

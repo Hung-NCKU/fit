@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>增肌教練</title>
+
+    <meta name="description" content="AI 增肌教練：拍照記錄飲食、追蹤訓練與體重" />
+    <meta name="theme-color" content="#171a21" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icon-192.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="增肌教練" />
+    <script>
+      // beforeinstallprompt 可能在 JS bundle 載入前就觸發（例如 service worker 已註冊過的回訪），
+      // 那時 Vue 還沒掛載、監聽器來不及掛上，安裝按鈕就永遠不會出現。
+      // 所以在這裡先接住並存起來，App 再去讀。
+      window.__installPrompt = null;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.__installPrompt = e;
+        window.dispatchEvent(new Event('installprompt-ready'));
+      });
+      window.addEventListener('appinstalled', () => {
+        window.__installPrompt = null;
+        window.dispatchEvent(new Event('installprompt-ready'));
+      });
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

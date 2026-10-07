@@ -1,0 +1,161 @@
+:root {
+  --bg: #0f1115;
+  --surface: #171a21;
+  --surface-2: #1f232c;
+  --border: #2a2f3a;
+  --text: #e8eaf0;
+  --muted: #949bab;
+  --accent: #6ee7a8;
+  --accent-dim: #2f6b50;
+  --warn: #f5a97f;
+  --danger: #ef7b7b;
+  --radius: 14px;
+  --font: -apple-system, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+
+  /* 瀏海／動態島／狀態列與底部 home indicator 的避讓距離。
+     index.html 設了 viewport-fit=cover，內容會鋪滿整個螢幕，
+     不讓開的話 iPhone 上頂部會被狀態列蓋住，看起來就是「版面偏上」。
+     沒有這些區域的裝置（Android、桌機）會是 0，所以這組設定實際上只對 iOS 生效。 */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  /* 額外微調用。安全區域算出來還是覺得偏上的話，只改下面這個數字就好。 */
+  --ios-nudge: 0px;
+}
+
+/* -webkit-touch-callout 只有 iOS 的 WebKit 有，Android 與桌機都不會進這一段 */
+@supports (-webkit-touch-callout: none) {
+  :root {
+    --safe-top: calc(env(safe-area-inset-top, 0px) + var(--ios-nudge));
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body, #app { height: 100%; }
+
+/* iOS Safari 的網址列會隨捲動收合，100% 會算到收合前的高度而被裁掉；
+   dvh 會跟著實際可視高度走。不支援 dvh 的瀏覽器沿用上面的 100%。 */
+@supports (height: 100dvh) {
+  html, body, #app { height: 100dvh; }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { margin: 0 0 .6rem; font-weight: 650; letter-spacing: .01em; }
+h1 { font-size: 1.35rem; }
+h2 { font-size: 1.05rem; }
+h3 { font-size: .95rem; }
+
+a { color: inherit; text-decoration: none; }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  border-radius: 10px;
+  padding: .5rem .9rem;
+  transition: background .15s, border-color .15s, opacity .15s;
+}
+button:hover:not(:disabled) { background: #272c37; border-color: #3a4150; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0c1a13;
+  font-weight: 600;
+}
+button.primary:hover:not(:disabled) { background: #85f0bb; border-color: #85f0bb; }
+
+button.ghost { background: transparent; }
+button.icon {
+  padding: .25rem .5rem;
+  font-size: .85rem;
+  color: var(--muted);
+  background: transparent;
+  border-color: transparent;
+}
+button.icon:hover:not(:disabled) { color: var(--danger); background: var(--surface-2); }
+
+input, select, textarea {
+  font: inherit;
+  width: 100%;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: .5rem .7rem;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent-dim);
+  box-shadow: 0 0 0 3px rgba(110, 231, 168, .12);
+}
+textarea { resize: vertical; }
+label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: .25rem; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+}
+
+.muted { color: var(--muted); }
+.small { font-size: .82rem; }
+.row { display: flex; gap: .6rem; align-items: center; }
+.row.wrap { flex-wrap: wrap; }
+.spread { display: flex; justify-content: space-between; align-items: center; gap: .6rem; }
+.grid { display: grid; gap: .8rem; }
+.stack { display: flex; flex-direction: column; gap: .8rem; }
+
+.empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: .1rem .5rem;
+  font-size: .75rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  white-space: nowrap;   /* 手機窄欄位下「📷 照片」會被斷成兩行 */
+}
+.badge.ai { color: var(--accent); border-color: var(--accent-dim); }
+
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { padding: .55rem .5rem; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 500; font-size: .78rem; white-space: nowrap; }
+tbody tr:last-child td { border-bottom: none; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.error {
+  background: rgba(239, 123, 123, .1);
+  border: 1px solid rgba(239, 123, 123, .35);
+  color: var(--danger);
+  border-radius: 10px;
+  padding: .6rem .8rem;
+  font-size: .87rem;
+}
+
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb { background: #333944; border-radius: 99px; }
+::-webkit-scrollbar-track { background: transparent; }
