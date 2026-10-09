@@ -30,16 +30,6 @@ export default async function apiRoutes(app) {
 
   /* ---- 使用者 ---- */
 
-  /**
-   * 目前是誰。沒有登入機制，所以永遠回傳同一個人。
-   * 前端啟動時會打這支拿名字，status.sh / stop.sh 也用它做健康檢查。
-   */
-  app.get('/session', async (req) => ({
-    user: req.userId,
-    name: getUser(req.userId)?.name ?? null,
-    users: USERS.map(u => ({ id: u.id, name: u.name })),
-  }));
-
   app.get('/users', async (req) => USERS.map(u => ({
     id: u.id,
     name: u.name,

@@ -82,6 +82,15 @@ done
 PUBLIC=""
 # ---- 通道 ----
 if [ "$WANT_TUNNEL" = "1" ]; then
+  if ! grep -qE '^PASSWORD_[A-Z]+=.+' "$ENV_FILE"; then
+    echo ""
+    echo "⚠️  沒有任何帳號設密碼，為了安全不開外網通道（本機仍可使用）。"
+    echo "   要開外網請先在 server/.env 設定 PASSWORD_MARTINA / PASSWORD_ELI。"
+    WANT_TUNNEL=0
+  fi
+fi
+
+if [ "$WANT_TUNNEL" = "1" ]; then
   echo "建立外網通道（$PROVIDER）…"
   ./tunnel.sh "$PROVIDER" > "$LOG_DIR/tunnel.log" 2>&1 &
   TUNNEL_PID=$!

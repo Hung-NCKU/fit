@@ -29,8 +29,9 @@
    nano server/.env        # GEMINI_API_KEY= 填 key
    ```
 
-   **沒有登入機制**：打開網址就直接進去。代價是外網網址等於公開——
-   任何拿到網址的人都看得到紀錄、也改得動、用得掉 Gemini 額度。
+   密碼設在 `PASSWORD_MARTINA` / `PASSWORD_ELI`。**輸入誰的密碼就以誰的身分登入**，
+   兩人各自獨立使用，但可以互看對方的訓練與飲食紀錄（唯讀）。
+   兩個都留空代表不需登入——只在自己電腦上用還好，但**開到外網前一定要設**。
 
 3. 啟動：
 
@@ -68,6 +69,7 @@ cd /mnt/d/claude/fit
   外網    ✅ https://xxx.ngrok-free.dev
 
   定時提醒 下一次提醒：2026/9/29 18:00:00（2 小時 46 分後）
+  martina 訂閱 1 台裝置
   eli     訂閱 1 台裝置
 ```
 
@@ -172,7 +174,7 @@ AI 看得到今天與昨天每一筆飲食的編號，所以可以直接說「�
 
 ```bash
 curl -X PUT http://localhost:3000/api/profile \
-  -H "content-type: application/json" \
+  -H "content-type: application/json" -b cookie.txt \
   -d '{"weight_kg":42,"goal_weight_kg":48,"recalc":true,"notes":"乳糖不耐，只能在家徒手訓練"}'
 ```
 
@@ -223,7 +225,7 @@ GEMINI_MODELS=gemini-flash-lite-latest,gemini-3.1-flash-lite,gemini-3.6-flash,ge
 ### 查目前用量
 
 ```bash
-curl -s http://localhost:3000/api/health | python3 -m json.tool
+curl -s -b cookie.txt http://localhost:3000/api/health | python3 -m json.tool
 ```
 
 ```json
@@ -277,7 +279,7 @@ curl -s http://localhost:3000/api/health | python3 -m json.tool
 ```
 
 兩個程序的輸出都寫進 `.logs/`，畫面只留重點。任一個掛掉會立刻提示。
-通道一律會開；只想本機跑就加 `--local`。
+沒有任何帳號設密碼時會自動**不開**外網通道，只跑本機。
 
 `tunnel.sh` 仍然可以單獨執行（後端已經在跑、只想重開通道時用）。
 
@@ -337,20 +339,15 @@ TUNNEL_HOSTNAME=fit.你的網域.com
 
 ### 安全性
 
-**這個服務沒有身分驗證。** 密碼登入在 2026-10-05 整個移除了，不是留空而已：
+沒有任何帳號設密碼時 `tunnel.sh` 會拒絕開通道。密碼設在 `server/.env` 的 `PASSWORD_MARTINA` / `PASSWORD_ELI`，
+改完重啟後端即可（改密碼會讓所有裝置自動登出，因為 cookie 簽章金鑰由密碼推導）。
 
-- `server/src/auth.js` 已刪除（cookie 簽章、`timingSafeEqual` 比對、嘗試次數限制都在裡面）
-- `web/src/views/LoginView.vue` 已刪除，前端沒有登入畫面也沒有登出按鈕
-- `/api/login`、`/api/logout` 兩個路由不存在了，打過去回 404
-- 不再註冊 `@fastify/cookie`，回應裡沒有任何 cookie
-- `server/.env` 沒有 `PASSWORD_*` 欄位了
-
-所有請求都當成 `USERS[0]`（見 `server/src/users.js` 的 `ME`），由 `server.js` 的
-`onRequest` hook 直接塞進 `req.userId`。各路由的授權邏輯沒動，以後要加回識別只要改那一行。
-
-**唯一的門檻是外網網址**——它公開在網際網路上，網址外流等於資料外流
-（紀錄可讀可改、Gemini 額度可被用光）。後端每次啟動會在 `.logs/server.log`
-印一行警告提醒這件事。只想本機用就跑 `./start.sh --local`，不開通道。
+- 未登入時所有 `/api/*` 與 `/uploads/*` 一律 401，只有前端靜態檔放行（登入畫面要載得起來）
+- 密碼比對用 `timingSafeEqual`，避免用回應時間猜密碼
+- 所有帳號都比對過一輪才回傳，不讓回應時間洩漏「哪個帳號存在」
+- 登入失敗 10 分鐘內 8 次就鎖住
+- 走 https 時 cookie 自動帶上 `Secure` 旗標（看 `x-forwarded-proto`），登入效期 30 天
+- 跨帳號只能讀不能寫：`?user=<id>` 可查對方紀錄，想改會回 403
 
 ## 定時熱量提醒（手機推播）
 
@@ -389,6 +386,79 @@ TUNNEL_HOSTNAME=fit.你的網域.com
 - 通知是 Web Push，Android 走 Google 的推播服務，手機要有網路
 - `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` 一旦更換，所有裝置都要重新訂閱
 
+## 用 Docker 跑在別台主機
+
+單一容器就包含後端、打包好的前端與 SQLite。**不需要** WSL、不需要那套 `.tools/`
+可攜工具鏈，只要有 Docker 的機器都能跑。
+
+### 快速啟動
+
+```bash
+cp docker/env.example docker/env    # 填 GEMINI_API_KEY 與兩組密碼
+docker compose up -d
+```
+
+開 <http://localhost:3000>。資料存在名為 `fit-data` 的 volume，重建容器不會掉。
+
+不想用 compose 也可以：
+
+```bash
+docker build -t fit .
+docker run -d -p 3000:3000 -v fit-data:/data --env-file docker/env --name fit fit
+```
+
+### 帶著現有紀錄一起搬
+
+預設建出來的映像是**空的**，第一次啟動會自動建立空白資料庫。
+要把目前的飲食、訓練、對話、照片一起帶走：
+
+```bash
+./docker-export.sh          # 匯出到 docker/seed/
+docker build -t fit .       # 種子會被打進映像
+```
+
+容器啟動時若 `/data` 是空的，就從 `/seed` 植入；已經有資料則**不會**覆蓋，
+所以重啟、升級映像都不會動到使用者後來記的東西。
+
+`docker-export.sh` 用的是 `VACUUM INTO` 而不是 `cp`。WAL 模式下直接複製 `.db`
+會漏掉還沒寫回主檔的資料，產出的種子看起來正常、實際上少了最近的紀錄。
+
+想改回空白映像：`./docker-export.sh --clear`
+
+### 搬到另一台主機
+
+映像裡有真實的健康紀錄，**不要推到公開的 registry**。用檔案搬：
+
+```bash
+docker save fit:latest | gzip > fit.tar.gz     # 約 290MB（資料佔 10MB 左右）
+# 複製到目標主機後
+gunzip -c fit.tar.gz | docker load
+docker run -d -p 3000:3000 -v fit-data:/data --env-file env fit
+```
+
+或推到自己的**私有** registry。
+
+### 時區一定要設
+
+`TZ`（預設 `Asia/Taipei`）不是裝飾用的。SQLite 的 `datetime('now','localtime')`、
+每日彙總的日期切分、定時提醒的觸發時間全都看它。不設的話容器是 UTC，
+台灣會差 8 小時 —— 晚上 8 點後記的那一餐會被算到隔天。
+映像裡有裝 `tzdata`，所以 `TZ` 設了就會生效。
+
+### 映像裡有什麼、沒有什麼
+
+| | |
+|---|---|
+| 有 | Node 24（內建 `node:sqlite`，沒有原生模組要編譯）、後端、打包好的前端、`tzdata` |
+| 沒有 | API key、密碼、VAPID 金鑰 —— 全部執行時由環境變數給 |
+| 沒有 | 外網通道。`start.sh` / `tunnel.sh` 只在宿主機上用，容器只負責聽 :3000 |
+
+要讓外網連得到，在目標主機前面擺你自己的反向代理（Caddy、Nginx、Cloudflare Tunnel），
+或照 [讓區網外的手機也能用](#讓區網外的手機也能用) 的做法在宿主機上開通道指向 `:3000`。
+
+容器以非 root 的 `node` 使用者執行；entrypoint 會先修好 `/data` 的擁有者再降權，
+所以 bind mount 一個宿主機目錄（`-v ./data:/data`）也不會有權限問題。
+
 ## 裝成手機 App（PWA）
 
 這個網站本身就是 PWA，Android 可以直接「安裝」成獨立 App：有自己的圖示、全螢幕、
@@ -398,7 +468,7 @@ TUNNEL_HOSTNAME=fit.你的網域.com
 
 1. 先確定用的是 **https 網址**（`./tunnel.sh` 開出來的那個）。
    PWA 規定必須是安全來源，`http://192.168.x.x:3000` 這種區網位址裝不起來。
-2. 手機 Chrome 打開網址
+2. 手機 Chrome 打開網址、登入
 3. 右上角會出現「📲 安裝」按鈕，按下去即可
    （沒出現的話用 Chrome 選單 →「安裝應用程式」／「加到主畫面」）
 
@@ -422,8 +492,8 @@ cd web && npm run icons && npm run build
 ### Service worker 只快取公開靜態檔
 
 `/api/*` 與 `/uploads/*` 完全不進快取，一律走網路。
-那些是個人資料（飲食紀錄、餐點照片），而且隨時在變，
-快取起來只會讀到舊的。
+那些是登入後才拿得到的個人資料（飲食紀錄、餐點照片），
+快取起來會變成登出後或換人用時還讀得到。
 
 所以這個 App **不能離線使用**——沒網路時能開起來，但看不到資料。
 資料本來就在你電腦的資料庫，手機只是前端。
@@ -453,6 +523,7 @@ fit/
 │   │   ├── server.js     # Fastify 進入點，正式模式兼任靜態檔伺服器
 │   │   ├── db.js         # SQLite schema、欄位遷移、營養目標公式
 │   │   ├── records.js    # 訓練／飲食／體重的新增查詢統計
+│   │   ├── auth.js       # 密碼登入、cookie、嘗試次數限制
 │   │   ├── uploads.js    # 照片存檔與格式／大小檢查
 │   │   ├── gemini.js     # Gemini 客戶端：模型候補鏈、配額偵測、重試
 │   │   ├── coach.js      # 系統提示、工具定義、function calling 迴圈
@@ -462,8 +533,15 @@ fit/
 │   ├── tools/query.mjs   # 資料庫查詢工具（db.sh 呼叫它）
 │   ├── data/fit.db       # 資料庫（自動建立）
 │   ├── data/uploads/     # 餐點照片
-│   └── .env              # API key 與通道設定（不進版控）
+│   └── .env              # API key 與密碼（不進版控）
 ├── web/                  # Vue 前端
+├── Dockerfile            # 後端+前端+資料的單一容器
+├── docker-compose.yml
+├── docker-export.sh      # 把現有資料庫匯出成映像種子
+├── docker/
+│   ├── entrypoint.sh     # 植入種子、修 volume 權限、降權
+│   ├── env.example
+│   └── seed/             # 匯出的 .db（不進版控）
 ├── start.sh              # 正式模式
 ├── dev.sh                # 開發模式
 ├── db.sh                 # 查看資料庫
@@ -474,7 +552,9 @@ fit/
 ## API
 
 ```
-GET    /api/session              目前是誰（沒有登入機制，永遠同一人）
+GET    /api/session              目前是否需要登入、是否已登入
+POST   /api/login                { "password": "..." }
+POST   /api/logout
 GET    /api/health
 GET    /api/profile              PUT /api/profile
 GET    /api/meals                POST /api/meals     PATCH/DELETE /api/meals/:id
@@ -484,10 +564,10 @@ GET    /api/summary/daily?date=YYYY-MM-DD
 GET    /api/summary/range?days=14
 POST   /api/chat                 { "message": "...", "image": "data:image/jpeg;base64,..." }
 GET    /api/chat/history         DELETE /api/chat/history
-GET    /uploads/<檔名>            餐點照片
+GET    /uploads/<檔名>            餐點照片（需登入）
 ```
 
-全部不需驗證，直接打就有回應。
+除了 `/api/session`、`/api/login`、`/api/logout` 之外，全部需要登入 cookie。
 
 ## 查看資料庫
 
@@ -528,8 +608,7 @@ GET    /uploads/<檔名>            餐點照片
 ./db.sh "SELECT exercise, MAX(weight_kg) FROM workouts GROUP BY exercise"
 ```
 
-Martina 已於 2026-09-29 停用，但**資料庫完整保留**在 `server/data/fit-martina.db`
-（飲食 37 筆、對話 68 則、照片 22 張）。第一個參數給使用者名稱就能查：
+第一個參數給使用者名稱就能切換資料庫：
 
 ```bash
 ./db.sh martina            # 她的全部總覽
@@ -550,8 +629,12 @@ Martina 已於 2026-09-29 停用，但**資料庫完整保留**在 `server/data/
 ### 方法三：API
 
 ```bash
-curl -s http://localhost:3000/api/meals
-curl -s http://localhost:3000/api/chat/history
+# 先登入拿 cookie
+curl -s -c cookie.txt -X POST http://localhost:3000/api/login \
+  -H "content-type: application/json" -d '{"password":"你的密碼"}'
+
+curl -s -b cookie.txt http://localhost:3000/api/meals
+curl -s -b cookie.txt http://localhost:3000/api/chat/history
 ```
 
 ### 方法四：GUI 工具
@@ -569,7 +652,7 @@ curl -s http://localhost:3000/api/chat/history
 資料庫搬到別台機器照片也跟著走。照片經前端壓縮後一張約 20–40KB，一天幾張的用量
 SQLite 完全吃得消（BLOB 放在獨立資料表，查飲食紀錄時不會掃到）。
 
-取用路徑是 `GET /uploads/<照片id>`，由後端從資料庫讀出來吐給瀏覽器。
+取用路徑是 `GET /uploads/<照片id>`，由後端從資料庫讀出來吐給瀏覽器，一樣需要登入。
 
 ### 從舊版（存檔案）升級
 

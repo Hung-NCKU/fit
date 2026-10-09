@@ -8,6 +8,11 @@ server/.env
 server/data/
 backups/
 
+# Docker 的資料種子：這裡面是真實的健康紀錄
+docker/seed/*.db
+# 容器用的環境變數（含 API key 與密碼）
+docker/env
+
 # ───── 可重建的產物 ─────
 
 node_modules/

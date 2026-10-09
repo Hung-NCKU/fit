@@ -1,0 +1,39 @@
+# 可攜工具鏈，約 4GB（Node 執行檔、ngrok/cloudflared、Android SDK）
+.tools/
+
+# 容器內自己裝
+node_modules/
+server/node_modules/
+web/node_modules/
+
+# 容器內自己打包
+web/dist/
+
+# 真實資料：絕對不要讓它隨手進到映像層裡。
+# 要帶資料請用 ./docker-export.sh 匯出乾淨副本到 docker/seed/
+server/data/
+backups/
+
+# 金鑰：改用環境變數傳進容器
+server/.env
+
+.logs/
+*.log
+.git/
+.gitignore
+.gitattributes
+
+# 文件
+README.md
+MAKING-OF.md
+
+# 只在宿主機上跑的腳本
+start.sh
+stop.sh
+status.sh
+tunnel.sh
+dev.sh
+backup.sh
+db.sh
+docker-export.sh
+autostart/

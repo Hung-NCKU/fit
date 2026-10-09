@@ -1,18 +1,20 @@
 import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import cookie from '@fastify/cookie';
 import fastifyStatic from '@fastify/static';
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import authRoutes, { authRequired, currentUser, isPublicPath, sessionSecret } from './auth.js';
 import apiRoutes from './routes/api.js';
 import chatRoutes from './routes/chat.js';
 import pushRoutes from './routes/push.js';
 import { readPhoto } from './uploads.js';
 import { initAllDatabases } from './db.js';
 import { startScheduler } from './scheduler.js';
-import { USERS, ME, getUser } from './users.js';
+import { USERS, getUser, passwordOf } from './users.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WEB_DIST = join(__dirname, '..', '..', 'web', 'dist');
@@ -37,12 +39,17 @@ app.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, 
 });
 
 await app.register(cors, { origin: true, credentials: true });
+await app.register(cookie, { secret: sessionSecret() });
 
-// 沒有登入機制：所有請求都是同一個人。
-// 路由裡的 req.userId 仍然全部沒動，以後要加回識別只要改這裡。
+// 驗證：未登入時擋掉所有 API 與照片，但放行登入畫面的靜態檔
 app.decorateRequest('userId', null);
-app.addHook('onRequest', async (req) => { req.userId = ME; });
+app.addHook('onRequest', async (req, reply) => {
+  req.userId = currentUser(req);
+  if (!authRequired() || isPublicPath(req.url) || req.userId) return;
+  return reply.code(401).send({ error: '請先登入' });
+});
 
+await app.register(authRoutes, { prefix: '/api' });
 await app.register(apiRoutes, { prefix: '/api' });
 await app.register(chatRoutes, { prefix: '/api' });
 await app.register(pushRoutes, { prefix: '/api' });
@@ -83,6 +90,11 @@ await app.listen({ port, host: '0.0.0.0' });
 if (!process.env.GEMINI_API_KEY) {
   app.log.warn('⚠️  尚未設定 GEMINI_API_KEY，AI 對話功能會失敗。請編輯 server/.env');
 }
-app.log.warn('⚠️  沒有登入機制：任何連得到這個位址的人都能讀寫紀錄。');
+const noPassword = USERS.filter(u => !passwordOf(u));
+if (!authRequired()) {
+  app.log.warn('⚠️  沒有任何帳號設密碼：任何連得到這個位址的人都能使用。開到外網前務必設定。');
+} else if (noPassword.length) {
+  app.log.warn(`⚠️  這些帳號沒設密碼，目前無法登入：${noPassword.map(u => u.name).join('、')}`);
+}
 startScheduler();
 app.log.info(`✅ http://localhost:${port}  使用者：${USERS.map(u => u.name).join(' / ')}`);

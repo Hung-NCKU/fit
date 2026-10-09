@@ -1,0 +1,19 @@
+# docker compose up -d
+#
+# 先準備好環境變數：cp docker/env.example docker/env，填入 GEMINI_API_KEY 與密碼。
+services:
+  fit:
+    build: .
+    image: fit:latest
+    container_name: fit
+    restart: unless-stopped
+    ports:
+      - "${FIT_PORT:-3000}:3000"
+    env_file:
+      - docker/env
+    volumes:
+      # 資料不在映像裡。想改成綁定宿主機目錄就換成 ./data:/data
+      - fit-data:/data
+
+volumes:
+  fit-data:

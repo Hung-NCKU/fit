@@ -3,6 +3,7 @@ import { RouterLink, RouterView, useRoute } from 'vue-router';
 import { computed, onMounted, ref } from 'vue';
 import { api } from './api.js';
 import { session } from './auth.js';
+import LoginView from './views/LoginView.vue';
 import PhotoViewer from './components/PhotoViewer.vue';
 import NotifyToggle from './components/NotifyToggle.vue';
 
@@ -43,14 +44,24 @@ const tabs = [
 ];
 
 const title = computed(() => tabs.find(t => t.to === route.path)?.label ?? '增肌教練');
+const locked = computed(() => session.authRequired && !session.authed);
+
+async function logout() {
+  await api.logout().catch(() => {});
+  session.authed = false;
+}
 
 onMounted(async () => {
   try {
     const s = await api.session();
+    session.authRequired = s.authRequired;
+    session.authed = s.authed;
     session.user = s.user;
     session.name = s.name;
     session.users = s.users || [];
   } catch {
+    session.authRequired = true;
+    session.authed = false;
     // 連不到後端也要把畫面放出來，各頁面自己會顯示錯誤
   } finally {
     session.ready = true;
@@ -63,13 +74,21 @@ onMounted(async () => {
     <div v-if="!session.ready" class="boot muted small">載入中…</div>
 
     <template v-else>
-      <header class="topbar">
+      <!-- 鎖住時只留一條窄列放安裝鈕：
+           沒登入也要裝得起來，否則新手機要先登入才能裝 App -->
+      <header v-if="locked" class="topbar gate">
+        <span class="bell-spacer"></span>
+        <button v-if="canShowInstall" class="icon install" @click="install">📲 安裝</button>
+      </header>
+
+      <header v-else class="topbar">
         <span class="logo">增肌教練</span>
         <span class="muted small">{{ title }}</span>
         <span v-if="session.name" class="who">{{ session.name }}</span>
         <span class="bell-spacer"></span>
         <NotifyToggle />
         <button v-if="canShowInstall" class="icon install" @click="install">📲 安裝</button>
+        <button v-if="session.authRequired" class="icon logout" @click="logout">登出</button>
       </header>
 
       <div v-if="showHint" class="hint">
@@ -87,18 +106,22 @@ onMounted(async () => {
         </p>
       </div>
 
-      <main class="content">
-        <RouterView v-slot="{ Component }">
-          <component :is="Component" />
-        </RouterView>
-      </main>
+      <LoginView v-if="locked" />
 
-      <nav class="tabbar">
-        <RouterLink v-for="t in tabs" :key="t.to" :to="t.to" class="tab">
-          <span class="ico">{{ t.icon }}</span>
-          <span class="lbl">{{ t.label }}</span>
-        </RouterLink>
-      </nav>
+      <template v-else>
+        <main class="content">
+          <RouterView v-slot="{ Component }">
+            <component :is="Component" />
+          </RouterView>
+        </main>
+
+        <nav class="tabbar">
+          <RouterLink v-for="t in tabs" :key="t.to" :to="t.to" class="tab">
+            <span class="ico">{{ t.icon }}</span>
+            <span class="lbl">{{ t.label }}</span>
+          </RouterLink>
+        </nav>
+      </template>
     </template>
 
     <PhotoViewer />
@@ -153,6 +176,9 @@ onMounted(async () => {
 
 .bell-spacer { margin-left: auto; }
 
+/* 登入畫面上的窄列：沒有文字，只放安裝鈕 */
+.topbar.gate { justify-content: flex-end; }
+
 .install {
   font-size: .78rem;
   color: var(--accent);
@@ -170,6 +196,7 @@ onMounted(async () => {
 }
 .hint p { margin: .5rem 0 0; line-height: 1.7; }
 .hint b { color: var(--accent); }
+.logout { font-size: .78rem; }
 
 .tabbar {
   flex: 0 0 auto;

@@ -25,6 +25,13 @@ if ! curl -s -m 2 "http://127.0.0.1:${PORT}/api/session" > /dev/null; then
 fi
 
 
+if ! grep -qE '^PASSWORD_[A-Z]+=.+' "$ENV_FILE" 2>/dev/null; then
+  echo ""
+  echo "❌ server/.env 裡沒有任何帳號設定密碼（PASSWORD_MARTINA / PASSWORD_ELI）。"
+  echo "   這個網址會公開在網際網路上，沒有密碼等於任何人都能看你們的紀錄、用你的 Gemini 額度。"
+  exit 1
+fi
+
 fetch_bin() {   # fetch_bin <輸出路徑> <網址> <說明>
   [ -x "$1" ] && return
   echo "第一次使用，下載 $3…"

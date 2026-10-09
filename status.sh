@@ -36,7 +36,7 @@ echo
 NEXT=$(grep -o '下一次提醒：[^（]*（[^）]*）' .logs/server.log 2>/dev/null | tail -1)
 printf '  %-10s %s\n' "定時提醒" "${NEXT:-（沒有排程紀錄）}"
 
-for u in eli; do
+for u in martina eli; do
   [ -f "server/data/fit-$u.db" ] || continue
   N=$(node -e "
 const {DatabaseSync}=require('node:sqlite');

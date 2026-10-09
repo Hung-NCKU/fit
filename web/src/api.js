@@ -1,3 +1,5 @@
+import { onUnauthorized } from './auth.js';
+
 const BASE = '/api';
 
 async function request(path, options = {}) {
@@ -9,7 +11,7 @@ async function request(path, options = {}) {
       credentials: 'same-origin',
       ...options,
       // 只有真的帶 body 才宣告 JSON：Fastify 對「content-type 是 JSON 但 body 空的」
-      // 會回 400 FST_ERR_CTP_EMPTY_JSON_BODY，DELETE 就是這樣壞掉的
+      // 會回 400 FST_ERR_CTP_EMPTY_JSON_BODY，DELETE 與登出就是這樣壞掉的
       headers: {
         ...(hasBody ? { 'content-type': 'application/json' } : {}),
         ...options.headers,
@@ -22,6 +24,10 @@ async function request(path, options = {}) {
   }
 
   const data = await res.json().catch(() => ({}));
+  if (res.status === 401 && path !== '/login') {
+    onUnauthorized();
+    throw new Error('連線已過期，請重新登入');
+  }
   if (!res.ok) throw new Error(data.error || `請求失敗（${res.status}）`);
   return data;
 }
@@ -37,6 +43,8 @@ export const api = {
   health: () => request('/health'),
 
   session: () => request('/session'),
+  login: (password) => request('/login', { method: 'POST', body: { password } }),
+  logout: () => request('/logout', { method: 'POST' }),
 
   getProfile: (user) => request('/profile' + qs({ user })),
   saveProfile: (body) => request('/profile', { method: 'PUT', body }),
