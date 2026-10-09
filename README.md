@@ -66,7 +66,7 @@ cd /mnt/d/claude/fit
   外網通道 執行中 (PID 3854・已 00:16)
 
   本機    ✅ http://localhost:3000
-  外網    ✅ https://xxx.ngrok-free.dev
+  外網    ✅ https://fit.你的tailnet.ts.net
 
   定時提醒 下一次提醒：2026/9/29 18:00:00（2 小時 46 分後）
   martina 訂閱 1 台裝置
@@ -263,7 +263,7 @@ curl -s -b cookie.txt http://localhost:3000/api/health | python3 -m json.tool
 ```bash
 ./start.sh            # 後端 + 通道（方式看 .env 的 TUNNEL_PROVIDER）
 ./start.sh --local    # 只跑後端，不開外網
-./start.sh ngrok      # 這次改用指定方式（quick / ngrok / cloudflare）
+./start.sh tailscale  # 這次改用指定方式（quick / ngrok / cloudflare / tailscale）
 ```
 
 輸出長這樣：
@@ -271,7 +271,7 @@ curl -s -b cookie.txt http://localhost:3000/api/health | python3 -m json.tool
 ```
 ─────────────────────────────────────────────
   本機      http://localhost:3000
-  外網      https://xxx.ngrok-free.dev
+  外網      https://fit.你的tailnet.ts.net
 
   紀錄檔    .logs/server.log、.logs/tunnel.log
   Ctrl+C    一起停止
@@ -283,15 +283,97 @@ curl -s -b cookie.txt http://localhost:3000/api/health | python3 -m json.tool
 
 `tunnel.sh` 仍然可以單獨執行（後端已經在跑、只想重開通道時用）。
 
-支援三種方式，差別在**網址會不會變**：
+支援四種方式，差別在**網址會不會變**、以及**外人打得開嗎**：
 
-| 方式 | 網址 | 需要什麼 | 限制 |
+| 方式 | 網址 | 需要什麼 | 外人用瀏覽器直接開 |
 |---|---|---|---|
-| `quick`（預設） | 每次重開都變 | 什麼都不用 | — |
-| **`ngrok`** | **固定，永久不變** | 免費帳號的 authtoken | 每月 1GB 流量 / 2 萬次請求 |
-| `cloudflare` | 固定，用自己的網域 | 一個已加入 Cloudflare 的網域 | 無流量上限 |
+| `quick` | 每次重開都變 | 什麼都不用 | ✅ 直接進 App |
+| `ngrok` | 固定，永久不變 | 免費帳號的 authtoken | ⚠️ **先擋一個警告頁**（見下方） |
+| `cloudflare` | 固定，用自己的網域 | 一個已加入 Cloudflare 的網域 | ✅ 直接進 App |
+| **`tailscale`**（目前用這個） | **固定，免費** | Tailscale 帳號（免費方案就夠） | ✅ 直接進 App |
 
-### 固定網址：ngrok（推薦，不需要自己的網域）
+### ⚠️ ngrok 免費方案會讓外人看到白畫面
+
+這個坑花了不少時間才找到，寫清楚免得別人重踩。
+
+ngrok 免費方案對**每一個路徑**都先回一個瀏覽器警告頁（`ERR_NGROK_6024`），
+**連 `.js`、`.css` 都是，而且回的是 HTTP 200**：
+
+```bash
+curl -A "Mozilla/5.0 ... Chrome/120" https://你的域名.ngrok-free.dev/assets/index-xxx.js
+#   HTTP 200  content-type: text/html  2808 bytes   ← 不是 JS，是警告頁
+```
+
+後果有兩層：
+
+1. 瀏覽器把 HTML 當 JavaScript 解析 → `Unexpected token '<'` → **整頁空白**
+2. 那個警告頁本身的內容是靠 `cdn.ngrok.com` 的 JS 畫出來的，
+   HTML 裡只有一個空的 `<div id="root">`。CDN 被擋或載不到時連警告頁都是白的，
+   使用者只會看到全白畫面，連「這是 ngrok」都看不出來
+   （徵兆：Chrome 跳出「要翻譯網頁嗎？從**英文**翻譯」，因為那頁是 `lang="en-US"`）
+
+**試過但沒用的解法**：用 ngrok 的 Traffic Policy 在邊緣自動加上
+`ngrok-skip-browser-warning` header。實測警告頁的判斷發生在 Traffic Policy **之前**，
+policy 根本還沒輪到就被攔下了。
+
+```yaml
+# 這樣沒用
+on_http_request:
+  - actions:
+      - type: add-headers
+        config:
+          headers:
+            ngrok-skip-browser-warning: "true"
+```
+
+**有效的解法**：付費升級 ngrok，或換一種通道。本專案選了 Tailscale Funnel。
+
+Service worker 那邊也做了防護（`web/public/sw.js`）：快取前會檢查 `content-type`
+是不是這個請求該拿到的型別。少了這道檢查，那份 200 OK 的 HTML 會被當成 JS
+**永久快取**，之後連點過「Visit Site」都救不回來。
+
+### 固定網址：Tailscale Funnel（免費，不需要自己的網域）
+
+目前用的就是這個。免費、網址固定、沒有攔截頁。
+
+```bash
+# 1. 安裝（會裝成 systemd 服務，開機自動啟動）
+curl -fsSL https://tailscale.com/install.sh | sh
+
+# 2. 登入：會印出一個網址，用瀏覽器開啟授權
+sudo tailscale up --hostname=fit
+
+# 3. 讓一般使用者也能操作 tailscale
+#    start.sh 是以一般使用者身分執行的，開機自動啟動那條路徑沒有終端機可以回應 sudo
+sudo tailscale set --operator=$USER
+```
+
+接著到後台開兩個開關（CLI 改不了，一定要從網頁）：
+
+- <https://login.tailscale.com/admin/dns> → 開啟 **MagicDNS** 與 **HTTPS Certificates**
+- <https://login.tailscale.com/admin/acls> → 在 policy 加上 funnel 屬性：
+
+  ```json
+  "nodeAttrs": [
+    { "target": ["autogroup:member"], "attr": ["funnel"] }
+  ]
+  ```
+
+最後在 `server/.env` 設 `TUNNEL_PROVIDER=tailscale`，跑 `./start.sh`。
+網址是 `https://<主機名>.<你的tailnet>.ts.net`，由 Tailscale 配發且固定不變。
+憑證是 Let's Encrypt 簽的，外人用任何瀏覽器開都是直接進 App。
+
+幾個實務細節：
+
+- **WSL 裡意外地順利。** 本來以為要 `--tun=userspace-networking`，但這台 WSL
+  有 `/dev/net/tun` 也有 systemd，用完整模式就行，`tailscaled` 還會開機自動啟動。
+- 網址不寫在 `.env` 裡，由 `start.sh` 的 `ts_host()` 向 daemon 查詢，
+  換主機名或換 tailnet 都不用改設定。
+- Funnel 對外只支援 443 / 8443 / 10000 三個埠，本專案用 443，
+  所以對外看起來就是普通的 https。
+- 流量走 Tailscale 的中繼節點，延遲可能比 ngrok 略高。
+
+### 固定網址：ngrok（不推薦，見上方的警告頁問題）
 
 ngrok 免費帳號會配發一個**永久固定**的網址（像 `abc-123-xyz.ngrok-free.dev`），
 不會過期也不會變。設定約 3 分鐘：
@@ -329,13 +411,6 @@ TUNNEL_PROVIDER=cloudflare
 TUNNEL_NAME=fit
 TUNNEL_HOSTNAME=fit.你的網域.com
 ```
-
-### 還有一個選擇：Tailscale Funnel
-
-固定網址（`裝置名.你的tailnet.ts.net`）、免費、對方也**不用**裝 Tailscale。
-沒有做進 `tunnel.sh` 是因為它要在 WSL 裡安裝 daemon（需要 sudo，
-且要用 `--tun=userspace-networking` 才跑得起來），比前兩種麻煩。
-想試的話看 <https://tailscale.com/kb/1223/funnel>。
 
 ### 安全性
 

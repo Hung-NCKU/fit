@@ -21,16 +21,17 @@ kill_all 'bash .*start[.]sh' && echo "  · 啟動器已停止（自動重啟也�
 sleep 2
 
 kill_all '^node src/server[.]js'      && echo "  · 後端已停止"
-kill_all '^[.]tools/(cloudflared|ngrok)' && echo "  · 外網通道已停止"
+{ kill_all '^[.]tools/(cloudflared|ngrok)' || kill_all '^tailscale funnel'; } && echo "  · 外網通道已停止"
 sleep 2
 
 # 還活著的就強制收掉
 kill_all 'bash .*start[.]sh' -KILL > /dev/null
 kill_all '^node src/server[.]js' -KILL > /dev/null
 kill_all '^[.]tools/(cloudflared|ngrok)' -KILL > /dev/null
+kill_all '^tailscale funnel' -KILL > /dev/null
 sleep 1
 
-LEFT=$(pgrep -f 'bash .*start[.]sh|^node src/server[.]js|^[.]tools/(cloudflared|ngrok)' 2>/dev/null | wc -l)
+LEFT=$(pgrep -f 'bash .*start[.]sh|^node src/server[.]js|^[.]tools/(cloudflared|ngrok)|^tailscale funnel' 2>/dev/null | wc -l)
 CODE=$(curl -s -m 3 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT:-3000}/api/session" 2>/dev/null)
 
 echo ""

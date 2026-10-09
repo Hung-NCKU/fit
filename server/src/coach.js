@@ -53,16 +53,20 @@ export const toolDeclarations = [
   },
   {
     name: 'log_weight',
-    description: '記錄體重（與體脂率）。使用者說「今天量了幾公斤」時呼叫。',
+    description: '記錄體態：體重、體脂率與圍度。'
+      + '使用者說「今天量了幾公斤」「體脂 18%」「腰圍 72」時呼叫。'
+      + '只填使用者有提到的欄位，沒提到的留空（同一天的舊值會保留，不會被清掉）。',
     parameters: {
       type: O,
       properties: {
         date: { type: S, description: '日期 YYYY-MM-DD，留空代表今天' },
         weight_kg: { type: N, description: '體重（公斤）' },
         body_fat_pct: { type: N, description: '體脂率（%），沒有就不填' },
+        waist_cm: { type: N, description: '腰圍（公分），沒有就不填' },
         note: { type: S, description: '備註' },
       },
-      required: ['weight_kg'],
+      // 沒有 required：使用者只說「腰圍 72」時不該逗模型編一個體重出來。
+      // 那一天還沒紀錄過的話，後端會回一個訊息要求補體重。
     },
   },
   {

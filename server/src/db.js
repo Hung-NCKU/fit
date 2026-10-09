@@ -113,6 +113,10 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   addColumn('meals', 'photo', "TEXT NOT NULL DEFAULT ''");
   addColumn('chat_messages', 'image', "TEXT NOT NULL DEFAULT ''");
   addColumn('chat_messages', 'model', "TEXT NOT NULL DEFAULT ''");   // 這則回覆實際是哪個模型答的
+  // 體態：體重與體脂原本就有，再補一個腰圍。
+  // 腰圍是脂肪的代理指標：體重在漲而腰圍沒漲，就是增肌而不是增脂。
+  // 可為空，只想記體重的人不被迫填。
+  addColumn('weights', 'waist_cm', 'REAL');
 }
 
 /* ---------------- 營養目標 ---------------- */

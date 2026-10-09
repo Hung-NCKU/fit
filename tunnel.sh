@@ -5,6 +5,7 @@
 #   ./tunnel.sh quick        Cloudflare 臨時通道：免註冊，但網址每次都變
 #   ./tunnel.sh ngrok        ngrok：固定網址，需要免費帳號的 authtoken
 #   ./tunnel.sh cloudflare   Cloudflare 具名通道：用自己的網域，需要先登入授權
+#   ./tunnel.sh tailscale    Tailscale Funnel：免費固定網址，沒有瀏覽器攔截頁
 set -e
 cd "$(dirname "$0")"
 
@@ -138,8 +139,60 @@ HELP
     exec .tools/cloudflared tunnel run --url "http://127.0.0.1:${PORT}" "$NAME"
     ;;
 
+  tailscale)
+    # Tailscale Funnel：免費、網址固定、而且沒有 ngrok 那個瀏覽器攔截頁。
+    # 網址是 https://<主機名>.<你的tailnet>.ts.net，由 Tailscale 配發，不會變。
+    #
+    # 跟前面幾種不同，它不是下載一個執行檔就好，而是系統服務（tailscaled），
+    # 所以第一次要先裝好並登入。沒裝的話下面會印出步驟。
+    if ! command -v tailscale > /dev/null 2>&1; then
+      cat <<'HELP'
+
+❌ 還沒安裝 Tailscale。
+
+  1. 安裝（會裝成 systemd 服務，開機自動啟動）：
+       curl -fsSL https://tailscale.com/install.sh | sh
+
+  2. 登入（會印出一個網址，用瀏覽器開啟授權）：
+       sudo tailscale up --hostname=fit
+
+  3. 到 https://login.tailscale.com/admin/dns 開啟 MagicDNS 與 HTTPS Certificates
+
+  4. 到 https://login.tailscale.com/admin/acls 的 Access controls，
+     在 policy 裡加上 funnel 屬性：
+
+       "nodeAttrs": [
+         { "target": ["autogroup:member"], "attr": ["funnel"] }
+       ]
+
+  5. 再跑一次 ./tunnel.sh tailscale
+
+HELP
+      exit 1
+    fi
+
+    if ! tailscale status > /dev/null 2>&1; then
+      echo ""
+      echo "❌ Tailscale 還沒登入。執行：sudo tailscale up --hostname=fit"
+      echo "   它會印出一個網址，用瀏覽器開啟授權後再試一次。"
+      exit 1
+    fi
+
+    TS_HOST=$(tailscale status --json 2>/dev/null \
+      | grep -o '"DNSName"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 \
+      | cut -d'"' -f4 | sed 's/\.$//')
+
+    echo ""
+    [ -n "$TS_HOST" ] && echo "  固定網址：https://${TS_HOST}"
+    echo ""
+
+    # --bg 會把設定寫進 tailscaled 並立刻返回；這裡要的是一個「活著的前景程序」，
+    # 好讓 start.sh 能用 wait -n 監看、Ctrl+C 時一起收掉。
+    # 所以改用前景模式：它會一直跑到被中斷為止。
+    exec tailscale funnel "${PORT}"
+    ;;
   *)
-    echo "不認得的方式「$PROVIDER」。可用：quick / ngrok / cloudflare"
+    echo "不認得的方式「$PROVIDER」。可用：quick / ngrok / cloudflare / tailscale"
     exit 1
     ;;
 esac

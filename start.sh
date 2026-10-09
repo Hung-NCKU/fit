@@ -19,6 +19,14 @@ mkdir -p "$LOG_DIR"
 
 get() { grep -E "^$1=" "$ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r'; }
 
+# Tailscale 配發的固定主機名（<主機>.<tailnet>.ts.net），從 daemon 問而不是寫死在 .env
+ts_host() {
+  command -v tailscale > /dev/null 2>&1 || return
+  tailscale status --json 2>/dev/null \
+    | grep -o '"DNSName"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 \
+    | cut -d'"' -f4 | sed 's/\.$//'
+}
+
 # ---- 參數（順序不拘，可以 ./start.sh ngrok --keep）----
 WANT_TUNNEL=1
 PROVIDER=""
@@ -27,8 +35,8 @@ for arg in "$@"; do
   case "$arg" in
     --local|--no-tunnel) WANT_TUNNEL=0 ;;
     --keep) KEEP=1 ;;
-    quick|ngrok|cloudflare) PROVIDER="$arg" ;;
-    *) echo "不認得的參數「$arg」。可用：--local / --keep / quick / ngrok / cloudflare"; exit 1 ;;
+    quick|ngrok|cloudflare|tailscale) PROVIDER="$arg" ;;
+    *) echo "不認得的參數「$arg」。可用：--local / --keep / quick / ngrok / cloudflare / tailscale"; exit 1 ;;
   esac
 done
 [ -z "$PROVIDER" ] && PROVIDER="$(get TUNNEL_PROVIDER)"
@@ -49,6 +57,7 @@ if [ -n "$OLD" ]; then
 fi
 # 用 ^ 錨定：不加的話連「命令列裡剛好含有這串字」的其他程序都會被殺到
 pkill -f '^\.tools/(cloudflared|ngrok)' 2>/dev/null || true
+pkill -f '^tailscale funnel' 2>/dev/null || true
 
 echo "打包前端…"
 (cd web && npm run build > "$LOG_DIR/build.log" 2>&1) || { echo "❌ 前端打包失敗："; tail -20 "$LOG_DIR/build.log"; exit 1; }
@@ -99,6 +108,7 @@ if [ "$WANT_TUNNEL" = "1" ]; then
   case "$PROVIDER" in
     ngrok)      PUBLIC="https://$(get NGROK_DOMAIN)" ;;
     cloudflare) PUBLIC="https://$(get TUNNEL_HOSTNAME)" ;;
+    tailscale)  PUBLIC="https://$(ts_host)" ;;
   esac
   [ "$PUBLIC" = "https://" ] && PUBLIC=""
 

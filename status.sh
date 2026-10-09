@@ -12,6 +12,7 @@ find_pids() { pgrep -f "$1" 2>/dev/null | tr '\n' ' '; }
 STARTER=$(find_pids 'bash .*start[.]sh')
 SERVER=$(find_pids '^node src/server[.]js')
 TUNNEL=$(find_pids '^[.]tools/(cloudflared|ngrok)')
+[ -z "$TUNNEL" ] && TUNNEL=$(find_pids '^tailscale funnel')
 
 age() { [ -n "$1" ] && ps -o etime= -p "${1%% *}" 2>/dev/null | tr -d ' '; }
 
@@ -24,17 +25,42 @@ echo
 LOCAL=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/api/session" 2>/dev/null)
 printf '  %-10s %s\n' "本機" "$([ "$LOCAL" = 200 ] && echo "✅ http://localhost:${PORT}" || echo "❌ 連不到 (HTTP ${LOCAL:-000})")"
 
-URL=$(grep -E '^NGROK_DOMAIN=.+' server/.env 2>/dev/null | cut -d= -f2- | tr -d '\r')
-[ -n "$URL" ] && URL="https://$URL"
-[ -z "$URL" ] && URL=$(grep -oE 'https://[a-z0-9]+(-[a-z0-9]+)+\.trycloudflare\.com' .logs/tunnel.log 2>/dev/null | tail -1)
+# 外網網址依通道方式而定；tailscale 的主機名要問 daemon，不在 .env 裡
+PROVIDER=$(grep -E '^TUNNEL_PROVIDER=' server/.env 2>/dev/null | cut -d= -f2- | tr -d '\r')
+URL=''
+case "${PROVIDER:-quick}" in
+  tailscale)
+    H=$(tailscale status --json 2>/dev/null \
+      | grep -o '"DNSName"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 \
+      | cut -d'"' -f4 | sed 's/\.$//')
+    [ -n "$H" ] && URL="https://$H" ;;
+  ngrok)
+    H=$(grep -E '^NGROK_DOMAIN=.+' server/.env 2>/dev/null | cut -d= -f2- | tr -d '\r')
+    [ -n "$H" ] && URL="https://$H" ;;
+  cloudflare)
+    H=$(grep -E '^TUNNEL_HOSTNAME=.+' server/.env 2>/dev/null | cut -d= -f2- | tr -d '\r')
+    [ -n "$H" ] && URL="https://$H" ;;
+  *)
+    URL=$(grep -oE 'https://[a-z0-9]+(-[a-z0-9]+)+\.trycloudflare\.com' .logs/tunnel.log 2>/dev/null | tail -1) ;;
+esac
 if [ -n "$URL" ]; then
   EXT=$(curl -s -m 20 -o /dev/null -w '%{http_code}' "$URL/api/session" 2>/dev/null)
-  printf '  %-10s %s\n' "外網" "$([ "$EXT" = 200 ] && echo "✅ $URL" || echo "❌ $URL (HTTP ${EXT:-000})")"
+  printf '  %-10s %s
+' "外網" "$([ "$EXT" = 200 ] && echo "✅ $URL" || echo "❌ $URL (HTTP ${EXT:-000})")"
 fi
 
 echo
 NEXT=$(grep -o '下一次提醒：[^（]*（[^）]*）' .logs/server.log 2>/dev/null | tail -1)
 printf '  %-10s %s\n' "定時提醒" "${NEXT:-（沒有排程紀錄）}"
+
+BK=$(ls -1d server/data/backups/*/ 2>/dev/null | tail -1)
+if [ -n "$BK" ]; then
+  printf '  %-10s %s
+' "自動備份" "$(basename "$BK")（共 $(ls -1d server/data/backups/*/ 2>/dev/null | wc -l) 份，$(du -sh "$BK" 2>/dev/null | cut -f1)）"
+else
+  printf '  %-10s %s
+' "自動備份" "（還沒有）"
+fi
 
 for u in martina eli; do
   [ -f "server/data/fit-$u.db" ] || continue

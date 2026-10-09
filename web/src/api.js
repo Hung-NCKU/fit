@@ -61,7 +61,7 @@ export const api = {
   updateWorkout: (id, body) => request(`/workouts/${id}`, { method: 'PATCH', body }),
   deleteWorkout: (id) => request(`/workouts/${id}`, { method: 'DELETE' }),
 
-  listWeights: () => request('/weights'),
+  listWeights: (user) => request('/weights' + qs({ user })),
   addWeight: (body) => request('/weights', { method: 'POST', body }),
   deleteWeight: (id) => request(`/weights/${id}`, { method: 'DELETE' }),
 

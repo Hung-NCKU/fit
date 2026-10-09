@@ -1,5 +1,6 @@
 import { getProfile, updateProfile } from '../db.js';
 import { quotaStatus } from '../gemini.js';
+import { lastBackup } from '../autobackup.js';
 import { getUser, USERS } from '../users.js';
 import {
   addMeal, listMeals, updateMeal, deleteMeal,
@@ -115,6 +116,7 @@ export default async function apiRoutes(app) {
       gemini: Boolean(process.env.GEMINI_API_KEY),
       model: models.find(m => m.available)?.model ?? null,
       models,
+      backup: lastBackup(),
     };
   });
 }

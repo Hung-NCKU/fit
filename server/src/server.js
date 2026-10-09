@@ -14,6 +14,7 @@ import pushRoutes from './routes/push.js';
 import { readPhoto } from './uploads.js';
 import { initAllDatabases } from './db.js';
 import { startScheduler } from './scheduler.js';
+import { startAutoBackup } from './autobackup.js';
 import { USERS, getUser, passwordOf } from './users.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -97,4 +98,5 @@ if (!authRequired()) {
   app.log.warn(`⚠️  這些帳號沒設密碼，目前無法登入：${noPassword.map(u => u.name).join('、')}`);
 }
 startScheduler();
+startAutoBackup();
 app.log.info(`✅ http://localhost:${port}  使用者：${USERS.map(u => u.name).join(' / ')}`);

@@ -92,15 +92,34 @@ export const deleteWorkout = (userId, id) =>
 
 /* ---------------- 體重 ---------------- */
 
+/** 沒填就是 null，不要變成 0 —— 0 公分的腰圍會把趨勢圖毀掉 */
+const optNum = (v) => (v === undefined || v === null || v === '' ? null : num(v));
+
 export function addWeight(userId, input) {
   const db = getDb(userId);
   const date = str(input.date, today());
+  const weight = optNum(input.weight_kg);
+
+  // 體重是 NOT NULL，所以那一天還沒有紀錄時必須給。
+  // 已經有紀錄則可以只補圍度（「腰圍 72」），舊體重會保留。
+  const existing = db.prepare('SELECT weight_kg FROM weights WHERE date = ?').get(date);
+  if (weight == null && !existing) {
+    throw Object.assign(new Error(`${date} 還沒有體態紀錄，第一筆請至少填體重`), { status: 400 });
+  }
+
   db.prepare(`
-    INSERT INTO weights (date, weight_kg, body_fat_pct, note) VALUES (?, ?, ?, ?)
-    ON CONFLICT(date) DO UPDATE SET weight_kg=excluded.weight_kg,
-                                    body_fat_pct=excluded.body_fat_pct,
-                                    note=excluded.note
-  `).run(date, num(input.weight_kg), input.body_fat_pct == null ? null : num(input.body_fat_pct), str(input.note));
+    INSERT INTO weights (date, weight_kg, body_fat_pct, waist_cm, note)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(date) DO UPDATE SET
+      weight_kg    = COALESCE(excluded.weight_kg, weights.weight_kg),
+      -- 選填欄位用 COALESCE：早上記體重、晚上再量腰圍時，
+      -- 不要因為第二次沒帶體脂就把早上那筆抹掉。
+      -- （對話裡說「腰圍 72」時只會帶一個值，靠這行才不會損資料）
+      body_fat_pct = COALESCE(excluded.body_fat_pct, weights.body_fat_pct),
+      waist_cm     = COALESCE(excluded.waist_cm,     weights.waist_cm),
+      note         = CASE WHEN excluded.note = '' THEN weights.note ELSE excluded.note END
+  `).run(date, weight ?? existing.weight_kg, optNum(input.body_fat_pct),
+         optNum(input.waist_cm), str(input.note));
   syncProfileWeight(userId);
   return db.prepare('SELECT * FROM weights WHERE date = ?').get(date);
 }
@@ -161,7 +180,10 @@ export function rangeSummary(userId, from, to) {
     SELECT date, COUNT(*) items, SUM(sets*reps*weight_kg) volume_kg, SUM(duration_min) duration_min
     FROM workouts WHERE date BETWEEN ? AND ? GROUP BY date ORDER BY date
   `).all(from, to);
-  const weights = db.prepare('SELECT date, weight_kg FROM weights WHERE date BETWEEN ? AND ? ORDER BY date').all(from, to);
+  const weights = db.prepare(`
+    SELECT date, weight_kg, body_fat_pct, waist_cm
+    FROM weights WHERE date BETWEEN ? AND ? ORDER BY date
+  `).all(from, to);
   return { from, to, user: userId, days, training, weights };
 }
 

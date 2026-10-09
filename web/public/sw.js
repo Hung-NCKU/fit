@@ -15,6 +15,8 @@ const NEVER_CACHE = (url) =>
  * ngrok 免費方案會對「每一個路徑」回一個 HTTP 200 的警告頁 —— 連 .js、.css 都是。
  * 瀏覽器把那份 HTML 當 JavaScript 解析就是整頁空白（Unexpected token '<'）。
  * 這個 header 讓 ngrok 直接放行，不插警告頁。
+ * （2026-10 已改用 Tailscale Funnel，沒有攔截頁；這行留著是為了切回 ngrok 時仍然正常，
+ * 其他通道會直接忽略不認得的 header。）
  */
 const SKIP_HEADER = { 'ngrok-skip-browser-warning': '1' };
 
