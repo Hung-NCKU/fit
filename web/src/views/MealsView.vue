@@ -19,12 +19,29 @@ const blank = () => ({
 const form = ref(blank());
 const editingId = ref(null);
 
+const loading = ref(false);
+// 切換使用者時可能有兩個請求同時在飛，而它們不保證按順序回來。
+// 先發的後到的話，畫面會停在上一個人的資料上（手機特別明顯，延遲高）。
+// 用序號標記，只採用最後一次發出的那個請求的結果。
+let reqId = 0;
+
 async function load() {
+  const mine = ++reqId;
   error.value = '';
-  try { rows.value = await api.listMeals({ limit: 300, user: viewing.value }); }
-  catch (e) { error.value = e.message; }
+  loading.value = true;
+  try {
+    const data = await api.listMeals({ limit: 300, user: viewing.value });
+    if (mine !== reqId) return;   // 已經有更新的請求，這份丟掉
+    rows.value = data;
+  } catch (e) {
+    if (mine !== reqId) return;
+    error.value = e.message;
+  } finally {
+    if (mine === reqId) loading.value = false;
+  }
 }
-watch(viewing, () => { cancel(); load(); });
+// 先清空再載入：不要讓上一個人的紀錄挂在畫面上等新資料
+watch(viewing, () => { rows.value = []; cancel(); load(); });
 
 async function save() {
   if (!form.value.name.trim()) return;
@@ -121,7 +138,8 @@ onMounted(load);
       </div>
     </div>
 
-    <div v-if="!grouped.length" class="card empty">
+    <div v-if="loading" class="card empty">載入中…</div>
+    <div v-else-if="!grouped.length" class="card empty">
       <template v-if="isMine">還沒有飲食紀錄。可以直接在「教練」頁說「我剛吃了兩顆蛋和一碗飯」。</template>
       <template v-else>對方還沒有飲食紀錄。</template>
     </div>
@@ -145,7 +163,8 @@ onMounted(load);
               <div class="item">
                 <button v-if="m.photo" class="thumb-btn" :title="`查看「${m.name}」的照片`"
                         @click="openPhoto(photoUrl(m.photo, viewing), `${m.name}　${Math.round(m.kcal)} kcal`)">
-                  <img class="thumb" :src="photoUrl(m.photo, viewing)" :alt="m.name" />
+                  <img class="thumb" :src="photoUrl(m.photo, viewing)" :alt="m.name"
+                       loading="lazy" decoding="async" />
                 </button>
                 <div>
                   <span class="badge">{{ MEAL_TYPES[m.meal_type] || '點心' }}</span>

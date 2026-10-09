@@ -5,7 +5,7 @@
  * /api 與 /uploads 是隨時在變的個人資料（飲食紀錄、餐點照片），
  * 一律不進快取，快取起來只會讀到舊的。
  */
-const VERSION = 'fit-v4';   // 改版號會清掉所有舊快取（v3 可能存了被污染的檔案，見下方）
+const VERSION = 'fit-v5';   // 改版號會清掉所有舊快取（v4 以前的 API 回應可能被 HTTP 快取留著）
 const SHELL = `${VERSION}-shell`;
 
 const NEVER_CACHE = (url) =>
@@ -20,8 +20,8 @@ const NEVER_CACHE = (url) =>
  */
 const SKIP_HEADER = { 'ngrok-skip-browser-warning': '1' };
 
-const fetchDirect = (url) =>
-  fetch(url, { headers: SKIP_HEADER, credentials: 'include', redirect: 'follow' });
+const fetchDirect = (url, extra = {}) =>
+  fetch(url, { headers: SKIP_HEADER, credentials: 'include', redirect: 'follow', ...extra });
 
 /**
  * 回應是不是「這個請求本來該拿到的東西」。
@@ -75,8 +75,9 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (NEVER_CACHE(url)) {
-    // 個人資料不進快取，但仍要帶上 skip header，否則 API 也會收到警告頁
-    e.respondWith(fetchDirect(request.url));
+    // 個人資料不進快取，但仍要帶上 skip header，否則 API 也會收到警告頁。
+    // no-store 連 HTTP 快取也一併繞過：?user=別人 的回應絕對不能被留著。
+    e.respondWith(fetchDirect(request.url, { cache: 'no-store' }));
     return;
   }
 

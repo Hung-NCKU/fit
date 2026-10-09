@@ -50,6 +50,13 @@ app.addHook('onRequest', async (req, reply) => {
   return reply.code(401).send({ error: '請先登入' });
 });
 
+// 個人資料一律不快取。沒有這行的話，瀏覽器或中間節點有機會把
+// ?user=martina 的回應留著，切換使用者時看到上一個人的紀錄。
+// （/uploads/:id 不在此列：照片 id 是 uuid，內容不會變，故意要快取）
+app.addHook('onSend', async (req, reply) => {
+  if (req.url.startsWith('/api/')) reply.header('cache-control', 'no-store');
+});
+
 await app.register(authRoutes, { prefix: '/api' });
 await app.register(apiRoutes, { prefix: '/api' });
 await app.register(chatRoutes, { prefix: '/api' });

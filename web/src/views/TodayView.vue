@@ -18,7 +18,11 @@ const profile = ref(null);
 const error = ref('');
 const loading = ref(true);
 
+// 與其他頁面相同：只採用最後一次發出的請求的結果
+let reqId = 0;
+
 async function load() {
+  const mine = ++reqId;
   loading.value = true;
   error.value = '';
   try {
@@ -31,13 +35,15 @@ async function load() {
       api.getProfile(u),
       api.listWeights(u),
     ]);
+    if (mine !== reqId) return;   // 已經切到別人了，這份丟掉
     summary.value = s; meals.value = m; workouts.value = w; range.value = r; profile.value = p;
     weights.value = bw;
     fillBody();
   } catch (e) {
+    if (mine !== reqId) return;
     error.value = e.message;
   } finally {
-    loading.value = false;
+    if (mine === reqId) loading.value = false;
   }
 }
 
@@ -149,7 +155,12 @@ const shiftDate = (n) => {
   load();
 };
 
-watch(viewing, load);
+// 先清空再載入，不要顯示上一個人的數字
+watch(viewing, () => {
+  summary.value = null; meals.value = []; workouts.value = [];
+  range.value = null; profile.value = null; weights.value = [];
+  load();
+});
 watch(date, fillBody);
 
 onMounted(load);

@@ -18,12 +18,29 @@ const blank = () => ({
 const form = ref(blank());
 const editingId = ref(null);
 
+const loading = ref(false);
+// 切換使用者時可能有兩個請求同時在飛，而它們不保證按順序回來。
+// 先發的後到的話，畫面會停在上一個人的資料上（手機特別明顯，延遲高）。
+// 用序號標記，只採用最後一次發出的那個請求的結果。
+let reqId = 0;
+
 async function load() {
+  const mine = ++reqId;
   error.value = '';
-  try { rows.value = await api.listWorkouts({ limit: 300, user: viewing.value }); }
-  catch (e) { error.value = e.message; }
+  loading.value = true;
+  try {
+    const data = await api.listWorkouts({ limit: 300, user: viewing.value });
+    if (mine !== reqId) return;   // 已經有更新的請求，這份丟掉
+    rows.value = data;
+  } catch (e) {
+    if (mine !== reqId) return;
+    error.value = e.message;
+  } finally {
+    if (mine === reqId) loading.value = false;
+  }
 }
-watch(viewing, () => { cancel(); load(); });
+// 先清空再載入：不要讓上一個人的紀錄挂在畫面上等新資料
+watch(viewing, () => { rows.value = []; cancel(); load(); });
 
 async function save() {
   if (!form.value.exercise.trim()) return;
@@ -118,7 +135,8 @@ onMounted(load);
       </div>
     </div>
 
-    <div v-if="!grouped.length" class="card empty">
+    <div v-if="loading" class="card empty">載入中…</div>
+    <div v-else-if="!grouped.length" class="card empty">
       <template v-if="isMine">還沒有訓練紀錄。可以直接在「教練」頁說「我今天做了深蹲 4 組 8 下 25 公斤」。</template>
       <template v-else>對方還沒有訓練紀錄。</template>
     </div>
