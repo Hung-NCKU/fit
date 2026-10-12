@@ -220,20 +220,28 @@ const changing = ref(false);
 function startChange() {
   picked.value = '';
   petName.value = '';
+  agreed.value = false;
   changing.value = true;
 }
 
+/**
+ * 換寵物前要先勾同意。
+ *
+ * 原本用原生的 confirm()，結果出過兩次意外：畫面上誤觸「確認換成這隻」，
+ * 系統對話框跳出來之後再誤觸一次（確定鈕就在手指附近），整隻寵物連同
+ * 代幣與買過的東西就沒了，而且無法復原。
+ *
+ * 改成頁面內的勾選框：兩次操作在畫面上的位置差很遠，不可能連續誤觸，
+ * 而且離開面板就自動取消，不會留著一個「已確認」的狀態等人踩。
+ */
+const agreed = ref(false);
+
 function confirmChange() {
-  const s = (data.value?.species || []).find(x => x.id === picked.value);
-  const ok = confirm(
-    `確定要改養「${s?.name ?? ''}」嗎？\n\n`
-    + `目前的「${pet.value?.name ?? ''}」會被取代，`
-    + `${pet.value?.coins ?? 0} 枚代幣與買過的布置全部歸零，無法復原。`,
-  );
-  if (!ok) return;
+  if (!picked.value || !agreed.value) return;
   act(async () => {
     await api.replacePet(picked.value, petName.value);
     changing.value = false;
+    agreed.value = false;
     tab.value = 'home';
   }, 'change');
 }
@@ -315,7 +323,7 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
       <div v-if="changing" class="card stack">
         <div class="spread">
           <h3 style="margin:0">換一隻來養</h3>
-          <button class="icon" @click="changing = false">取消</button>
+          <button class="icon" @click="changing = false; agreed = false">取消</button>
         </div>
         <p class="small" style="margin:0; color: var(--danger)">
           換掉之後，「{{ pet.name }}」的紀錄會被取代，目前的 {{ pet.coins }} 枚代幣與
@@ -325,7 +333,13 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
         <PetCarousel v-model="picked" :items="choices" />
 
         <input v-model="petName" maxlength="20" placeholder="幫牠取個名字（可留空）" />
-        <button class="primary" :disabled="!picked || busy" @click="confirmChange">
+
+        <label class="row agree small">
+          <input v-model="agreed" type="checkbox" />
+          <span>我知道這會刪掉「{{ pet.name }}」的紀錄，而且無法復原</span>
+        </label>
+
+        <button class="primary" :disabled="!picked || !agreed || busy" @click="confirmChange">
           {{ busy ? '處理中…' : '確認換成這隻' }}
         </button>
       </div>
@@ -403,6 +417,14 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
 </template>
 
 <style scoped>
+/* 換寵物是唯一不可復原的動作，勾選框故意放在按鈕上方一段距離 */
+.agree {
+  gap: .5rem;
+  align-items: flex-start;
+  color: var(--danger);
+}
+.agree input { width: auto; margin-top: .15rem; }
+
 /* ---- 試穿 ---- */
 .item.trying {
   outline: 2px solid var(--accent);

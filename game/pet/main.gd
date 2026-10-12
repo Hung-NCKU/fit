@@ -138,12 +138,16 @@ func _relayout() -> void:
 		_bg.scale = Vector2(k, k)
 		_bg.position = (view - t * k) * 0.5
 	if _decor.texture != null:
-		# 擺飾跟寵物站在同一條地板線上，而且靠左——不這樣的話它會浮在半空中，
-		# 或是剛好蓋在寵物身上。高度給場景的兩成，比寵物大一點點，像件家具。
-		var k2: float = (view.y * 0.20) / maxf(1.0, float(_decor.texture.get_height()))
+		# 場景的家具都靠兩側並且站在地板線上，買來的擺飾再放同一條線上就會
+		# 跟書架、貓跳台疊在一起。放在地板帶中間、稍微偏右的空地，
+		# 看起來就是「放在房間前方的地上」，而且不擋到任何東西。
+		# 寵物比它晚加入場景，所以走過去時會在擺飾前面。
+		var k2: float = (view.y * 0.17) / maxf(1.0, float(_decor.texture.get_height()))
 		_decor.scale = Vector2(k2, k2)
 		var dh: float = _decor.texture.get_height() * k2
-		_decor.position = Vector2(view.x * 0.15, view.y * PetBody.GROUND - dh * 0.5)
+		var ground: float = view.y * PetBody.GROUND
+		var front: float = ground + (view.y - ground) * 0.45
+		_decor.position = Vector2(view.x * 0.62, front - dh * 0.5)
 	if _ready_to_run:
 		_pet.resize(float(_cfg.get("size", 0.28)), view)
 
