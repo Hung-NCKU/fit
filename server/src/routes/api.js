@@ -3,7 +3,7 @@ import { quotaStatus } from '../gemini.js';
 import { lastBackup } from '../autobackup.js';
 import { getUser, USERS } from '../users.js';
 import {
-  addMeal, listMeals, updateMeal, deleteMeal,
+  addMeal, listMeals, listMealDates, updateMeal, deleteMeal,
   addWorkout, listWorkouts, updateWorkout, deleteWorkout,
   addWeight, listWeights, deleteWeight,
   dailySummary, rangeSummary, today, daysAgo,
@@ -50,6 +50,7 @@ export default async function apiRoutes(app) {
   /* ---- 飲食 ---- */
 
   app.get('/meals', async (req) => listMeals(viewUser(req), req.query));
+  app.get('/meals/dates', async (req) => listMealDates(viewUser(req)));
   app.post('/meals', async (req, reply) => {
     readOnlyGuard(req);
     return reply.code(201).send(addMeal(req.userId, req.body));

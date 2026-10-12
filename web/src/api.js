@@ -52,6 +52,7 @@ export const api = {
   users: () => request('/users'),
 
   listMeals: (p) => request('/meals' + qs(p)),
+  mealDates: (user) => request('/meals/dates' + qs({ user })),
   addMeal: (body) => request('/meals', { method: 'POST', body }),
   updateMeal: (id, body) => request(`/meals/${id}`, { method: 'PATCH', body }),
   deleteMeal: (id) => request(`/meals/${id}`, { method: 'DELETE' }),
@@ -79,8 +80,8 @@ export const api = {
   clearChat: () => request('/chat/history', { method: 'DELETE' }),
 };
 
-export const photoUrl = (file, user) =>
-  (file ? `/uploads/${file}` + (user ? `?user=${user}` : '') : '');
+export const photoUrl = (file, user, size) =>
+  (file ? `/uploads/${file}` + qs({ user, size }) : '');
 
 /**
  * 手機直拍動輒 4000px / 5MB，先在瀏覽器縮到長邊 1280、JPEG 0.82 再上傳：

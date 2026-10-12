@@ -724,8 +724,35 @@ curl -s -b cookie.txt http://localhost:3000/api/chat/history
 **全部存在資料庫裡**（`photos` 表的 BLOB 欄位），不是檔案。
 
 這樣做的理由：備份只要複製 `fit.db` 一個檔，不會有「紀錄刪了、照片還留在資料夾」的孤兒檔，
-資料庫搬到別台機器照片也跟著走。照片經前端壓縮後一張約 20–40KB，一天幾張的用量
+資料庫搬到別台機器照片也跟著走。前端上傳前會縮到長邊 1280、JPEG 0.82，
+實測一張約 **110–310KB**（原本文件寫 20–40KB 是錯的）。一天幾張的用量
 SQLite 完全吃得消（BLOB 放在獨立資料表，查飲食紀錄時不會掃到）。
+
+### 清單用縮圖，不是原圖
+
+飲食清單裡那張圖只有幾十 px 寬，原本卻直接載原始照片。一頁三十幾張、
+每張三百多 KB，等於一次十幾 MB —— 在外網通道上開一次飲食頁要等很久。
+
+現在 `GET /uploads/<照片id>?size=thumb` 會回一張長邊 120px、品質 60 的縮圖，
+**約 3.7KB，比原圖小 96 倍**。第一次要求時才計算，算完存進 `photos.thumb`
+重複使用（第一次約 330ms，之後 3ms）。點開的彈窗仍然用原圖。
+
+縮圖用 `jpeg-js` 產生而不是 `sharp`：sharp 是原生模組要編譯，會破壞這個專案
+「不需要 build toolchain、Docker 直接 `npm ci`」的前提。jpeg-js 是純 JavaScript，
+慢一些，但只算一次。非 JPEG 的照片不處理，直接回原圖。
+
+既有照片要預先算好可以跑：
+
+```bash
+cd server && node --input-type=module -e '
+import { readThumb } from "./src/thumbs.js";
+import { getDb } from "./src/db.js";
+import { USERS } from "./src/users.js";
+for (const u of USERS)
+  for (const r of getDb(u.id).prepare("SELECT id FROM photos WHERE thumb IS NULL").all())
+    readThumb(u.id, r.id);
+'
+```
 
 取用路徑是 `GET /uploads/<照片id>`，由後端從資料庫讀出來吐給瀏覽器，一樣需要登入。
 

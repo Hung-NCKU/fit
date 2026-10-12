@@ -5,11 +5,19 @@
  * /api 與 /uploads 是隨時在變的個人資料（飲食紀錄、餐點照片），
  * 一律不進快取，快取起來只會讀到舊的。
  */
-const VERSION = 'fit-v5';   // 改版號會清掉所有舊快取（v4 以前的 API 回應可能被 HTTP 快取留著）
+const VERSION = 'fit-v6';   // 改版號會清掉所有舊快取
 const SHELL = `${VERSION}-shell`;
 
+// 不放進 service worker 的快取：個人資料，而且隨時在變
 const NEVER_CACHE = (url) =>
   url.pathname.startsWith('/api') || url.pathname.startsWith('/uploads');
+
+// 連「瀏覽器 HTTP 快取」都要繞過的，只有 API。
+// 照片不在此列：id 是 uuid、內容永遠不變，後端刻意回
+// cache-control: private, max-age=604800, immutable。
+// 曾經把 /uploads 也設成 no-store，結果每次開飲食頁都要重新下載
+// 三十幾張、合計約 10MB 的照片，在外網通道上慢到不能用。
+const NO_HTTP_CACHE = (url) => url.pathname.startsWith('/api');
 
 /**
  * ngrok 免費方案會對「每一個路徑」回一個 HTTP 200 的警告頁 —— 連 .js、.css 都是。
@@ -75,9 +83,10 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (NEVER_CACHE(url)) {
-    // 個人資料不進快取，但仍要帶上 skip header，否則 API 也會收到警告頁。
-    // no-store 連 HTTP 快取也一併繞過：?user=別人 的回應絕對不能被留著。
-    e.respondWith(fetchDirect(request.url, { cache: 'no-store' }));
+    // 不進 SW 快取，但仍要帶上 skip header，否則切回 ngrok 時 API 會收到警告頁。
+    // API 另外加 no-store，連瀏覽器的 HTTP 快取也繞過 ——
+    // ?user=別人 的回應絕對不能被留著。照片則照常使用 HTTP 快取。
+    e.respondWith(fetchDirect(request.url, NO_HTTP_CACHE(url) ? { cache: 'no-store' } : {}));
     return;
   }
 

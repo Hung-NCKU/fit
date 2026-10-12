@@ -117,6 +117,10 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   // 腰圍是脂肪的代理指標：體重在漲而腰圍沒漲，就是增肌而不是增脂。
   // 可為空，只想記體重的人不被迫填。
   addColumn('weights', 'waist_cm', 'REAL');
+
+  // 餐點縮圖（JPEG）。清單裡的小圖本來直接載原始照片，平均 300KB；
+  // 縮成約 15KB 後第一次要求時算一次，之後存這裡重複使用。
+  addColumn('photos', 'thumb', 'BLOB');
 }
 
 /* ---------------- 營養目標 ---------------- */

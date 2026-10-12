@@ -20,17 +20,64 @@ const form = ref(blank());
 const editingId = ref(null);
 
 const loading = ref(false);
-// 切換使用者時可能有兩個請求同時在飛，而它們不保證按順序回來。
-// 先發的後到的話，畫面會停在上一個人的資料上（手機特別明顯，延遲高）。
+const dates = ref([]);                 // 有紀錄的日期（新到舊），含當天筆數與熱量
+const date = ref(todayStr());          // 正在看哪一天
+
+// 一次只載一天。整份歷史一起載的話，光是餐點照片就有數十 MB
+// （平均一張 300KB、三十幾張），在外網通道上開一次飲食頁要等很久。
+// 日期清單本身很輕（幾十列純文字），所以可以一次拿完用來做導覽。
+
+// 切換使用者或日期時可能有兩個請求同時在飛，而它們不保證按順序回來。
+// 先發的後到的話，畫面會停在上一筆資料上（手機特別明顯，延遲高）。
 // 用序號標記，只採用最後一次發出的那個請求的結果。
 let reqId = 0;
 
-async function load() {
+const dateIdx = computed(() => dates.value.findIndex(d => d.date === date.value));
+const summaryOfDay = computed(() => dates.value[dateIdx.value] || null);
+/** 清單是新到舊，所以「較舊」是往索引大的方向走 */
+const hasOlder = computed(() => {
+  const i = dateIdx.value;
+  return i >= 0 ? i < dates.value.length - 1 : dates.value.some(d => d.date < date.value);
+});
+const hasNewer = computed(() => {
+  const i = dateIdx.value;
+  return i >= 0 ? i > 0 : dates.value.some(d => d.date > date.value);
+});
+
+/** 跳到上／下一個「有紀錄」的日子，而不是單純加減一天 */
+function step(dir) {
+  const list = dates.value;
+  if (!list.length) return;
+  const i = dateIdx.value;
+  let next;
+  if (i >= 0) {
+    next = list[i + (dir === 'older' ? 1 : -1)];
+  } else {
+    next = dir === 'older'
+      ? list.find(d => d.date < date.value)
+      : [...list].reverse().find(d => d.date > date.value);
+  }
+  if (next) { date.value = next.date; loadDay(); }
+}
+
+async function loadDates() {
+  try {
+    dates.value = await api.mealDates(viewing.value);
+    // 預設停在最近一筆有紀錄的日子，不要開在空白的今天
+    if (dates.value.length && !dates.value.some(d => d.date === date.value)) {
+      date.value = dates.value[0].date;
+    }
+  } catch (e) {
+    error.value = e.message;
+  }
+}
+
+async function loadDay() {
   const mine = ++reqId;
   error.value = '';
   loading.value = true;
   try {
-    const data = await api.listMeals({ limit: 300, user: viewing.value });
+    const data = await api.listMeals({ date: date.value, user: viewing.value });
     if (mine !== reqId) return;   // 已經有更新的請求，這份丟掉
     rows.value = data;
   } catch (e) {
@@ -40,8 +87,15 @@ async function load() {
     if (mine === reqId) loading.value = false;
   }
 }
-// 先清空再載入：不要讓上一個人的紀錄挂在畫面上等新資料
-watch(viewing, () => { rows.value = []; cancel(); load(); });
+
+/** 新增或刪除會改變某天的筆數，日期清單也要跟著重算 */
+async function load() {
+  await loadDates();
+  await loadDay();
+}
+
+// 先清空再載入：不要讓上一個人的紀錄掛在畫面上等新資料
+watch(viewing, () => { rows.value = []; dates.value = []; cancel(); load(); });
 
 async function save() {
   if (!form.value.name.trim()) return;
@@ -107,6 +161,18 @@ onMounted(load);
 
     <UserTabs v-model="viewing" />
 
+    <div class="card daybar">
+      <div class="row">
+        <button class="icon" :disabled="!hasOlder" @click="step('older')">←</button>
+        <input v-model="date" type="date" style="width:auto" :max="todayStr()" @change="loadDay" />
+        <button class="icon" :disabled="!hasNewer" @click="step('newer')">→</button>
+      </div>
+      <span v-if="summaryOfDay" class="small muted">
+        {{ summaryOfDay.items }} 筆 · {{ summaryOfDay.kcal }} kcal · 蛋白質 {{ summaryOfDay.protein_g }}g
+      </span>
+      <span v-else class="small muted">這天沒有紀錄</span>
+    </div>
+
     <div v-if="error" class="error">{{ error }}</div>
 
     <div v-if="showForm && isMine" class="card">
@@ -163,7 +229,7 @@ onMounted(load);
               <div class="item">
                 <button v-if="m.photo" class="thumb-btn" :title="`查看「${m.name}」的照片`"
                         @click="openPhoto(photoUrl(m.photo, viewing), `${m.name}　${Math.round(m.kcal)} kcal`)">
-                  <img class="thumb" :src="photoUrl(m.photo, viewing)" :alt="m.name"
+                  <img class="thumb" :src="photoUrl(m.photo, viewing, 'thumb')" :alt="m.name"
                        loading="lazy" decoding="async" />
                 </button>
                 <div>
@@ -192,6 +258,15 @@ onMounted(load);
 </template>
 
 <style scoped>
+.daybar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+  flex-wrap: wrap;
+  padding: .7rem .9rem;
+}
+
 .item { display: flex; gap: .6rem; align-items: flex-start; }
 .thumb-btn {
   padding: 0;

@@ -29,12 +29,24 @@ export function addMeal(userId, input, source = 'manual') {
 export const getMeal = (userId, id) =>
   getDb(userId).prepare('SELECT * FROM meals WHERE id = ?').get(id);
 
-export function listMeals(userId, { from, to, date, limit = 500 } = {}) {
+export function listMeals(userId, { from, to, date, limit = 500, offset = 0 } = {}) {
   const db = getDb(userId);
   if (date) return db.prepare('SELECT * FROM meals WHERE date = ? ORDER BY id').all(date);
   if (from && to) return db.prepare('SELECT * FROM meals WHERE date BETWEEN ? AND ? ORDER BY date DESC, id DESC').all(from, to);
-  return db.prepare('SELECT * FROM meals ORDER BY date DESC, id DESC LIMIT ?').all(limit);
+  // offset 給飲食頁分頁用：整份歷史一次載入時，光是照片就有數十 MB
+  return db.prepare('SELECT * FROM meals ORDER BY date DESC, id DESC LIMIT ? OFFSET ?')
+    .all(num(limit) || 500, num(offset));
 }
+
+/**
+ * 有飲食紀錄的日期清單（新到舊），附當天的筆數與熱量。
+ * 飲食頁用它做日期分頁：一次只載一天，而且按 ← 時直接跳到「上一個有紀錄的日子」，
+ * 不會卡在一堆空白日期上。回傳量很小（幾十列純文字），可以一次拿完。
+ */
+export const listMealDates = (userId) => getDb(userId).prepare(`
+  SELECT date, COUNT(*) items, ROUND(SUM(kcal)) kcal, ROUND(SUM(protein_g)) protein_g
+  FROM meals GROUP BY date ORDER BY date DESC
+`).all();
 
 export function updateMeal(userId, id, patch) {
   const cur = getMeal(userId, id);

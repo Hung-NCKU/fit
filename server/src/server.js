@@ -12,6 +12,7 @@ import apiRoutes from './routes/api.js';
 import chatRoutes from './routes/chat.js';
 import pushRoutes from './routes/push.js';
 import { readPhoto } from './uploads.js';
+import { readThumb } from './thumbs.js';
 import { initAllDatabases } from './db.js';
 import { startScheduler } from './scheduler.js';
 import { startAutoBackup } from './autobackup.js';
@@ -68,7 +69,10 @@ await app.register(pushRoutes, { prefix: '/api' });
  */
 app.get('/uploads/:id', async (req, reply) => {
   const owner = req.query.user && getUser(req.query.user) ? req.query.user : req.userId;
-  const photo = readPhoto(owner, req.params.id);
+  // ?size=thumb：飲食清單用的小圖。算不出縮圖時 readThumb 會退回原圖。
+  const photo = req.query.size === 'thumb'
+    ? readThumb(owner, req.params.id)
+    : readPhoto(owner, req.params.id);
   if (!photo) return reply.code(404).send({ error: '找不到照片' });
   return reply
     .header('content-type', photo.mime)
