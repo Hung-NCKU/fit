@@ -186,10 +186,27 @@ HELP
     [ -n "$TS_HOST" ] && echo "  固定網址：https://${TS_HOST}"
     echo ""
 
-    # --bg 會把設定寫進 tailscaled 並立刻返回；這裡要的是一個「活著的前景程序」，
-    # 好讓 start.sh 能用 wait -n 監看、Ctrl+C 時一起收掉。
-    # 所以改用前景模式：它會一直跑到被中斷為止。
-    exec tailscale funnel "${PORT}"
+    # 一定要用 --bg（持久設定寫進 tailscaled），不能用前景模式。
+    # 前景的 `tailscale funnel 3000` 會印出「Available on the internet」而且程序活著，
+    # 但實測它「不會把主機名發布到公開 DNS」—— tailnet 內的裝置靠 MagicDNS 仍連得到，
+    # 外面的人則是 NXDOMAIN，整個外網等於是斷的。這個差異很難發現，
+    # 因為開發機自己就在 tailnet 裡，怎麼測都是通的。
+    #   驗證方式：curl --resolve <host>:443:<公開IP> 繞開 MagicDNS，
+    #   或查 https://dns.google/resolve?name=<host>&type=A 看有沒有 A 記錄。
+    tailscale funnel --bg "${PORT}" > /dev/null 2>&1
+
+    # 確認設定真的進去了，而不是只看指令有沒有回 0
+    if ! tailscale funnel status 2>/dev/null | grep -q "Funnel on"; then
+      echo "❌ Funnel 設定失敗。檢查後台是否已開啟 HTTPS Certificates 與 funnel 權限："
+      echo "   https://login.tailscale.com/admin/dns"
+      echo "   https://login.tailscale.com/admin/acls"
+      exit 1
+    fi
+
+    echo "  Funnel 已開啟（設定存在 tailscaled，重開機會自動恢復）"
+    echo ""
+    # 不是常駐程序：設定好就結束，由 start.sh 判斷不要納入 wait 監看
+    exit 0
     ;;
   *)
     echo "不認得的方式「$PROVIDER」。可用：quick / ngrok / cloudflare / tailscale"

@@ -13,13 +13,16 @@ STARTER=$(find_pids 'bash .*start[.]sh')
 SERVER=$(find_pids '^node src/server[.]js')
 TUNNEL=$(find_pids '^[.]tools/(cloudflared|ngrok)')
 [ -z "$TUNNEL" ] && TUNNEL=$(find_pids '^tailscale funnel')
+# Tailscale Funnel 是 tailscaled 的設定而不是獨立程序，沒有 PID 可找
+TS_FUNNEL=''
+command -v tailscale > /dev/null 2>&1 && tailscale funnel status 2>/dev/null | grep -q 'Funnel on' && TS_FUNNEL=1
 
 age() { [ -n "$1" ] && ps -o etime= -p "${1%% *}" 2>/dev/null | tr -d ' '; }
 
 echo "═══ 增肌教練 ═══"
 printf '  %-10s %s\n' "啟動器" "$([ -n "$STARTER" ] && echo "執行中 (PID $STARTER・已 $(age "$STARTER"))" || echo '未執行')"
 printf '  %-10s %s\n' "後端"   "$([ -n "$SERVER" ]  && echo "執行中 (PID $SERVER・已 $(age "$SERVER"))"   || echo '未執行')"
-printf '  %-10s %s\n' "外網通道" "$([ -n "$TUNNEL" ] && echo "執行中 (PID $TUNNEL・已 $(age "$TUNNEL"))"   || echo '未執行')"
+printf '  %-10s %s\n' "外網通道" "$([ -n "$TUNNEL" ] && echo "執行中 (PID $TUNNEL・已 $(age "$TUNNEL"))" || { [ -n "$TS_FUNNEL" ] && echo 'Funnel 已開啟（tailscaled 持久設定）' || echo '未執行'; })"
 
 echo
 LOCAL=$(curl -s -m 5 -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/api/session" 2>/dev/null)

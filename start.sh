@@ -101,38 +101,47 @@ fi
 
 if [ "$WANT_TUNNEL" = "1" ]; then
   echo "建立外網通道（$PROVIDER）…"
-  ./tunnel.sh "$PROVIDER" > "$LOG_DIR/tunnel.log" 2>&1 &
-  TUNNEL_PID=$!
+  if [ "$PROVIDER" = tailscale ]; then
+    # Tailscale Funnel 是 tailscaled 的持久設定，不是一個要顧的程序。
+    # 同步跑完就好，不要納入 TUNNEL_PID，否則 wait -n 會立刻以為通道掛了。
+    ./tunnel.sh tailscale > "$LOG_DIR/tunnel.log" 2>&1 || {
+      echo "⚠️  Funnel 設定失敗，只能在本機使用："; sed -n "1,15p" "$LOG_DIR/tunnel.log"; }
+    PUBLIC="https://$(ts_host)"
+    [ "$PUBLIC" = "https://" ] && PUBLIC=""
+  else
+    ./tunnel.sh "$PROVIDER" > "$LOG_DIR/tunnel.log" 2>&1 &
+    TUNNEL_PID=$!
 
-  # 等網址出現：ngrok 與 cloudflare 具名通道是固定的，quick 要從 log 撈
-  case "$PROVIDER" in
-    ngrok)      PUBLIC="https://$(get NGROK_DOMAIN)" ;;
-    cloudflare) PUBLIC="https://$(get TUNNEL_HOSTNAME)" ;;
-    tailscale)  PUBLIC="https://$(ts_host)" ;;
-  esac
-  [ "$PUBLIC" = "https://" ] && PUBLIC=""
+    # 等網址出現：ngrok 與 cloudflare 具名通道是固定的，quick 要從 log 撈
+    case "$PROVIDER" in
+      ngrok)      PUBLIC="https://$(get NGROK_DOMAIN)" ;;
+      cloudflare) PUBLIC="https://$(get TUNNEL_HOSTNAME)" ;;
+      tailscale)  PUBLIC="https://$(ts_host)" ;;
+    esac
+    [ "$PUBLIC" = "https://" ] && PUBLIC=""
 
-  for i in $(seq 1 90); do
-    if [ -z "$PUBLIC" ]; then
-      PUBLIC=$(grep -oE 'https://[a-z0-9]+(-[a-z0-9]+)+\.trycloudflare\.com' "$LOG_DIR/tunnel.log" 2>/dev/null | head -1)
-    fi
-    [ -n "$PUBLIC" ] && break
-    if ! kill -0 "$TUNNEL_PID" 2>/dev/null; then
-      echo "⚠️  通道啟動失敗，只能在本機使用："
-      sed -n '1,15p' "$LOG_DIR/tunnel.log"
-      TUNNEL_PID=""
-      break
-    fi
-    sleep 1
-  done
-
-  # 通道生效有時會慢個幾秒，等到通得了再宣告成功
-  if [ -n "$PUBLIC" ]; then
-    for i in $(seq 1 30); do
-      CODE=$(curl -s -m 8 -o /dev/null -w '%{http_code}' "$PUBLIC/api/session" 2>/dev/null || true)
-      [ -n "$CODE" ] && [ "$CODE" != "000" ] && break
-      sleep 2
+    for i in $(seq 1 90); do
+      if [ -z "$PUBLIC" ]; then
+        PUBLIC=$(grep -oE 'https://[a-z0-9]+(-[a-z0-9]+)+\.trycloudflare\.com' "$LOG_DIR/tunnel.log" 2>/dev/null | head -1)
+      fi
+      [ -n "$PUBLIC" ] && break
+      if ! kill -0 "$TUNNEL_PID" 2>/dev/null; then
+        echo "⚠️  通道啟動失敗，只能在本機使用："
+        sed -n '1,15p' "$LOG_DIR/tunnel.log"
+        TUNNEL_PID=""
+        break
+      fi
+      sleep 1
     done
+
+    # 通道生效有時會慢個幾秒，等到通得了再宣告成功
+    if [ -n "$PUBLIC" ]; then
+      for i in $(seq 1 30); do
+        CODE=$(curl -s -m 8 -o /dev/null -w '%{http_code}' "$PUBLIC/api/session" 2>/dev/null || true)
+        [ -n "$CODE" ] && [ "$CODE" != "000" ] && break
+        sleep 2
+      done
+  fi
   fi
 fi
 

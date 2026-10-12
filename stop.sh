@@ -29,6 +29,18 @@ kill_all 'bash .*start[.]sh' -KILL > /dev/null
 kill_all '^node src/server[.]js' -KILL > /dev/null
 kill_all '^[.]tools/(cloudflared|ngrok)' -KILL > /dev/null
 kill_all '^tailscale funnel' -KILL > /dev/null
+
+# Funnel 用 --bg 設定，是寫進 tailscaled 的持久狀態，砍程序不會關掉它。
+#
+# 預設「不關」。實測重新開啟後，Tailscale 的入口節點要約 100 秒才對外生效，
+# 每次開機都卡兩分鐘不划算 —— 而開機自動啟動正是這個服務的主要使用方式。
+# 後端停著時外面拿到的是 502，沒有資料外洩問題（而且仍要密碼才進得去）。
+#
+# 真的要收掉對外曝光：./stop.sh --funnel-off
+if [ "$1" = --funnel-off ] && command -v tailscale > /dev/null 2>&1; then
+  tailscale funnel --https=443 off > /dev/null 2>&1 \
+    && echo "  · Tailscale Funnel 已關閉（下次啟動約需 2 分鐘才對外生效）"
+fi
 sleep 1
 
 LEFT=$(pgrep -f 'bash .*start[.]sh|^node src/server[.]js|^[.]tools/(cloudflared|ngrok)|^tailscale funnel' 2>/dev/null | wc -l)
