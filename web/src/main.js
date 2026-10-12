@@ -7,6 +7,7 @@ import ChatView from './views/ChatView.vue';
 import TodayView from './views/TodayView.vue';
 import WorkoutsView from './views/WorkoutsView.vue';
 import MealsView from './views/MealsView.vue';
+import PetView from './views/PetView.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -15,6 +16,7 @@ const router = createRouter({
     { path: '/today', component: TodayView },
     { path: '/workouts', component: WorkoutsView },
     { path: '/meals', component: MealsView },
+    { path: '/pet', component: PetView },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 });

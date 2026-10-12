@@ -95,6 +95,21 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
   created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
+CREATE TABLE IF NOT EXISTS pet (
+  id         INTEGER PRIMARY KEY CHECK (id = 1),
+  species    TEXT NOT NULL,
+  name       TEXT NOT NULL DEFAULT '',
+  coins      INTEGER NOT NULL DEFAULT 0,
+  equipped   TEXT NOT NULL DEFAULT '{}',     -- JSON：{ bg, hat, toy }
+  settled_to TEXT NOT NULL DEFAULT '',       -- 代幣結算到哪一天，避免重複發
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+CREATE TABLE IF NOT EXISTS pet_items (
+  item_id     TEXT PRIMARY KEY,
+  acquired_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
 CREATE TABLE IF NOT EXISTS chat_messages (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   role       TEXT NOT NULL,

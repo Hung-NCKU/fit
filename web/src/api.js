@@ -73,6 +73,12 @@ export const api = {
   sendChat: (message, image, model) => request('/chat', { method: 'POST', body: { message, image, model } }),
   models: () => request('/models'),
 
+  pet: (user) => request('/pet' + qs({ user })),
+  adoptPet: (species, name) => request('/pet', { method: 'POST', body: { species, name } }),
+  buyItem: (item) => request('/pet/buy', { method: 'POST', body: { item } }),
+  equipItem: (item) => request('/pet/equip', { method: 'POST', body: { item } }),
+  unequipSlot: (slot) => request('/pet/equip', { method: 'POST', body: { slot } }),
+
   pushConfig: () => request('/push/config'),
   pushSubscribe: (subscription) => request('/push/subscribe', { method: 'POST', body: { subscription } }),
   pushUnsubscribe: (endpoint) => request('/push/unsubscribe', { method: 'POST', body: { endpoint } }),

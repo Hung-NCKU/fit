@@ -41,6 +41,7 @@ const tabs = [
   { to: '/today', label: '今日', icon: '🎯' },
   { to: '/workouts', label: '訓練', icon: '🏋️' },
   { to: '/meals', label: '飲食', icon: '🍚' },
+  { to: '/pet', label: '寵物', icon: '🐾' },
 ];
 
 const title = computed(() => tabs.find(t => t.to === route.path)?.label ?? '增肌教練');
@@ -202,7 +203,7 @@ onMounted(async () => {
 .tabbar {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   border-top: 1px solid var(--border);
   background: var(--surface);
   padding-bottom: var(--safe-bottom);
@@ -225,7 +226,7 @@ onMounted(async () => {
 .ico {
   font-size: 1.1rem;
   line-height: 1;
-  padding: .3rem 1.05rem;
+  padding: .3rem .8rem;
   border-radius: 12px;
   transition: background .15s;
 }
