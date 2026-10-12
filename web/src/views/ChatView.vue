@@ -272,8 +272,8 @@ onMounted(load);
 }
 .msg.user .bubble {
   background: var(--accent-dim);
-  border-color: #3d8a67;
-  color: #eafff4;
+  border-color: var(--accent-dim);
+  color: #ffe9c7;
 }
 .bubble :deep(.li) { display: block; padding-left: .3rem; }
 .bubble :deep(strong) { color: var(--accent); }
@@ -283,7 +283,7 @@ onMounted(load);
 .action {
   font-size: .78rem;
   color: var(--accent);
-  background: rgba(110, 231, 168, .08);
+  background: var(--accent-soft);
   border: 1px solid var(--accent-dim);
   border-radius: 8px;
   padding: .25rem .55rem;

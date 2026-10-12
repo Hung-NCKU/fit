@@ -167,11 +167,12 @@ onMounted(async () => {
 
 .who {
   margin-left: .2rem;
-  padding: .1rem .5rem;
+  padding: .12rem .6rem;
   font-size: .75rem;
+  font-weight: 600;
   border-radius: 999px;
-  background: var(--accent-dim);
-  color: #eafff4;
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .bell-spacer { margin-left: auto; }
@@ -212,15 +213,24 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: .1rem;
-  padding: .5rem 0 .55rem;
+  gap: .15rem;
+  padding: .45rem 0 .5rem;
   color: var(--muted);
   font-size: .72rem;
-  border-top: 2px solid transparent;
 }
 .tab:hover { color: var(--text); }
-.tab.router-link-exact-active { color: var(--accent); border-top-color: var(--accent); }
-.ico { font-size: 1.15rem; line-height: 1.2; }
+
+/* 圖示本身是一塊可以上底色的區域 —— 選中時變成琥珀色圓角底，
+   而不是畫一條上邊框。這是那個 App 分頁列最明顯的特徵。 */
+.ico {
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: .3rem 1.05rem;
+  border-radius: 12px;
+  transition: background .15s;
+}
+.tab.router-link-exact-active { color: var(--accent); }
+.tab.router-link-exact-active .ico { background: var(--accent-soft); }
 
 @media (max-width: 520px) {
   .content {

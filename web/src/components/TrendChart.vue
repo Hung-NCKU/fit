@@ -5,7 +5,7 @@ const props = defineProps({
   title: { type: String, required: true },
   points: { type: Array, required: true },   // [{ label, value }]
   type: { type: String, default: 'bar' },    // 'bar' | 'line'
-  color: { type: String, default: '#199e70' },
+  color: { type: String, default: 'var(--accent)' },
   unit: { type: String, default: '' },
   target: { type: Number, default: 0 },
   targetLabel: { type: String, default: '目標' },

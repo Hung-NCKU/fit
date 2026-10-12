@@ -42,9 +42,9 @@ const viewingOther = computed(() => model.value !== session.user);
   color: var(--muted);
 }
 .tabs button.on {
-  background: var(--accent-dim);
-  border-color: #3d8a67;
-  color: #eafff4;
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent);
 }
 .me { opacity: .7; font-size: .78rem; }
 </style>

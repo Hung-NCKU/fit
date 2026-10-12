@@ -3,10 +3,17 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { api, todayStr, MEAL_TYPES, CATEGORIES } from '../api.js';
 import { session } from '../auth.js';
 import TrendChart from '../components/TrendChart.vue';
-import MacroMeter from '../components/MacroMeter.vue';
+import Ring from '../components/Ring.vue';
 import UserTabs from '../components/UserTabs.vue';
 
-const C = { kcal: '#199e70', weight: '#3987e5', volume: '#d95926' };
+const C = {
+  kcal: 'var(--accent)',
+  protein: 'var(--protein)',
+  carb: 'var(--carb)',
+  fat: 'var(--fat)',
+  weight: 'var(--accent)',
+  volume: 'var(--fat)',
+};
 
 const date = ref(todayStr());
 const viewing = ref(session.user);                       // 正在看誰的紀錄
@@ -148,6 +155,44 @@ const bodyDelta = computed(() => {
 
 const latestBody = computed(() => weights.value[0] || null);
 
+/* ---------------- 週曆列 ---------------- */
+
+const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
+
+/** 哪些日子有飲食紀錄：用來在日期下面點一個小點 */
+const daysWithFood = computed(() =>
+  new Set((range.value?.days || []).filter(d => Number(d.kcal) > 0).map(d => d.date)));
+
+/** 以選取日為準往前後各取幾天，湊成一條七天的捲軸 */
+const weekStrip = computed(() => {
+  const out = [];
+  const base = new Date(date.value + 'T00:00:00');
+  for (let i = -6; i <= 0; i++) {
+    const d = new Date(base);
+    d.setDate(d.getDate() + i);
+    const iso = d.toLocaleDateString('sv-SE');
+    out.push({
+      iso,
+      day: d.getDate(),
+      wd: WEEKDAYS[d.getDay()],
+      dot: daysWithFood.value.has(iso),
+      future: iso > todayStr(),
+    });
+  }
+  return out;
+});
+
+function pickDate(iso) {
+  if (iso === date.value || iso > todayStr()) return;
+  date.value = iso;
+  load();
+}
+
+const remaining = computed(() => {
+  if (!summary.value) return 0;
+  return Math.max(0, Math.round(summary.value.targets.kcal - summary.value.nutrition.kcal));
+});
+
 const shiftDate = (n) => {
   const d = new Date(date.value + 'T00:00:00');
   d.setDate(d.getDate() + n);
@@ -182,13 +227,50 @@ onMounted(load);
         <span v-if="date === todayStr()" class="badge">今天</span>
       </div>
 
-      <div v-if="summary" class="grid meters">
-        <MacroMeter label="熱量" :value="summary.nutrition.kcal" :target="summary.targets.kcal" unit=" kcal" :color="C.kcal" />
-        <MacroMeter label="蛋白質" :value="summary.nutrition.protein_g" :target="summary.targets.protein_g" :color="C.kcal" />
-        <MacroMeter label="碳水" :value="summary.nutrition.carb_g" :target="summary.targets.carb_g" :color="C.weight" />
-        <MacroMeter label="脂肪" :value="summary.nutrition.fat_g" :target="summary.targets.fat_g" :color="C.volume" />
+      <!-- 週曆列：一眼看出這週哪幾天有記錄 -->
+      <div class="week">
+        <button
+          v-for="d in weekStrip" :key="d.iso"
+          class="day" :class="{ on: d.iso === date }"
+          :disabled="d.future"
+          @click="pickDate(d.iso)"
+        >
+          <span class="wd">{{ d.wd }}</span>
+          <span class="dd">{{ d.day }}</span>
+          <span class="dot" :class="{ show: d.dot }"></span>
+        </button>
+      </div>
+
+      <!-- 熱量：剩多少 + 環形進度 -->
+      <div v-if="summary" class="kcal-row">
+        <div>
+          <div class="big-num">{{ remaining }}</div>
+          <div class="small muted">還剩</div>
+          <div class="small">
+            <b style="color: var(--accent)">{{ Math.round(summary.nutrition.kcal) }}</b>
+            <span class="muted"> / {{ summary.targets.kcal }} kcal</span>
+          </div>
+        </div>
+        <Ring :value="summary.nutrition.kcal" :target="summary.targets.kcal"
+              :color="C.kcal" :size="92" :width="9">
+          <span class="flame">🔥</span>
+        </Ring>
       </div>
       <div v-else-if="loading" class="empty">載入中…</div>
+    </div>
+
+    <div v-if="summary" class="grid macros">
+      <div v-for="m in [
+        { k: '蛋白質', v: summary.nutrition.protein_g, t: summary.targets.protein_g, c: C.protein },
+        { k: '碳水',   v: summary.nutrition.carb_g,    t: summary.targets.carb_g,    c: C.carb },
+        { k: '脂肪',   v: summary.nutrition.fat_g,     t: summary.targets.fat_g,     c: C.fat },
+      ]" :key="m.k" class="card macro">
+        <Ring :value="m.v" :target="m.t" :color="m.c" :size="58" :width="6" />
+        <div class="small muted">{{ m.k }}</div>
+        <div class="small">
+          <b>{{ Math.round(m.v) }}</b><span class="muted"> / {{ m.t }}g</span>
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -290,8 +372,50 @@ onMounted(load);
 </template>
 
 <style scoped>
-.meters { grid-template-columns: repeat(2, 1fr); gap: 1rem .9rem; }
-@media (max-width: 480px) { .meters { grid-template-columns: 1fr; } }
+/* ---- 週曆列 ---- */
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: .25rem; margin-bottom: 1rem; }
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .2rem;
+  padding: .45rem 0 .35rem;
+  background: none;
+  border: none;
+  border-radius: 12px;
+}
+.day:hover:not(:disabled) { background: var(--surface-2); }
+.day:disabled { opacity: .3; }
+.day .wd { font-size: .68rem; color: var(--muted); }
+.day .dd {
+  font-size: .95rem;
+  font-weight: 600;
+  width: 1.9rem;
+  height: 1.9rem;
+  line-height: 1.9rem;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+.day.on .dd { background: var(--accent); color: #2b1700; }
+.day .dot { width: 4px; height: 4px; border-radius: 999px; background: transparent; }
+.day .dot.show { background: var(--accent); }
+.day.on .dot.show { background: var(--accent); }
+
+/* ---- 熱量 ---- */
+.kcal-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.flame { font-size: 1.5rem; }
+
+/* ---- 三大營養素 ---- */
+.macros { grid-template-columns: repeat(3, 1fr); gap: .6rem; }
+.macro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .3rem;
+  padding: .9rem .4rem;
+  text-align: center;
+}
+.macro b { font-variant-numeric: tabular-nums; }
 
 .body-form {
   display: grid;

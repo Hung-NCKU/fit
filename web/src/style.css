@@ -1,15 +1,24 @@
 :root {
-  --bg: #0f1115;
-  --surface: #171a21;
-  --surface-2: #1f232c;
-  --border: #2a2f3a;
-  --text: #e8eaf0;
-  --muted: #949bab;
-  --accent: #6ee7a8;
-  --accent-dim: #2f6b50;
+  --bg: #0a0a0a;
+  --surface: #1c1b1b;
+  --surface-2: #272525;
+  --border: #302d2d;
+  --text: #ffffff;
+  --muted: #8e8e93;
+
+  /* 琥珀橘是主色；accent-soft 用在有底色的標籤與選中狀態上 */
+  --accent: #e08a00;
+  --accent-dim: #5c3a00;
+  --accent-soft: rgba(224, 138, 0, .16);
+
+  /* 三大營養素各有固定顏色，環形圖與數字都用同一組 */
+  --protein: #f44336;
+  --carb: #ffc107;
+  --fat: #1fc8a9;
+
   --warn: #f5a97f;
   --danger: #ef7b7b;
-  --radius: 14px;
+  --radius: 18px;
   --font: -apple-system, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
 
   /* 瀏海／動態島／狀態列與底部 home indicator 的避讓距離。
@@ -69,16 +78,20 @@ button {
   padding: .5rem .9rem;
   transition: background .15s, border-color .15s, opacity .15s;
 }
-button:hover:not(:disabled) { background: #272c37; border-color: #3a4150; }
+button:hover:not(:disabled) { background: #313135; border-color: #3d3d42; }
 button:disabled { opacity: .45; cursor: not-allowed; }
 
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #0c1a13;
-  font-weight: 600;
+  color: #2b1700;
+  font-weight: 700;
+  border-radius: 14px;
+  padding: .75rem 1rem;
+  /* 那個 App 的主要按鈕帶一圈橘色光暈，是它最明顯的視覺特徵之一 */
+  box-shadow: 0 0 18px rgba(224, 138, 0, .30);
 }
-button.primary:hover:not(:disabled) { background: #85f0bb; border-color: #85f0bb; }
+button.primary:hover:not(:disabled) { background: #f59c10; border-color: #f59c10; }
 
 button.ghost { background: transparent; }
 button.icon {
@@ -102,14 +115,14 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--accent-dim);
-  box-shadow: 0 0 0 3px rgba(110, 231, 168, .12);
+  box-shadow: 0 0 0 3px rgba(224, 138, 0, .18);
 }
 textarea { resize: vertical; }
 label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: .25rem; }
 
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid transparent;   /* 靠底色深淺區分層次，不畫線 */
   border-radius: var(--radius);
   padding: 1rem 1.1rem;
 }
@@ -139,7 +152,23 @@ label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: .2
   color: var(--muted);
   white-space: nowrap;   /* 手機窄欄位下「📷 照片」會被斷成兩行 */
 }
-.badge.ai { color: var(--accent); border-color: var(--accent-dim); }
+.badge.ai { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
+
+/* 那個 App 用這種「琥珀底、琥珀字」的膠囊放吐槽文案與狀態 */
+.badge.soft {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+/* 大數字：等寬數字，避免跳動 */
+.big-num {
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
 
 table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 th, td { padding: .55rem .5rem; text-align: left; border-bottom: 1px solid var(--border); }

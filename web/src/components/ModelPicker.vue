@@ -135,7 +135,7 @@ onUnmounted(() => {
 }
 .opt + .opt { margin-top: .2rem; }
 .opt:hover:not(:disabled) { background: var(--surface-2); border-color: var(--border); }
-.opt.sel { background: rgba(110, 231, 168, .08); border-color: var(--accent-dim); }
+.opt.sel { background: var(--accent-soft); border-color: var(--accent-dim); }
 .opt.off { opacity: .45; cursor: not-allowed; }
 
 .row1 { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
