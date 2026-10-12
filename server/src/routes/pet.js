@@ -1,6 +1,6 @@
 import {
   SPECIES, SHOP, getPet, adoptPet, ownedItems,
-  settleCoins, petState, buyItem, equipItem, unequipSlot, speciesOf,
+  settleCoins, petState, buyItem, equipItem, unequipSlot, speciesOf, replacePet,
 } from '../pet.js';
 import { getUser } from '../users.js';
 
@@ -33,7 +33,7 @@ export default async function petRoutes(app) {
 
     return {
       mine,
-      pet: { ...pet, speciesName: speciesOf(pet.species).name, faces: speciesOf(pet.species).faces },
+      pet: { ...pet, speciesName: speciesOf(pet.species).name, tint: speciesOf(pet.species).tint },
       state: petState(u),
       owned: ownedItems(u),
       shop: SHOP,
@@ -44,6 +44,12 @@ export default async function petRoutes(app) {
   app.post('/pet', async (req, reply) => {
     writeGuard(req);
     return reply.code(201).send(adoptPet(req.userId, req.body?.species, req.body?.name));
+  });
+
+  // 換寵物：舊的紀錄與代幣會被清掉，前端必須先確認過
+  app.post('/pet/replace', async (req) => {
+    writeGuard(req);
+    return replacePet(req.userId, req.body?.species, req.body?.name);
   });
 
   app.post('/pet/buy', async (req) => {

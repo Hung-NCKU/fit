@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { api } from '../api.js';
 import { session } from '../auth.js';
 import UserTabs from '../components/UserTabs.vue';
@@ -43,11 +43,86 @@ const mine = computed(() => data.value?.mine !== false);
 const owned = computed(() => new Set(data.value?.owned || []));
 const equipped = computed(() => pet.value?.equipped || {});
 
-/** 心情決定牠現在的臉 */
-const face = computed(() => {
-  if (!pet.value || !state.value) return '🐾';
-  return pet.value.faces[state.value.mood] || pet.value.faces.ok;
+/* ---------------- 作息 ---------------- */
+
+/**
+ * 貓一天睡 14 小時左右，清晨與黃昏最活躍，其餘時間吃飯、理毛、發呆。
+ * 這裡照這個節奏排，每 30 秒重算一次，所以放著不動也會看到牠換狀態。
+ */
+const ROUTINE = [
+  { from: 0,  to: 5,  act: 'sleep', text: '睡得很熟' },
+  { from: 5,  to: 7,  act: 'beg',   text: '天亮了，在討早餐' },
+  { from: 7,  to: 9,  act: 'eat',   text: '正在吃早餐' },
+  { from: 9,  to: 11, act: 'groom', text: '飯後理毛' },
+  { from: 11, to: 15, act: 'sleep', text: '午睡中' },
+  { from: 15, to: 17, act: 'idle',  text: '醒了，在發呆' },
+  { from: 17, to: 19, act: 'play',  text: '黃昏最有精神，正在玩' },
+  { from: 19, to: 21, act: 'eat',   text: '正在吃晚餐' },
+  { from: 21, to: 23, act: 'groom', text: '睡前理毛' },
+  { from: 23, to: 24, act: 'sleep', text: '準備睡了' },
+];
+
+const now = ref(new Date());
+let clock = null;
+onMounted(() => { clock = setInterval(() => { now.value = new Date(); }, 30_000); });
+onUnmounted(() => clearInterval(clock));
+
+const routine = computed(() => {
+  const h = now.value.getHours();
+  return ROUTINE.find(r => h >= r.from && h < r.to) || ROUTINE[0];
 });
+
+/**
+ * 心情蓋過作息：餓壞了就不睡一直討食，太飽或太瘦就沒力氣玩。
+ * 不這樣做的話，每天同一個時間永遠長一樣，飲食紀錄的變化就看不出來。
+ */
+const activity = computed(() => {
+  const m = state.value?.mood;
+  if (m === 'hungry') return 'beg';
+  if ((m === 'round' || m === 'thin') && routine.value.act === 'play') return 'idle';
+  // 心情好又剛好沒事做的時候，給牠「開心」那張
+  if (m === 'happy' && routine.value.act === 'idle') return 'happy';
+  return routine.value.act;
+});
+
+/** 作息名稱 → 素材檔名。beg 用「走路」那張（走過來討食）。 */
+const ACT_FILE = { beg: 'walk', idle: 'idle', sleep: 'sleep', eat: 'eat', play: 'play', groom: 'groom', happy: 'happy' };
+
+const petSprite = computed(() => {
+  if (!pet.value) return '';
+  const f = ACT_FILE[activity.value];
+  return hasActs(pet.value.species) && f && ACT_SPRITES.has(f)
+    ? `/pets/act-${f}.webp`
+    : petBody(pet.value.species);
+});
+
+const activityText = computed(() => {
+  const m = state.value?.mood;
+  if (m === 'hungry') return '一直在討食';
+  if (m === 'round' && routine.value.act === 'play') return '太飽了，不想動';
+  if (m === 'thin' && routine.value.act === 'play') return '沒力氣玩，趴著';
+  return routine.value.text;
+});
+
+/** 插畫檔名：<id>.webp 是整張卡，<id>-pet.webp 只有動物本體 */
+/** 角色卡（選寵物用）與去背的本體（場景用） */
+const petCard = (id) => `/pets/${id}.webp`;
+const petBody = (id) => `/pets/${id}-pet.webp`;
+
+/**
+ * 場景裡要顯示的那張圖。
+ * 概念圖的「寵物動作」只畫了貓，所以只有貓有動作版本；
+ * 其他九種沒有，就用該物種的靜態本體，動態交給 CSS。
+ */
+const ACT_SPRITES = new Set(['walk', 'eat', 'sleep', 'play', 'stretch', 'groom', 'idle', 'happy']);
+const hasActs = (id) => id === 'cat';
+
+const sceneImg = computed(() => {
+  const id = equipped.value.bg || 'bg_room';
+  return `/pets/scene-${id.replace(/^bg_/, '')}.webp`;
+});
+
+
 
 const itemById = (id) => (data.value?.shop || []).find(i => i.id === id) || null;
 const bg = computed(() => itemById(equipped.value.bg));
@@ -77,6 +152,30 @@ async function act(fn, key) {
 }
 
 const adopt = () => act(() => api.adoptPet(picked.value, petName.value), 'adopt');
+
+/* 換一隻：舊的代幣與買過的東西都會清掉，所以一定要先確認 */
+const changing = ref(false);
+
+function startChange() {
+  picked.value = '';
+  petName.value = '';
+  changing.value = true;
+}
+
+function confirmChange() {
+  const s = (data.value?.species || []).find(x => x.id === picked.value);
+  const ok = confirm(
+    `確定要改養「${s?.name ?? ''}」嗎？\n\n`
+    + `目前的「${pet.value?.name ?? ''}」會被取代，`
+    + `${pet.value?.coins ?? 0} 枚代幣與買過的布置全部歸零，無法復原。`,
+  );
+  if (!ok) return;
+  act(async () => {
+    await api.replacePet(picked.value, petName.value);
+    changing.value = false;
+    tab.value = 'home';
+  }, 'change');
+}
 const buy = (id) => act(() => api.buyItem(id), id);
 const equip = (id) => act(() => api.equipItem(id), id);
 const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
@@ -106,8 +205,8 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
             class="pick" :class="{ on: picked === s.id }"
             @click="picked = s.id"
           >
-            <span class="pick-face">{{ s.faces.happy }}</span>
-            <span class="small">{{ s.name }}</span>
+            <img class="pick-img" :src="petCard(s.id)" :alt="s.name" loading="lazy" />
+            <span class="small">{{ s.name }}<span class="muted"> · {{ s.nick }}</span></span>
           </button>
         </div>
 
@@ -126,20 +225,29 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
             <b>{{ pet.name || pet.speciesName }}</b>
             <span class="muted small"> · {{ pet.speciesName }}</span>
           </div>
-          <span class="badge soft">🪙 {{ pet.coins }}</span>
+          <span class="row" style="gap:.5rem">
+            <span class="badge soft">🪙 {{ pet.coins }}</span>
+            <button v-if="mine" class="icon" :disabled="busy" @click="startChange">換一隻</button>
+          </span>
         </div>
 
         <!-- 場景：背景、寵物、裝備全部用 emoji 疊出來 -->
-        <div class="scene">
-          <span class="scene-bg">{{ bg?.emoji || '🏠' }}</span>
+        <div class="scene" :style="{ '--tint': pet.tint || '#f6efdf' }">
+          <img class="scene-bg" :src="sceneImg" :alt="bg?.name || '小房間'" />
           <span v-if="toy" class="scene-toy">{{ toy.emoji }}</span>
-          <span class="scene-pet" :style="{ transform: `scale(${bodyScale})` }">
+          <span class="scene-pet" :class="activity" :style="{ '--body': bodyScale }">
             <span v-if="hat" class="scene-hat">{{ hat.emoji }}</span>
-            {{ face }}
+            <img class="scene-img" :src="petSprite" :alt="pet.speciesName" />
+            <!-- 作息的小道具：睡覺的 Z、吃飯的碗、玩耍的球 -->
+            <span v-if="activity === 'sleep'" class="prop zzz">💤</span>
+            <span v-else-if="activity === 'eat'" class="prop bowl">🍚</span>
+            <span v-else-if="activity === 'play'" class="prop ball">🧶</span>
+            <span v-else-if="activity === 'beg'" class="prop beg">❗</span>
           </span>
         </div>
 
         <p class="says">{{ state.says }}</p>
+        <p class="small muted doing">現在：{{ activityText }}</p>
 
         <div class="row wrap stats small">
           <span><span class="muted">近 7 天熱量 </span><b>{{ state.kcalPct }}%</b></span>
@@ -148,7 +256,35 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
         </div>
       </div>
 
-      <div v-if="mine" class="row seg">
+      <!-- 換寵物：沿用同一組角色卡，但送出前會再確認一次 -->
+      <div v-if="changing" class="card stack">
+        <div class="spread">
+          <h3 style="margin:0">換一隻來養</h3>
+          <button class="icon" @click="changing = false">取消</button>
+        </div>
+        <p class="small" style="margin:0; color: var(--danger)">
+          換掉之後，「{{ pet.name }}」的紀錄會被取代，目前的 {{ pet.coins }} 枚代幣與
+          買過的布置全部歸零，無法復原。
+        </p>
+
+        <div class="grid picker">
+          <button
+            v-for="s in data.species" :key="s.id"
+            class="pick" :class="{ on: picked === s.id, cur: s.id === pet.species }"
+            @click="picked = s.id"
+          >
+            <img class="pick-img" :src="petCard(s.id)" :alt="s.name" loading="lazy" />
+            <span class="small">{{ s.name }}<span class="muted"> · {{ s.nick }}</span></span>
+          </button>
+        </div>
+
+        <input v-model="petName" maxlength="20" placeholder="幫牠取個名字（可留空）" />
+        <button class="primary" :disabled="!picked || busy" @click="confirmChange">
+          {{ busy ? '處理中…' : '確認換成這隻' }}
+        </button>
+      </div>
+
+      <div v-if="mine && !changing" class="row seg">
         <button :class="{ on: tab === 'home' }" @click="tab = 'home'">牠的窩</button>
         <button :class="{ on: tab === 'shop' }" @click="tab = 'shop'">商城</button>
       </div>
@@ -208,7 +344,7 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
 
 <style scoped>
 /* ---- 選寵物 ---- */
-.picker { grid-template-columns: repeat(3, 1fr); gap: .6rem; }
+.picker { grid-template-columns: repeat(2, 1fr); gap: .6rem; }
 .pick {
   display: flex;
   flex-direction: column;
@@ -220,43 +356,132 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
   border-radius: 14px;
 }
 .pick.on { background: var(--accent-soft); color: var(--accent); }
-.pick-face { font-size: 2rem; line-height: 1.1; }
+/* 目前養的那隻標一下，免得不小心換成同一種 */
+.pick.cur { outline: 2px dashed var(--border); outline-offset: -2px; }
+.pick-img {
+  width: 100%;
+  max-width: 132px;
+  border-radius: 10px;
+  display: block;
+}
 
 /* ---- 場景 ---- */
 .scene-card { overflow: hidden; }
+.scene-card .says { color: var(--text); }
+/* 插畫本身是米白底的，疊在深色上一定像貼紙。
+   索性讓整個場景用同一組暖色，變成一扇「看進牠世界」的窗。 */
 .scene {
   position: relative;
-  height: 190px;
+  height: 230px;
   border-radius: 14px;
-  background: radial-gradient(circle at 50% 120%, var(--surface-2), var(--bg));
+  overflow: hidden;
+  background: var(--tint, #f6efdf);   /* 場景圖載入前的底色 */
   display: grid;
-  place-items: center;
+  place-items: end center;   /* 讓牠站在地上，不要浮在正中間 */
+  padding-bottom: 6px;
 }
+/* 環境是整張插畫，鋪滿整個場景當背景 */
 .scene-bg {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: 7rem;
-  opacity: .16;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .scene-pet {
+  --body: 1;              /* 體態縮放，由 JS 依近 7 天熱量帶進來 */
   position: relative;
-  font-size: 4.2rem;
-  line-height: 1;
-  transition: transform .4s ease;
+  display: block;
+  /* 固定高度而不是百分比：這是 grid item 且 align-items 不是 stretch，
+     百分比高度在這個情況下不會解析，圖會用自然大小撐破場景。 */
+  height: 148px;   /* 比場景小一截，才看得出牠待在房間裡而不是塞滿 */
+  transform-origin: center bottom;
+  /* 呼吸：所有狀態共用，讓牠看起來是活的而不是一張貼紙 */
+  animation: breathe 3.6s ease-in-out infinite;
+}
+.scene-img {
+  height: 100%;
+  width: auto;
+  display: block;
+  /* 素材本身已去背，疊在場景插畫上。加一點落地陰影才不會像貼紙 */
+  filter: drop-shadow(0 6px 6px rgba(0, 0, 0, .28));
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(var(--body)); }
+  50%      { transform: scale(calc(var(--body) * 1.03)); }
+}
+
+/* 各作息的動作。插畫本身是靜態的，靠位移與傾斜做出活著的感覺。 */
+.scene-pet.sleep { animation: breathe 6s ease-in-out infinite; }
+.scene-pet.play  { animation: hop .7s ease-in-out infinite; }
+.scene-pet.eat   { animation: nibble .9s ease-in-out infinite; }
+.scene-pet.groom { animation: groom 2.4s ease-in-out infinite; }
+.scene-pet.beg   { animation: tilt 2.2s ease-in-out infinite; }
+
+@keyframes hop {
+  0%, 100% { transform: translateY(0) scale(var(--body)); }
+  40%      { transform: translateY(-10px) scale(calc(var(--body) * 1.02)); }
+}
+@keyframes nibble {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(var(--body)); }
+  50%      { transform: translateY(5px) rotate(2deg) scale(var(--body)); }
+}
+@keyframes groom {
+  0%, 100% { transform: rotate(0deg) scale(var(--body)); }
+  50%      { transform: rotate(5deg) scale(var(--body)); }
+}
+@keyframes tilt {
+  0%, 100% { transform: rotate(-4deg) scale(var(--body)); }
+  50%      { transform: rotate(4deg) scale(var(--body)); }
+}
+
+/* 作息小道具 */
+.prop {
+  position: absolute;
+  font-size: 1.6rem;
+  /* 道具疊在插畫上，給一點描邊才不會糊在背景裡 */
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25));
+}
+.zzz  { top: -6%; right: -4%; animation: floaty 2.8s ease-in-out infinite; }
+.bowl { bottom: -6%; right: 2%; }
+.ball { bottom: 0; right: -14%; animation: roll 1.5s ease-in-out infinite; }
+.beg  { top: -4%; right: 2%; animation: pulse 1.2s ease-in-out infinite; }
+
+@keyframes floaty {
+  0%   { opacity: 0; transform: translate(0, 6px) scale(.8); }
+  35%  { opacity: .95; }
+  100% { opacity: 0; transform: translate(10px, -18px) scale(1.1); }
+}
+@keyframes roll {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  50%      { transform: translateX(-16px) rotate(-180deg); }
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: .85; }
+  50%      { transform: scale(1.25); opacity: 1; }
+}
+
+/* 使用者偏好減少動態時全部停掉 */
+@media (prefers-reduced-motion: reduce) {
+  .scene-pet, .prop { animation: none !important; }
+  /* 動畫關掉後沒人套用 scale，體態縮放要自己補上 */
+  .scene-pet { transform: scale(var(--body)); }
 }
 /* 帽子壓在頭上：位置用相對字級算，換寵物也不會跑掉 */
+/* 帽子壓在頭頂。插畫的頭大致在上緣往下一點，用百分比定位才不會因物種跑掉 */
 .scene-hat {
   position: absolute;
-  top: -.42em;
+  top: -8%;
   left: 50%;
   transform: translateX(-50%);
-  font-size: .55em;
+  font-size: 1.7rem;
+  z-index: 1;
 }
 .scene-toy { position: absolute; right: 14%; bottom: 14%; font-size: 1.8rem; }
 
-.says { margin: .8rem 0 .5rem; }
+.says { margin: .8rem 0 .2rem; }
+.doing { margin: 0 0 .5rem; }
 .stats { gap: 1rem; }
 .stats b { font-variant-numeric: tabular-nums; }
 

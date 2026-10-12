@@ -12,11 +12,14 @@ import PetView from './views/PetView.vue';
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', component: ChatView },
+    // 開啟 App 的第一眼是寵物，教練改掛在 /chat
+    { path: '/', component: PetView },
+    { path: '/chat', component: ChatView },
     { path: '/today', component: TodayView },
     { path: '/workouts', component: WorkoutsView },
     { path: '/meals', component: MealsView },
-    { path: '/pet', component: PetView },
+    // 舊的書籤或已安裝 PWA 可能還指著 /pet
+    { path: '/pet', redirect: '/' },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 });

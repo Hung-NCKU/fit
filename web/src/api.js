@@ -75,6 +75,7 @@ export const api = {
 
   pet: (user) => request('/pet' + qs({ user })),
   adoptPet: (species, name) => request('/pet', { method: 'POST', body: { species, name } }),
+  replacePet: (species, name) => request('/pet/replace', { method: 'POST', body: { species, name } }),
   buyItem: (item) => request('/pet/buy', { method: 'POST', body: { item } }),
   equipItem: (item) => request('/pet/equip', { method: 'POST', body: { item } }),
   unequipSlot: (slot) => request('/pet/equip', { method: 'POST', body: { slot } }),

@@ -13,14 +13,23 @@ import { dailySummary, today, daysAgo } from './records.js';
 
 /* ---------------- 可選的寵物 ---------------- */
 
-/** 每種寵物各自有五種心情的樣子 */
+/**
+ * 可以挑的十隻，對應 web/public/pets/ 裡的插畫（由 web/tools/slice-pets.sh 切出來）。
+ * id 就是圖檔名；name 是物種，nick 是插畫上原本寫的名字，領養時當預設名。
+ * tint 是那張卡原本的底色（用 ImageMagick 取樣出來的）。場景沿用它，
+ * 插畫的背景才會跟場景融在一起，不然看起來就是一張貼紙貼在深色上。
+ */
 export const SPECIES = [
-  { id: 'cat',     name: '貓',   faces: { happy: '😸', ok: '😺', thin: '🙀', round: '😻', hungry: '😿' } },
-  { id: 'dog',     name: '狗',   faces: { happy: '🐶', ok: '🐕', thin: '🐩', round: '🦮', hungry: '🐺' } },
-  { id: 'rabbit',  name: '兔',   faces: { happy: '🐰', ok: '🐇', thin: '🐇', round: '🐰', hungry: '🥕' } },
-  { id: 'hamster', name: '倉鼠', faces: { happy: '🐹', ok: '🐹', thin: '🐁', round: '🐹', hungry: '🐀' } },
-  { id: 'bird',    name: '鸚鵡', faces: { happy: '🦜', ok: '🐦', thin: '🐤', round: '🦆', hungry: '🪹' } },
-  { id: 'dragon',  name: '小龍', faces: { happy: '🐲', ok: '🐉', thin: '🦎', round: '🐊', hungry: '🥚' } },
+  { id: 'cat',        name: '小貓',   nick: '橘豆', tint: '#fbefcb' },
+  { id: 'dog',        name: '小狗',   nick: '奶泡', tint: '#dde5eb' },
+  { id: 'rabbit',     name: '兔子',   nick: '米糕', tint: '#fce2d6' },
+  { id: 'hamster',    name: '倉鼠',   nick: '小栗', tint: '#fce8c1' },
+  { id: 'guinea',     name: '天竺鼠', nick: '布丁', tint: '#e6ebce' },
+  { id: 'hedgehog',   name: '刺蝟',   nick: '針針', tint: '#fde5c5' },
+  { id: 'ferret',     name: '雪貂',   nick: '麻糬', tint: '#ebe1e8' },
+  { id: 'parrot',     name: '小鸚鵡', nick: '啾啾', tint: '#e3ebd1' },
+  { id: 'tortoise',   name: '陸龜',   nick: '苔苔', tint: '#f1eed1' },
+  { id: 'chinchilla', name: '龍貓',   nick: '霧球', tint: '#e9e1ed' },
 ];
 
 export const speciesOf = (id) => SPECIES.find(s => s.id === id) || SPECIES[0];
@@ -70,7 +79,7 @@ export function adoptPet(userId, species, name) {
   db.prepare(`
     INSERT INTO pet (id, species, name, coins, equipped, settled_to)
     VALUES (1, ?, ?, 0, ?, ?)
-  `).run(sp.id, String(name || sp.name).slice(0, 20), JSON.stringify({ bg: 'bg_room' }), daysAgo(8));
+  `).run(sp.id, String(name || sp.nick || sp.name).slice(0, 20), JSON.stringify({ bg: 'bg_room' }), daysAgo(8));
   // settled_to 往回設八天：第一次開頁面時會把最近七天完整的日子結算進來。
   // 設成昨天的話新寵物永遠拿不到第一筆（結算只算已過完的日子），
   // 使用者已經記錄好幾週卻看到 0 代幣、商城全部買不起。
@@ -79,6 +88,21 @@ export function adoptPet(userId, species, name) {
   return getPet(userId);
 }
 
+/**
+ * 換一隻養。上一隻的代幣與買過的東西全部清掉，重新開始。
+ * 這是破壞性操作，前端一定要先跟使用者確認過。
+ */
+export function replacePet(userId, species, name) {
+  const db = getDb(userId);
+  db.exec('DELETE FROM pet_items');
+  db.exec('DELETE FROM pet');
+  const fresh = adoptPet(userId, species, name);
+
+  // 領養會認列最近七天的紀錄當見面禮，但換寵物不該再給一次 ——
+  // 否則反覆換寵物就能無限刷代幣。結算起點設成昨天，從明天開始重新累積。
+  db.prepare('UPDATE pet SET coins = 0, settled_to = ? WHERE id = 1').run(daysAgo(1));
+  return getPet(userId);
+}
 export const ownedItems = (userId) =>
   getDb(userId).prepare('SELECT item_id FROM pet_items').all().map(r => r.item_id);
 

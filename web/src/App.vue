@@ -37,11 +37,11 @@ async function install() {
 }
 
 const tabs = [
-  { to: '/', label: '教練', icon: '💬' },
+  { to: '/', label: '寵物', icon: '🐾' },
+  { to: '/chat', label: '教練', icon: '💬' },
   { to: '/today', label: '今日', icon: '🎯' },
   { to: '/workouts', label: '訓練', icon: '🏋️' },
   { to: '/meals', label: '飲食', icon: '🍚' },
-  { to: '/pet', label: '寵物', icon: '🐾' },
 ];
 
 const title = computed(() => tabs.find(t => t.to === route.path)?.label ?? '增肌教練');
