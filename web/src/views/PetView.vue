@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import { session } from '../auth.js';
 import UserTabs from '../components/UserTabs.vue';
 import PetCarousel from '../components/PetCarousel.vue';
+import PetStage from '../components/PetStage.vue';
 
 const viewing = ref(session.user);
 const data = ref(null);
@@ -35,7 +36,7 @@ async function load() {
   }
 }
 
-watch(viewing, () => { data.value = null; tab.value = 'home'; load(); });
+watch(viewing, () => { data.value = null; tab.value = 'home'; trying.value = null; load(); });
 onMounted(load);
 
 const pet = computed(() => data.value?.pet || null);
@@ -43,6 +44,8 @@ const state = computed(() => data.value?.state || null);
 const mine = computed(() => data.value?.mine !== false);
 const owned = computed(() => new Set(data.value?.owned || []));
 const equipped = computed(() => pet.value?.equipped || {});
+// 生活習性＋逐格動畫規格，來源是 pet/動物特性.txt 與 pet/切片與動畫/
+const behavior = computed(() => data.value?.behavior || null);
 
 /* ---------------- 作息 ---------------- */
 
@@ -123,22 +126,63 @@ const ACT_SPRITES = new Set(['walk', 'eat', 'sleep', 'play', 'stretch', 'groom',
 const hasActs = (id) => id === 'cat';
 
 const sceneImg = computed(() => {
-  const id = equipped.value.bg || 'bg_room';
+  const id = shown.value.bg || 'bg_room';
   return `/pets/scene-${id.replace(/^bg_/, '')}.webp`;
 });
 
 
 
 const itemById = (id) => (data.value?.shop || []).find(i => i.id === id) || null;
-const bg = computed(() => itemById(equipped.value.bg));
-const hat = computed(() => itemById(equipped.value.hat));
-const decor = computed(() => itemById(equipped.value.decor));
-const cloth = computed(() => itemById(equipped.value.cloth));
-const shoe = computed(() => itemById(equipped.value.shoe));
-const acc = computed(() => itemById(equipped.value.acc));
+
+/* ---------------- 試穿 ---------------- */
+
+/**
+ * 商城點一下是「試穿」，不是「買」。
+ *
+ * 一頂帽子在角色卡上好看，戴到自己那隻身上不一定好看；而且代幣得靠
+ * 好好吃飯賺，買錯沒有退款。所以先把東西套到寵物身上給你看，確認了才扣款。
+ */
+const trying = ref(null);
+
+/** 畫面上要顯示的穿戴狀態：試穿中的東西蓋過實際穿著的 */
+const shown = computed(() => (
+  trying.value ? { ...equipped.value, [trying.value.slot]: trying.value.id } : equipped.value
+));
+
+const tryOn = (item) => { trying.value = trying.value?.id === item.id ? null : item; };
+
+/** 確認才真的買。買過的只是換上，不扣款。 */
+function confirmTry() {
+  const item = trying.value;
+  if (!item) return;
+  act(async () => {
+    // buyItem 本來就會順手換上，所以買過的才需要另外呼叫 equip
+    if (owned.value.has(item.id)) await api.equipItem(item.id);
+    else await api.buyItem(item.id);
+    trying.value = null;
+  }, 'try');
+}
+
+const bg = computed(() => itemById(shown.value.bg));
+const hat = computed(() => itemById(shown.value.hat));
+const decor = computed(() => itemById(shown.value.decor));
+const cloth = computed(() => itemById(shown.value.cloth));
+const shoe = computed(() => itemById(shown.value.shoe));
+const acc = computed(() => itemById(shown.value.acc));
 
 /** 穿戴類疊在寵物身上，擺飾放在場景角落 */
 const worn = computed(() => [hat.value, cloth.value, shoe.value, acc.value].filter(Boolean));
+
+/** 同一份穿戴資料，換成遊戲要的 { 部位: 圖片路徑 } */
+const wearPaths = computed(() => ({
+  hat: hat.value?.img || '',
+  cloth: cloth.value?.img || '',
+  shoe: shoe.value?.img || '',
+  acc: acc.value?.img || '',
+}));
+
+/** 吃飯時放在旁邊的碗。圖鑑裡本來就有一個，不必另外畫。 */
+const bowlImg = computed(() => itemById('lib-2-room-02')?.img || '');
 
 /** 體態只影響顯示大小，不改 emoji —— 同一隻動物胖瘦用縮放表現最直覺 */
 const bodyScale = computed(() => ({ thin: .82, normal: 1, round: 1.18 }[state.value?.body] ?? 1));
@@ -193,8 +237,6 @@ function confirmChange() {
     tab.value = 'home';
   }, 'change');
 }
-const buy = (id) => act(() => api.buyItem(id), id);
-const equip = (id) => act(() => api.equipItem(id), id);
 const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
 </script>
 
@@ -239,7 +281,12 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
           </span>
         </div>
 
-        <!-- 場景：背景、寵物、裝備全部用 emoji 疊出來 -->
+        <!-- 舞台：Godot 跑起來就換成 canvas，沒跑起來就留在這個靜態場景 -->
+        <PetStage
+          :pet="pet" :state="state" :behavior="behavior"
+          :scene="sceneImg" :wear="wearPaths" :decor="decor?.img || ''"
+          :bowl="bowlImg" :fallback-doing="activityText"
+        >
         <div class="scene" :style="{ '--tint': pet.tint || '#f6efdf' }">
           <img class="scene-bg" :src="sceneImg" :alt="bg?.name || '小房間'" />
           <img v-if="decor" class="scene-decor" :src="decor.img" :alt="decor.name" />
@@ -253,9 +300,9 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
             <span v-else-if="activity === 'beg'" class="prop beg">❗</span>
           </span>
         </div>
+        </PetStage>
 
         <p class="says">{{ state.says }}</p>
-        <p class="small muted doing">現在：{{ activityText }}</p>
 
         <div class="row wrap stats small">
           <span><span class="muted">近 7 天熱量 </span><b>{{ state.kcalPct }}%</b></span>
@@ -316,33 +363,70 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
         <div v-for="g in shopGroups" :key="g.group" class="card stack">
           <h3 style="margin:0">{{ g.group }}</h3>
           <div class="grid shop">
-            <div
+            <button
               v-for="i in g.items" :key="i.id"
-              class="item" :class="{ on: equipped[i.slot] === i.id }"
+              class="item"
+              :class="{ on: equipped[i.slot] === i.id, trying: trying?.id === i.id }"
+              :disabled="busy" @click="tryOn(i)"
             >
               <img class="item-face" :src="i.img" :alt="i.name" loading="lazy" />
               <span class="small">{{ i.name }}</span>
-              <span v-if="i.desc" class="small muted desc">{{ i.desc }}</span>
 
-              <button
-                v-if="!owned.has(i.id)"
-                class="small" :disabled="busy || pet.coins < i.price"
-                @click="buy(i.id)"
-              >🪙 {{ i.price }}</button>
-              <button
-                v-else-if="equipped[i.slot] !== i.id"
-                class="small" :disabled="busy" @click="equip(i.id)"
-              >換上</button>
-              <span v-else class="badge soft small">使用中</span>
-            </div>
+              <span v-if="equipped[i.slot] === i.id" class="badge soft small">使用中</span>
+              <span v-else-if="owned.has(i.id)" class="small muted">已擁有</span>
+              <span v-else class="small" :class="{ poor: pet.coins < i.price }">🪙 {{ i.price }}</span>
+            </button>
           </div>
         </div>
       </template>
+
+      <!-- 試穿中：釘在畫面底部，捲到哪裡都按得到 -->
+      <div v-if="trying" class="trybar">
+        <img class="item-face small-face" :src="trying.img" :alt="trying.name" />
+        <span class="stack tight">
+          <b class="small">{{ trying.name }}</b>
+          <span class="small muted">
+            {{ owned.has(trying.id) ? '已經有了，換上不用錢'
+               : pet.coins < trying.price ? `還差 ${trying.price - pet.coins} 枚代幣`
+               : `買下要 ${trying.price} 枚，剩 ${pet.coins - trying.price} 枚` }}
+          </span>
+        </span>
+        <button class="icon" :disabled="busy" @click="trying = null">取消</button>
+        <button
+          class="primary small"
+          :disabled="busy || (!owned.has(trying.id) && pet.coins < trying.price)"
+          @click="confirmTry"
+        >{{ owned.has(trying.id) ? '換上' : '買下' }}</button>
+      </div>
     </template>
   </div>
 </template>
 
 <style scoped>
+/* ---- 試穿 ---- */
+.item.trying {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.poor { color: var(--danger); }
+
+/* 商品列表很長，確認列要一直跟著，不然得捲回上面才按得到 */
+.trybar {
+  position: sticky;
+  bottom: .6rem;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .6rem .8rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, .55);
+  border: 1px solid var(--accent-soft);
+}
+.trybar .stack.tight { flex: 1; gap: .1rem; min-width: 0; }
+.small-face { width: 38px; height: 38px; object-fit: contain; }
+
 /* ---- 選寵物 ---- */
 
 

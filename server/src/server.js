@@ -84,7 +84,10 @@ app.get('/uploads/:id', async (req, reply) => {
 
 // 正式模式：直接由 Fastify 提供打包好的 Vue 前端
 if (existsSync(WEB_DIST)) {
-  await app.register(fastifyStatic, { root: WEB_DIST });
+  // preCompressed：有 .br / .gz 就直接送那一份。
+  // Godot 的 index.wasm 有 38 MB，不壓縮的話光是開寵物頁就得吃掉這麼多流量；
+  // 壓過之後約 9 MB。檔案由 web/tools/build-petgame.sh 一併產生。
+  await app.register(fastifyStatic, { root: WEB_DIST, preCompressed: true });
   app.setNotFoundHandler((req, reply) => {
     if (req.url.startsWith('/api') || req.url.startsWith('/uploads')) {
       return reply.code(404).send({ error: 'Not found' });

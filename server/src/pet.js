@@ -10,6 +10,7 @@
  */
 import { getDb } from './db.js';
 import { dailySummary, today, daysAgo } from './records.js';
+import CATALOG from './pet-catalog.json' with { type: 'json' };
 
 /* ---------------- 可選的寵物 ---------------- */
 
@@ -39,14 +40,15 @@ export const speciesOf = (id) => SPECIES.find(s => s.id === id) || SPECIES[0];
 /**
  * 商城。
  *
- * 圖片一律是 web/public/pets/<id>.webp，由 web/tools/slice-items.sh 從
- * pet/商品_N.png 切出來，所以商品 id 直接用檔名，不另外維護一份對照表。
+ * 商品來自 pet/素材/（使用者畫的兩本圖鑑，已經去背分類，還附一份
+ * 素材索引.csv 標了真實名稱）。web/tools/build-catalog.sh 把它轉成
+ * WebP 並產生 pet-catalog.json，這裡直接讀那份目錄。
+ *
+ * 之前是用 ImageMagick 的連通區域分析自動從整張商品圖切，名稱只能用猜的；
+ * 有了圖鑑就沒必要再猜。切圖那套做法留在 web/tools/slice-items.sh。
  *
  * slot 相同的東西互相取代（同時只能戴一頂帽子、擺一樣擺飾）。
  * group 只影響商城怎麼分區顯示，不影響穿戴規則。
- *
- * 價格用「同一類裡愈後面愈貴」的級距自動算，不手寫 99 個數字 ——
- * 原圖每一類的排序本來就大致由簡單到華麗。
  */
 
 /** 五個環境。圖是整張場景插畫，不是小圖示。 */
@@ -58,47 +60,12 @@ const SCENES = [
   ['bg_space',  '太空艙',  400, '誰說寵物不能上太空'],
 ];
 
-/**
- * 每一組：[商品圖的張數編號, slot, 分區名稱, 起價, 每項遞增, 名稱...]
- * 名稱的順序要跟 slice-items.sh 切出來的編號一致（先上後下、先左後右）。
- */
-const GROUPS = [
-  [1, 'decor', '小房間擺飾', 40, 8,
-    '書架', '床鋪', '飯碗', '毛線球', '地毯', '小桌子', '盆栽', '玩具箱', '抓抓板', '小夜燈'],
-  [2, 'decor', '庭院擺飾', 50, 8,
-    '花圃', '小水盆', '樹樁', '小帳蓬', '鞦韆', '木橋', '菜圃盆栽', '小圍欄', '蝴蝶裝飾', '石子路'],
-  [3, 'decor', '海邊擺飾', 50, 8,
-    '沙堡', '遮陽傘', '救生圈', '小船模型', '冰飲攤', '貝殼', '海星', '漂流木', '貝殼盆栽', '沙灘椅'],
-  [4, 'decor', '太空艙擺飾', 70, 10,
-    '漂浮玩具', '太空艙床', '控制台', '星球盆栽', '小機器人', '星星吊飾', '太空食物盒', '圓窗', '文件架', '地毯'],
-  [5, 'decor', '健身房擺飾', 60, 10,
-    '跑步機', '啞鈴', '拉筋墊', '獎盃', '水壺', '瑜珈球', '毛巾架', '計時器', '置物櫃', '植物盆栽'],
-  [10, 'decor', '其他擺飾', 40, 8,
-    '盆栽', '毛線球', '小魚乾', '小獎盃', '水果盤', '罐罐', '抱枕', '地毯', '小床'],
-
-  [6, 'hat', '帽子', 60, 12,
-    '草帽', '貝雷帽', '毛帽', '探險帽', '太空帽', '海盜帽', '廚師帽', '皇冠', '兔耳帽', '巫師帽'],
-  [7, 'cloth', '衣服', 80, 14,
-    '條紋T恤', '吊帶褲', '連帽上衣', '圍裙', '太空服', '浴衣', '運動服', '偵探裝', '廚師裝', '雨衣'],
-  [8, 'shoe', '鞋襪', 50, 10,
-    '運動鞋', '雨鞋', '室內拖', '涼鞋', '太空鞋', '條紋襪', '點點襪', '星星襪', '聖誕襪', '毛毛靴'],
-  [9, 'acc', '配件', 60, 12,
-    '圍巾', '領結', '小背包', '小披風', '小翅膀', '鈴鐺項圈', '名牌', '泳圈', '竹蜻蜓', '葉子頭冠'],
-];
-
 export const SHOP = [
   ...SCENES.map(([id, name, price, desc]) => ({
     id, slot: 'bg', group: '環境', name, price, desc,
     img: `/pets/scene-${id.replace(/^bg_/, '')}.webp`,
   })),
-  ...GROUPS.flatMap(([sheet, slot, group, base, step, ...names]) =>
-    names.map((name, i) => ({
-      id: `item-${sheet}-${i + 1}`,
-      slot, group, name,
-      price: base + i * step,
-      desc: '',
-      img: `/pets/item-${sheet}-${i + 1}.webp`,
-    }))),
+  ...CATALOG.map(i => ({ ...i, desc: '' })),
 ];
 
 /** 商城的分區順序，前端照這個排 */
@@ -265,6 +232,8 @@ export function petState(userId) {
     mood, body, says,
     days: days.length,
     silent,
+    // 牡吃的跟你一樣：主人今天沒記錄，遊戲裡的飯磗就不會出現
+    ateToday: dailySummary(userId, today()).nutrition.items > 0,
     kcalPct: Math.round(kcal * 100),
     proteinPct: Math.round(protein * 100),
   };

@@ -1,0 +1,38 @@
+{
+  "pet": "tortoise",
+  "name_zh": "烏龜",
+  "frame_width": 96,
+  "frame_height": 96,
+  "actions": {
+    "idle": {
+      "name_zh": "待機",
+      "frames": 4,
+      "fps": 4,
+      "sprite_sheet_row": 0
+    },
+    "walk": {
+      "name_zh": "行走",
+      "frames": 4,
+      "fps": 6,
+      "sprite_sheet_row": 1
+    },
+    "eat": {
+      "name_zh": "進食",
+      "frames": 4,
+      "fps": 6,
+      "sprite_sheet_row": 2
+    },
+    "sleep": {
+      "name_zh": "睡覺",
+      "frames": 4,
+      "fps": 4,
+      "sprite_sheet_row": 3
+    },
+    "play": {
+      "name_zh": "玩耍",
+      "frames": 4,
+      "fps": 6,
+      "sprite_sheet_row": 4
+    }
+  }
+}

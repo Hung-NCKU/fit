@@ -5,12 +5,19 @@
  * /api 與 /uploads 是隨時在變的個人資料（飲食紀錄、餐點照片），
  * 一律不進快取，快取起來只會讀到舊的。
  */
-const VERSION = 'fit-v6';   // 改版號會清掉所有舊快取
+const VERSION = 'fit-v7';   // 改版號會清掉所有舊快取
 const SHELL = `${VERSION}-shell`;
 
-// 不放進 service worker 的快取：個人資料，而且隨時在變
+// 不放進 service worker 的快取：
+//   /api、/uploads  個人資料，而且隨時在變
+//   /petgame        Godot 的 index.wasm 有 38MB。Cache Storage 存的是解開後
+//                   的大小，一隻手機的配額可能就被它吃掉大半，連帶把真正
+//                   該快取的前端檔案擠掉。交給瀏覽器的 HTTP 快取就好——
+//                   伺服器送的是預壓縮的 .gz（約 9MB）。
 const NEVER_CACHE = (url) =>
-  url.pathname.startsWith('/api') || url.pathname.startsWith('/uploads');
+  url.pathname.startsWith('/api')
+  || url.pathname.startsWith('/uploads')
+  || url.pathname.startsWith('/petgame');
 
 // 連「瀏覽器 HTTP 快取」都要繞過的，只有 API。
 // 照片不在此列：id 是 uuid、內容永遠不變，後端刻意回

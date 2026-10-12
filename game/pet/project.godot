@@ -1,0 +1,27 @@
+; fit 的寵物動畫。只做「讓牠動起來」這件事：
+; 場景圖、寵物圖、裝扮都是開場時由網頁丟進來的設定決定，執行時才從
+; 同一個網域抓圖，所以換裝或換場景不需要重新匯出遊戲。
+
+config_version=5
+
+[application]
+
+config/name="fit-pet"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.5", "GL Compatibility")
+
+[display]
+
+window/size/viewport_width=640
+window/size/viewport_height=400
+# 不用 stretch：畫布固定 640x400，由 CSS 去放大。
+# 開 stretch 的話 get_viewport_rect() 拿到的是裝置像素（手機上可能是兩三千），
+# 所有按比例算的版面全部會跑掉。
+window/stretch/mode="disabled"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.04, 0.04, 0.04, 1)
+textures/vram_compression/import_etc2_astc=true

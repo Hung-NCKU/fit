@@ -30,3 +30,9 @@ web/dist/
 Thumbs.db
 .vscode/
 .idea/
+
+# Godot 的網頁匯出是建置產物，用 web/tools/build-petgame.sh 產生
+web/public/petgame/
+
+# Godot 編輯器的快取與匯入結果，重新 --import 就會長回來
+game/pet/.godot/
