@@ -1284,10 +1284,194 @@ cp server/.env.example server/.env
 - §3.1：用檔案隔離取代 `WHERE user_id = ?`，以及這個決定在 §11.2 停用使用者時的回報
 - §12.4：SQLite WAL 的備份陷阱；測試隔離為什麼要做在架構層
 
+**影像與素材**
+- §16.2：用連通區域分析把一張插畫切成一百個物件；洪水填充去背為什麼比色鍵安全
+- §16.4：純 CSS 的 3D Carousel，以及「角度要累加不能取模」
+
 **除錯方法論**
 - §12.6：一個 bug 有三個互相掩蓋的原因；以及「先確認測試方法本身是對的」
 - §12.1：curl 測過不等於瀏覽器會過
 - §8.2：在 localhost 上剛好不會重現的時序 bug
+
+---
+
+## 16. 寵物：把飲食紀錄變成一隻會動的小動物
+
+靈感是 Neko Atsume（貓咪收集），但有一個關鍵差別：**牠吃的跟你一樣**。
+寵物沒有自己的一套數值，心情與體態完全由飼主的飲食紀錄推算出來。
+
+### 16.1 代幣只能靠達標賺
+
+```js
+const COIN_LOGGED  = 2;   // 有記錄就好
+const COIN_KCAL    = 8;   // 熱量落在目標 ±10%
+const COIN_PROTEIN = 8;   // 蛋白質達到目標九成
+```
+
+一天最多 18 枚。沒有看廣告、沒有課金、沒有簽到——想買東西就得好好吃飯，
+這是整個功能唯一的設計目的。
+
+結算用 `settled_to` 記住算到哪一天：
+
+```js
+const yesterday = daysAgo(1);
+if (pet.settled_to >= yesterday) return { earned: 0, days: 0 };
+```
+
+只結算**已經過完**的日子。今天還沒過完就結算，使用者下午吃了東西會發現
+代幣沒變多，然後以為壞了。補算也上限三十天，不然第一次開頁面會掃完整個
+資料庫。
+
+### 16.2 從一張插畫切出全部素材
+
+素材是使用者自己畫的三張 PNG：十隻角色卡、一張概念圖（五個場景＋貓的
+八種動作）、十張商品系列圖。前端要的是個別的 WebP。
+
+角色卡與場景是規則格線，直接算座標裁就好。**商品圖不是**——十張的排版都
+不一樣（商品 1 是 5+5，商品 10 是 4+3+2），所以改用連通區域分析：
+
+```bash
+BOXES=$(convert "$SRC" -alpha extract -threshold 20% \
+          -morphology Dilate Disk:4 \
+          -define connected-components:verbose=true \
+          -define connected-components:area-threshold=3000 \
+          -connected-components 8 /dev/null 2>&1 \
+        | grep 'gray(255)' | awk '{print $2}')
+```
+
+三個細節：
+
+- **先膨脹再偵測**。像「石子路」這種由幾顆不相連的石頭組成的物件，不先把
+  鄰近碎塊黏起來就會被當成好幾樣商品。膨脹只用來找範圍，裁切仍用原圖。
+  半徑 9 會把相鄰的兩樣商品黏成一樣，4 剛好。
+- **`area-threshold` 濾掉陰影碎片**，不然每個物件下面的陰影會變成獨立商品。
+- **排序要先分列再比 x**。`sort` 直接照 y 排會因為同一列物件高度不同而亂掉，
+  所以先用中心的 y 除以 120 取整當「列號」。
+
+去背用洪水填充而不是色鍵：
+
+```bash
+convert "$1" -alpha set -bordercolor "#FDF6E4" -border 1 \
+  -fuzz 14% -fill none -draw 'matte 0,0 floodfill' \
+  -shave 1x1 \
+  -channel alpha -morphology Erode Octagon:1 +channel "$1"
+```
+
+- 先鑲一圈底色邊框，四邊的背景才會連成一片，從 `0,0` 填一次就夠。
+- 色鍵會把貓肚子那塊同樣接近白色的區域一起吃掉，洪水填充只拿掉**與邊界
+  相連**的背景，所以安全。
+- 這台是 ImageMagick 6，透明度的繪圖原語叫 `matte`，IM7 才改叫 `alpha`。
+- 填完邊緣會留一圈半透明的米白，看起來像白邊，把 alpha 往內縮一個像素就乾淨了。
+- `cwebp` 一定要加 `-exact`，否則它會更動透明區域的顏色，疊到深色背景上會浮出雜邊。
+
+最後 33 + 99 個 WebP，全部加起來還不到 2 MB。
+
+### 16.3 104 件商品不用手寫 104 個物件
+
+商城是用壓縮表展開的：
+
+```js
+const GROUPS = [
+  [1, 'decor', '小房間擺飾', 40, 8,
+    '書架', '床鋪', '飯碗', '毛線球', '地毯', '小桌子', '盆栽', '玩具箱', '抓抓板', '小夜燈'],
+  // ...
+];
+
+export const SHOP = [
+  ...SCENES.map(...),
+  ...GROUPS.flatMap(([sheet, slot, group, base, step, ...names]) =>
+    names.map((name, i) => ({
+      id: `item-${sheet}-${i + 1}`,
+      slot, group, name,
+      price: base + i * step,
+      img: `/pets/item-${sheet}-${i + 1}.webp`,
+    }))),
+];
+```
+
+`[起價, 每項遞增]` 讓每一區的價格自動成等差數列，同一區越後面的越貴。
+名稱的順序必須跟 `slice-items.sh` 的編號一致（先上後下、先左後右）——
+這是整段唯一需要人工對齊的地方，所以兩邊的註解都寫了同一句話。
+
+### 16.4 選寵物用 CSS 3D Carousel
+
+十隻排在一個圓柱上，容器給 `perspective`，內層 `preserve-3d` 之後整個繞
+Y 軸轉，轉到正面的那張就是選中的。不用任何輪播函式庫。
+
+半徑不能亂填，要讓相鄰卡片剛好不重疊：
+
+```js
+const radius = computed(() => {
+  const half = (Math.PI / props.items.length);
+  return Math.round((CARD_W / 2) / Math.tan(half)) + 10;
+});
+```
+
+每張卡的位置就是「先轉到自己的角度，再往外推一個半徑」：
+
+```js
+transform: `rotateY(${i * step}deg) translateZ(${radius}px)`
+```
+
+轉盤本身則是 `translateZ(-radius) rotateY(angle)`，把圓心推回原處。
+
+**角度要累加，不能取模**。如果直接用 `index * step`，從第 10 隻切到第 1 隻
+會倒著轉一大圈：
+
+```js
+let diff = ((i - index.value) % n + n) % n;   // 0..n-1
+if (diff > n / 2) diff -= n;                  // 選比較近的方向
+angle.value -= diff * step.value;
+```
+
+背面那幾張要壓暗（`filter: brightness(.45)`），不然整圈一樣亮會完全看不出前後。
+
+### 16.5 換寵物：一個會被無限刷的漏洞
+
+「換一隻」要清掉舊紀錄並歸零代幣。第一版是這樣寫的：
+
+```js
+db.exec('DELETE FROM pet_items');
+db.exec('DELETE FROM pet');
+return adoptPet(userId, species, name);
+```
+
+看起來沒問題，但 `adoptPet` 會把 `settled_to` 設成八天前，讓新使用者一開頁面
+就有最近七天的代幣可以領。於是：**換一隻寵物 → 領七天 → 再換一隻 → 再領七天**。
+實測從 6 枚刷到 126 枚。
+
+修法是領養與換養分開看待：
+
+```js
+const fresh = adoptPet(userId, species, name);
+// 領養會認列最近七天…但換寵物不該再給一次 —— 否則反覆換寵物就能無限刷代幣
+db.prepare('UPDATE pet SET coins = 0, settled_to = ? WHERE id = 1').run(daysAgo(1));
+```
+
+### 16.6 這一段踩到的坑
+
+**`GET /api/pet` 只在「還沒養」的時候回傳物種清單。**
+
+```js
+if (!pet) return { pet: null, species: SPECIES, mine };
+return { mine, pet: {...}, state, owned, shop, settled };  // ← 少了 species
+```
+
+第一次領養看得到十隻，但「換一隻」的 carousel 是空的——有箭頭、有一個點、
+沒有卡片。因為換寵物也要挑，所以不管有沒有養都得把清單帶出去。
+
+**`const busy = ref('')` 會讓按鈕永遠是停用的。** Vue 對布林屬性的規則是
+「空字串視為存在」，所以 `:disabled="busy"` 在 `busy === ''` 時會變成
+`disabled=""`，也就是停用。改成 `ref(null)`。
+
+**新寵物拿到 0 枚代幣。** `settled_to` 設成 `daysAgo(1)` 時，結算函式第一句
+`if (pet.settled_to >= yesterday) return` 就直接返回了。要設成 `daysAgo(8)`
+才會把過去七天算進來。
+
+**測試不小心把真的寵物換掉了。** 用 adb 點手機模擬器驗證 carousel 時，座標
+算錯點到了「確認換成這隻」，而且當天的自動備份早於寵物功能上線，備份裡
+根本沒有 `pet` 表。這類破壞性操作之後一律要先確認畫面上那個按鈕的位置，
+或是改用 `FIT_DATA_DIR` 開一個拋棄式資料庫測。
 
 ---
 

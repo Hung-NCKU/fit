@@ -33,6 +33,8 @@ export default async function petRoutes(app) {
 
     return {
       mine,
+      // 換寵物也要挑，所以不管有沒有養都要把清單帶出去
+      species: SPECIES,
       pet: { ...pet, speciesName: speciesOf(pet.species).name, tint: speciesOf(pet.species).tint },
       state: petState(u),
       owned: ownedItems(u),

@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { api } from '../api.js';
 import { session } from '../auth.js';
 import UserTabs from '../components/UserTabs.vue';
+import PetCarousel from '../components/PetCarousel.vue';
 
 const viewing = ref(session.user);
 const data = ref(null);
@@ -107,6 +108,10 @@ const activityText = computed(() => {
 /** 插畫檔名：<id>.webp 是整張卡，<id>-pet.webp 只有動物本體 */
 /** 角色卡（選寵物用）與去背的本體（場景用） */
 const petCard = (id) => `/pets/${id}.webp`;
+
+/** 輪播要的是 { id, name, nick, img } */
+const choices = computed(() =>
+  (data.value?.species || []).map(s => ({ ...s, img: petCard(s.id) })));
 const petBody = (id) => `/pets/${id}-pet.webp`;
 
 /**
@@ -127,20 +132,32 @@ const sceneImg = computed(() => {
 const itemById = (id) => (data.value?.shop || []).find(i => i.id === id) || null;
 const bg = computed(() => itemById(equipped.value.bg));
 const hat = computed(() => itemById(equipped.value.hat));
-const toy = computed(() => itemById(equipped.value.toy));
+const decor = computed(() => itemById(equipped.value.decor));
+const cloth = computed(() => itemById(equipped.value.cloth));
+const shoe = computed(() => itemById(equipped.value.shoe));
+const acc = computed(() => itemById(equipped.value.acc));
+
+/** 穿戴類疊在寵物身上，擺飾放在場景角落 */
+const worn = computed(() => [hat.value, cloth.value, shoe.value, acc.value].filter(Boolean));
 
 /** 體態只影響顯示大小，不改 emoji —— 同一隻動物胖瘦用縮放表現最直覺 */
 const bodyScale = computed(() => ({ thin: .82, normal: 1, round: 1.18 }[state.value?.body] ?? 1));
 
 const SLOTS = [
-  { id: 'bg', label: '環境' },
-  { id: 'hat', label: '帽子' },
-  { id: 'toy', label: '擺飾' },
+  { id: 'bg',    label: '環境' },
+  { id: 'decor', label: '擺飾' },
+  { id: 'hat',   label: '帽子' },
+  { id: 'cloth', label: '衣服' },
+  { id: 'shoe',  label: '鞋襪' },
+  { id: 'acc',   label: '配件' },
 ];
-const shopBySlot = computed(() => SLOTS.map(s => ({
-  ...s,
-  items: (data.value?.shop || []).filter(i => i.slot === s.id),
-})));
+
+/** 商城照後端給的分區排，一區一張卡 */
+const shopGroups = computed(() => {
+  const list = data.value?.shop || [];
+  const names = [...new Set(list.map(i => i.group))];
+  return names.map(g => ({ group: g, items: list.filter(i => i.group === g) }));
+});
 
 async function act(fn, key) {
   if (busy.value) return;
@@ -199,16 +216,7 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
           </p>
         </div>
 
-        <div class="grid picker">
-          <button
-            v-for="s in data.species" :key="s.id"
-            class="pick" :class="{ on: picked === s.id }"
-            @click="picked = s.id"
-          >
-            <img class="pick-img" :src="petCard(s.id)" :alt="s.name" loading="lazy" />
-            <span class="small">{{ s.name }}<span class="muted"> · {{ s.nick }}</span></span>
-          </button>
-        </div>
+        <PetCarousel v-model="picked" :items="choices" />
 
         <input v-model="petName" maxlength="20" placeholder="幫牠取個名字（可留空）" />
         <button class="primary" :disabled="!picked || busy" @click="adopt">
@@ -234,9 +242,9 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
         <!-- 場景：背景、寵物、裝備全部用 emoji 疊出來 -->
         <div class="scene" :style="{ '--tint': pet.tint || '#f6efdf' }">
           <img class="scene-bg" :src="sceneImg" :alt="bg?.name || '小房間'" />
-          <span v-if="toy" class="scene-toy">{{ toy.emoji }}</span>
+          <img v-if="decor" class="scene-decor" :src="decor.img" :alt="decor.name" />
           <span class="scene-pet" :class="activity" :style="{ '--body': bodyScale }">
-            <span v-if="hat" class="scene-hat">{{ hat.emoji }}</span>
+            <img v-for="w in worn" :key="w.id" class="worn" :class="w.slot" :src="w.img" :alt="w.name" />
             <img class="scene-img" :src="petSprite" :alt="pet.speciesName" />
             <!-- 作息的小道具：睡覺的 Z、吃飯的碗、玩耍的球 -->
             <span v-if="activity === 'sleep'" class="prop zzz">💤</span>
@@ -267,16 +275,7 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
           買過的布置全部歸零，無法復原。
         </p>
 
-        <div class="grid picker">
-          <button
-            v-for="s in data.species" :key="s.id"
-            class="pick" :class="{ on: picked === s.id, cur: s.id === pet.species }"
-            @click="picked = s.id"
-          >
-            <img class="pick-img" :src="petCard(s.id)" :alt="s.name" loading="lazy" />
-            <span class="small">{{ s.name }}<span class="muted"> · {{ s.nick }}</span></span>
-          </button>
-        </div>
+        <PetCarousel v-model="picked" :items="choices" />
 
         <input v-model="petName" maxlength="20" placeholder="幫牠取個名字（可留空）" />
         <button class="primary" :disabled="!picked || busy" @click="confirmChange">
@@ -296,7 +295,8 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
           <span>
             <span class="muted small">{{ s.label }}　</span>
             <template v-if="itemById(equipped[s.id])">
-              {{ itemById(equipped[s.id]).emoji }} {{ itemById(equipped[s.id]).name }}
+              <img class="slot-img" :src="itemById(equipped[s.id]).img" :alt="''" />
+              {{ itemById(equipped[s.id]).name }}
             </template>
             <span v-else class="muted small">（沒有）</span>
           </span>
@@ -313,14 +313,14 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
 
       <!-- 商城 -->
       <template v-else>
-        <div v-for="g in shopBySlot" :key="g.id" class="card stack">
-          <h3 style="margin:0">{{ g.label }}</h3>
+        <div v-for="g in shopGroups" :key="g.group" class="card stack">
+          <h3 style="margin:0">{{ g.group }}</h3>
           <div class="grid shop">
             <div
               v-for="i in g.items" :key="i.id"
               class="item" :class="{ on: equipped[i.slot] === i.id }"
             >
-              <span class="item-face">{{ i.emoji }}</span>
+              <img class="item-face" :src="i.img" :alt="i.name" loading="lazy" />
               <span class="small">{{ i.name }}</span>
               <span v-if="i.desc" class="small muted desc">{{ i.desc }}</span>
 
@@ -344,26 +344,7 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
 
 <style scoped>
 /* ---- 選寵物 ---- */
-.picker { grid-template-columns: repeat(2, 1fr); gap: .6rem; }
-.pick {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: .2rem;
-  padding: .8rem .3rem;
-  background: var(--surface-2);
-  border-color: transparent;
-  border-radius: 14px;
-}
-.pick.on { background: var(--accent-soft); color: var(--accent); }
-/* 目前養的那隻標一下，免得不小心換成同一種 */
-.pick.cur { outline: 2px dashed var(--border); outline-offset: -2px; }
-.pick-img {
-  width: 100%;
-  max-width: 132px;
-  border-radius: 10px;
-  display: block;
-}
+
 
 /* ---- 場景 ---- */
 .scene-card { overflow: hidden; }
@@ -478,7 +459,29 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
   font-size: 1.7rem;
   z-index: 1;
 }
-.scene-toy { position: absolute; right: 14%; bottom: 14%; font-size: 1.8rem; }
+/* 擺飾放在場景右下角，不要擋到寵物 */
+.scene-decor {
+  position: absolute;
+  right: 6%;
+  bottom: 6%;
+  width: 24%;
+  max-width: 68px;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .25));
+}
+
+/* 穿戴類疊在寵物身上。各部位的落點用百分比，換物種也不會跑掉。 */
+.worn {
+  position: absolute;
+  left: 50%;
+  width: 46%;
+  transform: translateX(-50%);
+  z-index: 2;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .2));
+}
+.worn.hat   { top: -14%; width: 42%; }
+.worn.cloth { top: 36%;  width: 54%; opacity: .95; }
+.worn.shoe  { bottom: -6%; width: 34%; }
+.worn.acc   { top: 22%;  width: 32%; }
 
 .says { margin: .8rem 0 .2rem; }
 .doing { margin: 0 0 .5rem; }
@@ -506,7 +509,8 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
   border-radius: 14px;
 }
 .item.on { border-color: var(--accent); }
-.item-face { font-size: 1.9rem; line-height: 1.1; }
+.item-face { width: 100%; max-width: 54px; display: block; }
+.slot-img { width: 22px; vertical-align: -5px; }
 .item .desc { line-height: 1.35; }
 .item button { width: 100%; }
 </style>
