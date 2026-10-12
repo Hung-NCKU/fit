@@ -5,7 +5,8 @@
  * /api 與 /uploads 是隨時在變的個人資料（飲食紀錄、餐點照片），
  * 一律不進快取，快取起來只會讀到舊的。
  */
-const VERSION = 'fit-v7';   // 改版號會清掉所有舊快取
+const VERSION = 'fit-v8';   // 改版號會清掉所有舊快取。public/ 下的圖換了就要改，
+                            // 否則 cache-first 會一直端出舊的那張。
 const SHELL = `${VERSION}-shell`;
 
 // 不放進 service worker 的快取：
