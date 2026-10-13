@@ -1,0 +1,384 @@
+/**
+ * 寵物。參考 Neko Atsume：養一隻小動物，用代幣買布置與裝扮。
+ *
+ * 和原作不同的地方是「牠吃的跟你一樣」—— 寵物的心情與體態完全由飼主的
+ * 飲食紀錄推算出來，不是另外一套數值。吃太少牠會瘦、吃太多牠會圓、
+ * 連續幾天沒記錄牠會餓。代幣靠記錄飲食與達標賺，不能用別的方式取得。
+ *
+ * 外觀一律用 emoji 組出來，不需要任何圖檔或繪圖函式庫 ——
+ * 這個專案其他地方（分頁列、標籤）也是這樣做的。
+ */
+import { getDb } from './db.js';
+import { dailySummary, today, daysAgo } from './records.js';
+import { ALL_WEAR, wardrobeOf } from './pet-wardrobe.js';
+
+/* ---------------- 可選的寵物 ---------------- */
+
+/**
+ * 可以挑的十隻，對應 web/public/pets/ 裡的插畫（由 web/tools/slice-pets.sh 切出來）。
+ * id 就是圖檔名；name 是物種，nick 是插畫上原本寫的名字，領養時當預設名。
+ * tint 是那張卡原本的底色（用 ImageMagick 取樣出來的）。場景沿用它，
+ * 插畫的背景才會跟場景融在一起，不然看起來就是一張貼紙貼在深色上。
+ */
+export const SPECIES = [
+  { id: 'cat',        name: '小貓',   nick: '橘豆', tint: '#fbefcb' },
+  { id: 'dog',        name: '小狗',   nick: '奶泡', tint: '#dde5eb' },
+  { id: 'rabbit',     name: '兔子',   nick: '米糕', tint: '#fce2d6' },
+  { id: 'hamster',    name: '倉鼠',   nick: '小栗', tint: '#fce8c1' },
+  { id: 'guinea',     name: '天竺鼠', nick: '布丁', tint: '#e6ebce' },
+  { id: 'hedgehog',   name: '刺蝟',   nick: '針針', tint: '#fde5c5' },
+  { id: 'ferret',     name: '雪貂',   nick: '麻糬', tint: '#ebe1e8' },
+  { id: 'parrot',     name: '小鸚鵡', nick: '啾啾', tint: '#e3ebd1' },
+  { id: 'tortoise',   name: '陸龜',   nick: '苔苔', tint: '#f1eed1' },
+  { id: 'chinchilla', name: '龍貓',   nick: '霧球', tint: '#e9e1ed' },
+];
+
+export const speciesOf = (id) => SPECIES.find(s => s.id === id) || SPECIES[0];
+
+/* ---------------- 商城 ---------------- */
+
+/**
+ * 商城。
+ *
+ * 賣兩種東西：五個環境，以及「目前這隻的衣服」。
+ *
+ * 衣服是跟著物種走的——pet/穿搭/ 裡每隻動物有一張自己的衣櫃，配色也不一樣，
+ * 所以同一頂草帽在天竺鼠身上是草綠色、在貓身上是橘色。清單因此由
+ * shopFor(species) 組出來，不是一份固定的 SHOP。
+ *
+ * 先前賣的是圖鑑切出來的兩百多件通用道具（pet-catalog.json）。那份素材還在，
+ * 現在的用途是給 build-scenes.sh 組場景背景，不再上架。
+ *
+ * slot 相同的東西互相取代（同時只能戴一頂帽子）。
+ * group 只影響商城怎麼分區顯示，不影響穿戴規則。
+ */
+
+/** 五個環境。圖是整張場景插畫，不是小圖示。 */
+const SCENES = [
+  ['bg_room',   '小房間',  0,   '預設的窩'],
+  ['bg_garden', '庭院',    120, '曬得到太陽'],
+  ['bg_beach',  '海邊',    220, '看得到海'],
+  ['bg_gym',    '健身房',  300, '牠也想練'],
+  ['bg_space',  '太空艙',  400, '誰說寵物不能上太空'],
+];
+
+/** 五個環境是所有物種共用的 */
+const SCENE_ITEMS = SCENES.map(([id, name, price, desc]) => ({
+  id, slot: 'bg', group: '環境', name, price, desc,
+  img: `/pets/scene-${id.replace(/^bg_/, '')}.webp`,
+}));
+
+/** 這隻看得到的商城內容 */
+export const shopFor = (species) => [...SCENE_ITEMS, ...wardrobeOf(species)];
+
+/**
+ * 查一件商品。要涵蓋所有物種的衣服，不能只看目前這隻的——
+ * 換寵物之後舊的穿戴紀錄還在 pet_history 裡，查得到才顯示得出來。
+ */
+const EVERYTHING = [...SCENE_ITEMS, ...ALL_WEAR];
+
+/** 商城的分區順序，前端照這個排 */
+export const shopGroupsFor = (species) => [...new Set(shopFor(species).map(i => i.group))];
+
+export const itemOf = (id) => EVERYTHING.find(i => i.id === id) || null;
+
+/* ---------------- 存取 ---------------- */
+
+const parse = (s, fallback) => { try { return JSON.parse(s); } catch { return fallback; } };
+
+export function getPet(userId) {
+  const row = getDb(userId).prepare('SELECT * FROM pet WHERE id = 1').get();
+  if (!row) return null;
+  return { ...row, equipped: parse(row.equipped, {}) };
+}
+
+export function adoptPet(userId, species, name) {
+  const sp = SPECIES.find(s => s.id === species);
+  if (!sp) throw Object.assign(new Error(`沒有這種寵物：${species}`), { status: 400 });
+  if (getPet(userId)) throw Object.assign(new Error('已經有寵物了'), { status: 409 });
+
+  const db = getDb(userId);
+  db.prepare(`
+    INSERT INTO pet (id, species, name, coins, equipped, settled_to)
+    VALUES (1, ?, ?, 0, ?, ?)
+  `).run(sp.id, String(name || sp.nick || sp.name).slice(0, 20), JSON.stringify({ bg: 'bg_room' }), daysAgo(8));
+  // settled_to 往回設八天：第一次開頁面時會把最近七天完整的日子結算進來。
+  // 設成昨天的話新寵物永遠拿不到第一筆（結算只算已過完的日子），
+  // 使用者已經記錄好幾週卻看到 0 代幣、商城全部買不起。
+  // 預設的窩送的，不用買
+  db.prepare('INSERT OR IGNORE INTO pet_items (item_id) VALUES (?)').run('bg_room');
+  return getPet(userId);
+}
+
+/**
+ * 換一隻養。上一隻的代幣與買過的東西全部清掉，重新開始。
+ *
+ * 這是整個 App 唯一不可復原的操作，而且實際上誤觸過三次（兩次是原生
+ * confirm() 的「確定」剛好落在手指附近，一次原因不明，日誌已經被覆蓋）。
+ * 所以確認不能只靠前端：呼叫端必須把「目前這隻的名字」原樣帶回來。
+ *
+ * 這樣一來，舊版前端（還在用 confirm()、不會送這個欄位）會直接被擋下來，
+ * 而不是把寵物換掉；任何誤觸也不可能湊出正確的名字。
+ */
+export function replacePet(userId, species, name, confirmName) {
+  const current = getPet(userId);
+  if (current && String(confirmName ?? '').trim() !== current.name) {
+    throw Object.assign(
+      new Error('換寵物要把目前這隻的名字帶回來確認'),
+      { status: 400 },
+    );
+  }
+
+  const db = getDb(userId);
+
+  // 先把舊的那一隻整隻留下來再動手。「無法復原」是設計上的選擇，
+  // 不是技術上的必然——留一份存根的成本幾乎是零。
+  if (current) {
+    const row = db.prepare('SELECT * FROM pet WHERE id = 1').get();
+    db.prepare(`
+      INSERT INTO pet_history (species, name, coins, equipped, settled_to, items, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      row.species, row.name, row.coins, row.equipped, row.settled_to,
+      JSON.stringify(ownedItems(userId)), row.created_at,
+    );
+  }
+
+  db.exec('DELETE FROM pet_items');
+  db.exec('DELETE FROM pet');
+  const fresh = adoptPet(userId, species, name);
+
+  // 領養會認列最近七天的紀錄當見面禮，但換寵物不該再給一次 ——
+  // 否則反覆換寵物就能無限刷代幣。結算起點設成昨天，從明天開始重新累積。
+  db.prepare('UPDATE pet SET coins = 0, settled_to = ? WHERE id = 1').run(daysAgo(1));
+  return getPet(userId);
+}
+export const ownedItems = (userId) =>
+  getDb(userId).prepare('SELECT item_id FROM pet_items').all().map(r => r.item_id);
+
+/* ---------------- 代幣結算 ---------------- */
+
+/** 一天最多拿多少 */
+const COIN_LOGGED = 2;      // 有記錄就好
+const COIN_KCAL = 8;        // 熱量落在目標 ±10%
+const COIN_PROTEIN = 8;     // 蛋白質達到目標九成
+
+/**
+ * 新規則上線日：這天（含）之後，「有記錄 +2」與「熱量達標 +8」改成記錄當下入帳
+ * （見 rewardMealSaved），每日結算只剩蛋白質那份。這天之前的日子照舊結算，
+ * 否則上線前還沒結算到的日子會少拿。
+ */
+const INSTANT_FROM = '2026-10-14';
+const COIN_PER_UPDATE = 2;   // 每次新增或修改飲食
+
+/** 某一天結算時可以拿幾枚 */
+export function coinsForDay(userId, date) {
+  const s = dailySummary(userId, date);
+  if (!s.nutrition.items) return 0;          // 完全沒記錄
+
+  const legacy = date < INSTANT_FROM;
+  let c = legacy ? COIN_LOGGED : 0;
+  const tk = s.targets.kcal || 0;
+  const tp = s.targets.protein_g || 0;
+  if (legacy && tk && Math.abs(s.nutrition.kcal - tk) <= tk * 0.1) c += COIN_KCAL;
+  if (tp && s.nutrition.protein_g >= tp * 0.9) c += COIN_PROTEIN;
+  return c;
+}
+
+/**
+ * 新增或修改一筆飲食之後呼叫：自動入帳，不用按領取。
+ *   每次 +2（新增、修改都算，刪除不算）
+ *   該日熱量第一次落在目標 ±10% 再 +8（每天最多一次）
+ * 沒有寵物就不發。回傳這次發了幾枚。
+ *
+ * 注意：+2 沒有次數上限，新增再刪除、反覆修改都能刷。這是使用者指定的規則。
+ */
+export function rewardMealSaved(userId, date) {
+  const pet = getPet(userId);
+  if (!pet) return 0;
+  const db = getDb(userId);
+  let earned = COIN_PER_UPDATE;
+
+  if (date && date >= INSTANT_FROM) {
+    const s = dailySummary(userId, date);
+    const tk = s.targets.kcal || 0;
+    if (tk && Math.abs(s.nutrition.kcal - tk) <= tk * 0.1) {
+      const r = db.prepare('INSERT OR IGNORE INTO pet_daily_bonus (date) VALUES (?)').run(date);
+      if (r.changes) earned += COIN_KCAL;
+    }
+  }
+  db.prepare('UPDATE pet SET coins = coins + ? WHERE id = 1').run(earned);
+  return earned;
+}
+
+/**
+ * 把「上次結算之後到昨天」的代幣一次發完。
+ *
+ * 只結算已經過完的日子：今天還在記錄中，現在算會不公平。
+ * settled_to 記住結算到哪一天，重複呼叫不會重複發。
+ */
+export function settleCoins(userId) {
+  const pet = getPet(userId);
+  if (!pet) return { earned: 0, days: 0 };
+
+  const db = getDb(userId);
+  const yesterday = daysAgo(1);
+  if (pet.settled_to >= yesterday) return { earned: 0, days: 0 };
+
+  // 最多往回補 30 天，避免久沒開 App 時一次跑幾百天
+  const from = pet.settled_to && pet.settled_to > daysAgo(30) ? pet.settled_to : daysAgo(30);
+
+  let earned = 0;
+  let days = 0;
+  const d = new Date(from + 'T00:00:00');
+  const end = new Date(yesterday + 'T00:00:00');
+  while (d < end) {
+    d.setDate(d.getDate() + 1);
+    const iso = d.toLocaleDateString('sv-SE');
+    const c = coinsForDay(userId, iso);
+    if (c) { earned += c; days++; }
+  }
+
+  db.prepare('UPDATE pet SET coins = coins + ?, settled_to = ? WHERE id = 1').run(earned, yesterday);
+  return { earned, days };
+}
+
+/* ---------------- 心情與體態 ---------------- */
+
+const WINDOW = 7;
+
+/**
+ * 看最近七天的飲食，推算寵物的狀態。
+ * 刻意不存進資料庫：它完全是飲食紀錄的衍生值，存起來只會不同步。
+ */
+export function petState(userId) {
+  const ratios = (date) => {
+    const s = dailySummary(userId, date);
+    if (!s.nutrition.items) return null;
+    return {
+      date,
+      items: s.nutrition.items,
+      kcalRatio: s.targets.kcal ? s.nutrition.kcal / s.targets.kcal : 0,
+      proteinRatio: s.targets.protein_g ? s.nutrition.protein_g / s.targets.protein_g : 0,
+    };
+  };
+
+  const days = [];
+  for (let i = 1; i <= WINDOW; i++) {
+    const d = ratios(daysAgo(i));
+    if (d) days.push(d);
+  }
+
+  /**
+   * 今天要不要算進平均。
+   *
+   * 今天還沒過完，所以早上吃完早餐就把它算進去，會讓平均反而往下掉——
+   * 剛吃完東西寵物卻變瘦，這說不過去。但是整天不算也不對：
+   * 吃滿一天的量了，寵物卻還是一副餓壞的樣子（Martina 遇到的就是這個）。
+   *
+   * 折衷：今天只在「已經吃到目標」或「天都快黑了」的時候才算。
+   * 這個偏袒是單向的——今天只會讓結果變好，不會無端變差。
+   */
+  const todayRow = ratios(today());
+  if (todayRow && (todayRow.kcalRatio >= 1 || new Date().getHours() >= 20)) {
+    days.push(todayRow);
+  }
+
+  // 連續幾天沒記錄了。**要從今天開始數**：今天明明記了十八筆，
+  // 卻因為迴圈從昨天起算而顯示「3 天沒看到你記錄了」，寵物就一直討食。
+  let silent = 0;
+  for (let i = 0; i <= WINDOW; i++) {
+    if (dailySummary(userId, daysAgo(i)).nutrition.items) break;
+    silent++;
+  }
+  // 從來沒記錄過的新帳號不算「沒看到你」：往前找 60 天都沒有就當作還沒開始
+  if (silent > WINDOW) {
+    let ever = false;
+    for (let i = WINDOW + 1; i <= 60 && !ever; i++) {
+      ever = Boolean(dailySummary(userId, daysAgo(i)).nutrition.items);
+    }
+    if (!ever) silent = 0;
+  }
+
+  const avg = (k) => (days.length ? days.reduce((a, b) => a + b[k], 0) / days.length : 0);
+  const kcal = avg('kcalRatio');
+  const protein = avg('proteinRatio');
+
+  let mood, body, says;
+  if (silent >= 3) {
+    mood = 'hungry'; body = 'thin';
+    says = `${silent} 天沒看到你記錄了，牠在等你`;
+  } else if (!days.length) {
+    mood = 'ok'; body = 'normal';
+    says = '還沒有足夠的紀錄，先吃幾餐讓牠認識你';
+  } else if (kcal < 0.7) {
+    mood = 'thin'; body = 'thin';
+    says = `最近平均只吃到目標的 ${Math.round(kcal * 100)}%，牠跟著瘦了`;
+  } else if (kcal > 1.3) {
+    mood = 'round'; body = 'round';
+    says = `最近平均吃到目標的 ${Math.round(kcal * 100)}%，牠圓了一圈`;
+  } else if (kcal >= 0.9 && protein >= 0.9) {
+    mood = 'happy'; body = 'normal';
+    says = '熱量跟蛋白質都在範圍內，牠心情很好';
+  } else if (protein < 0.7) {
+    mood = 'ok'; body = 'normal';
+    says = `蛋白質只到目標的 ${Math.round(protein * 100)}%，牠有點沒力`;
+  } else {
+    mood = 'ok'; body = 'normal';
+    says = '還可以，但還有進步空間';
+  }
+
+  return {
+    mood, body, says,
+    days: days.length,
+    silent,
+    // 牡吃的跟你一樣：主人今天沒記錄，遊戲裡的飯磗就不會出現
+    ateToday: dailySummary(userId, today()).nutrition.items > 0,
+    kcalPct: Math.round(kcal * 100),
+    proteinPct: Math.round(protein * 100),
+  };
+}
+
+/* ---------------- 商城行為 ---------------- */
+
+export function buyItem(userId, itemId) {
+  const item = itemOf(itemId);
+  if (!item) throw Object.assign(new Error('沒有這個商品'), { status: 404 });
+
+  const pet = getPet(userId);
+  if (!pet) throw Object.assign(new Error('還沒有寵物'), { status: 400 });
+
+  const db = getDb(userId);
+  if (ownedItems(userId).includes(itemId)) {
+    throw Object.assign(new Error('已經買過了'), { status: 409 });
+  }
+  if (pet.coins < item.price) {
+    throw Object.assign(new Error(`代幣不夠，還差 ${item.price - pet.coins} 枚`), { status: 400 });
+  }
+
+  db.prepare('UPDATE pet SET coins = coins - ? WHERE id = 1').run(item.price);
+  db.prepare('INSERT INTO pet_items (item_id) VALUES (?)').run(itemId);
+  return equipItem(userId, itemId);   // 買了就直接換上
+}
+
+export function equipItem(userId, itemId) {
+  const item = itemOf(itemId);
+  if (!item) throw Object.assign(new Error('沒有這個商品'), { status: 404 });
+  if (!ownedItems(userId).includes(itemId)) {
+    throw Object.assign(new Error('還沒有這個東西'), { status: 400 });
+  }
+  const pet = getPet(userId);
+  const equipped = { ...pet.equipped, [item.slot]: itemId };
+  getDb(userId).prepare('UPDATE pet SET equipped = ? WHERE id = 1').run(JSON.stringify(equipped));
+  return getPet(userId);
+}
+
+/** 脫掉某一格的裝備（背景不給脫，不然場景會空掉） */
+export function unequipSlot(userId, slot) {
+  if (slot === 'bg') throw Object.assign(new Error('背景不能移除'), { status: 400 });
+  const pet = getPet(userId);
+  const equipped = { ...pet.equipped };
+  delete equipped[slot];
+  getDb(userId).prepare('UPDATE pet SET equipped = ? WHERE id = 1').run(JSON.stringify(equipped));
+  return getPet(userId);
+}
