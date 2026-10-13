@@ -1,4 +1,5 @@
 import { getDb, getProfile, updateProfile, GOAL_LABEL } from './db.js';
+import { rewardMealSaved } from './pet.js';
 import { generateContent, partsToText, partsToCalls } from './gemini.js';
 import {
   addMeal, getMeal, updateMeal, deleteMeal,
@@ -187,6 +188,7 @@ function runTool(userId, name, args = {}, photo = '') {
     case 'log_meal': {
       // 這一輪是照片辨識的話，把照片一起存進紀錄，之後回頭看得到吃了什麼
       const row = addMeal(userId, { ...args, photo }, photo ? 'photo' : 'ai');
+      rewardMealSaved(userId, row.date);
       const sum = dailySummary(userId, row.date);
       return {
         ok: true, saved: row,
@@ -204,6 +206,7 @@ function runTool(userId, name, args = {}, photo = '') {
       if (!before) return { ok: false, error: `找不到編號 #${id} 的飲食紀錄` };
       const { id: _drop, ...patch } = args;
       const after = updateMeal(userId, id, patch);
+      if (after) rewardMealSaved(userId, after.date);
       return { ok: true, before, saved: after, ...todayTotals(userId, after.date) };
     }
     case 'delete_meal': {

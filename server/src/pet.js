@@ -3,7 +3,7 @@
  *
  * 和原作不同的地方是「牠吃的跟你一樣」—— 寵物的心情與體態完全由飼主的
  * 飲食紀錄推算出來，不是另外一套數值。吃太少牠會瘦、吃太多牠會圓、
- * 連續幾天沒記錄牠會餓。代幣也只能靠達標賺，不能用別的方式取得。
+ * 連續幾天沒記錄牠會餓。代幣靠記錄飲食與達標賺，不能用別的方式取得。
  *
  * 外觀一律用 emoji 組出來，不需要任何圖檔或繪圖函式庫 ——
  * 這個專案其他地方（分頁列、標籤）也是這樣做的。
@@ -163,17 +163,52 @@ const COIN_LOGGED = 2;      // 有記錄就好
 const COIN_KCAL = 8;        // 熱量落在目標 ±10%
 const COIN_PROTEIN = 8;     // 蛋白質達到目標九成
 
-/** 某一天可以拿幾枚 */
+/**
+ * 新規則上線日：這天（含）之後，「有記錄 +2」與「熱量達標 +8」改成記錄當下入帳
+ * （見 rewardMealSaved），每日結算只剩蛋白質那份。這天之前的日子照舊結算，
+ * 否則上線前還沒結算到的日子會少拿。
+ */
+const INSTANT_FROM = '2026-10-14';
+const COIN_PER_UPDATE = 2;   // 每次新增或修改飲食
+
+/** 某一天結算時可以拿幾枚 */
 export function coinsForDay(userId, date) {
   const s = dailySummary(userId, date);
   if (!s.nutrition.items) return 0;          // 完全沒記錄
 
-  let c = COIN_LOGGED;
+  const legacy = date < INSTANT_FROM;
+  let c = legacy ? COIN_LOGGED : 0;
   const tk = s.targets.kcal || 0;
   const tp = s.targets.protein_g || 0;
-  if (tk && Math.abs(s.nutrition.kcal - tk) <= tk * 0.1) c += COIN_KCAL;
+  if (legacy && tk && Math.abs(s.nutrition.kcal - tk) <= tk * 0.1) c += COIN_KCAL;
   if (tp && s.nutrition.protein_g >= tp * 0.9) c += COIN_PROTEIN;
   return c;
+}
+
+/**
+ * 新增或修改一筆飲食之後呼叫：自動入帳，不用按領取。
+ *   每次 +2（新增、修改都算，刪除不算）
+ *   該日熱量第一次落在目標 ±10% 再 +8（每天最多一次）
+ * 沒有寵物就不發。回傳這次發了幾枚。
+ *
+ * 注意：+2 沒有次數上限，新增再刪除、反覆修改都能刷。這是使用者指定的規則。
+ */
+export function rewardMealSaved(userId, date) {
+  const pet = getPet(userId);
+  if (!pet) return 0;
+  const db = getDb(userId);
+  let earned = COIN_PER_UPDATE;
+
+  if (date && date >= INSTANT_FROM) {
+    const s = dailySummary(userId, date);
+    const tk = s.targets.kcal || 0;
+    if (tk && Math.abs(s.nutrition.kcal - tk) <= tk * 0.1) {
+      const r = db.prepare('INSERT OR IGNORE INTO pet_daily_bonus (date) VALUES (?)').run(date);
+      if (r.changes) earned += COIN_KCAL;
+    }
+  }
+  db.prepare('UPDATE pet SET coins = coins + ? WHERE id = 1').run(earned);
+  return earned;
 }
 
 /**

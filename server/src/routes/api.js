@@ -1,5 +1,6 @@
 import { getProfile, updateProfile } from '../db.js';
 import { quotaStatus } from '../gemini.js';
+import { rewardMealSaved } from '../pet.js';
 import { lastBackup } from '../autobackup.js';
 import { addGuest, getUser, isTempGuest, promote, removeGuest, USERS } from '../users.js';
 import {
@@ -125,11 +126,14 @@ export default async function apiRoutes(app) {
   app.get('/meals/dates', async (req) => listMealDates(viewUser(req)));
   app.post('/meals', async (req, reply) => {
     readOnlyGuard(req);
-    return reply.code(201).send(addMeal(req.userId, req.body));
+    const meal = addMeal(req.userId, req.body);
+    rewardMealSaved(req.userId, meal.date);
+    return reply.code(201).send(meal);
   });
   app.patch('/meals/:id', async (req, reply) => {
     readOnlyGuard(req);
     const row = updateMeal(req.userId, Number(req.params.id), req.body);
+    if (row) rewardMealSaved(req.userId, row.date);
     return row || reply.code(404).send({ error: '找不到紀錄' });
   });
   app.delete('/meals/:id', async (req, reply) => {

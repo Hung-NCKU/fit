@@ -366,8 +366,8 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
           >移除</button>
         </div>
         <p v-if="mine" class="small muted" style="margin:0">
-          代幣只能靠達標賺：有記錄 +2、熱量落在目標 ±10% +8、蛋白質達九成 +8。
-          每天結算一次，今天的要等明天才算。
+          代幣靠記錄賺：每新增或修改一筆飲食馬上 +2；當天熱量第一次落在目標 ±10% 再 +8（每天一次）。
+          蛋白質達九成 +8，隔天結算。
         </p>
       </div>
 
