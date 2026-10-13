@@ -211,7 +211,7 @@ function confirmRename() {
 </script>
 
 <template>
-  <div class="stack">
+  <div class="stack pet-page">
     <UserTabs v-model="viewing" />
 
     <div v-if="error" class="error">{{ error }}</div>
@@ -256,13 +256,13 @@ function confirmRename() {
 
     <!-- 已經有寵物 -->
     <template v-else-if="pet">
-      <div class="card scene-card">
-        <div class="spread" style="margin-bottom:.6rem">
-          <div>
+      <div class="card scene-card" :class="{ 'shop-preview': tab === 'shop' }">
+        <div class="spread scene-heading" style="margin-bottom:.6rem">
+          <div class="pet-title">
             <b>{{ pet.name || pet.speciesName }}</b>
             <span class="muted small"> · {{ pet.speciesName }}</span>
           </div>
-          <span class="row" style="gap:.5rem">
+          <span class="row wrap scene-actions" style="gap:.5rem">
             <span class="badge soft">🪙 {{ pet.coins }}</span>
             <button v-if="mine" class="icon" :disabled="busy" @click="renameName = pet.name; renaming = true">改名</button>
             <button v-if="mine && roster.length === 1" class="icon" :disabled="busy" @click="startChange">換一隻</button>
@@ -276,6 +276,7 @@ function confirmRename() {
           <PetActor v-for="(member, index) in roster" :key="member.petKey"
             :pet="member" :index="index" :count="roster.length" :state="state" :scene-height="sceneHeight"
             :selected="member.petKey === pet.petKey" :interactive="mine && !busy"
+            :preview="tab === 'shop' && member.petKey === pet.petKey"
             :wearing="member.petKey === pet.petKey ? worn : undefined" @select="choosePet" />
         </div>
 
@@ -444,12 +445,27 @@ function confirmRename() {
 
 
 /* ---- 場景 ---- */
+.pet-page, .scene-card { width:100%; min-width:0; max-width:100%; }
 .scene-card { overflow: hidden; }
+.scene-heading { flex-wrap:wrap; gap:.4rem; }
+.pet-title { min-width:0; overflow-wrap:anywhere; }
+.scene-actions { margin-left:auto; }
+.family button { max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+.scene-card.shop-preview { position:sticky; top:0; z-index:6; box-shadow:0 8px 18px #0006; }
+.shop-preview .scene { min-height:130px; max-height:clamp(130px, 26vh, 240px); }
+.shop-preview .family { margin-top:.5rem; }
+.shop-preview .says, .shop-preview .stats { display:none; }
+.shop-preview > p.small { margin:.4rem 0 0; }
+.shop-preview .family button { padding:.3rem .5rem; font-size:.75rem; }
+@media(max-height:600px) { .shop-preview .scene { min-height:100px; max-height:120px; } }
 .scene-card .says { color: var(--text); }
 /* 插畫本身是米白底的，疊在深色上一定像貼紙。
    索性讓整個場景用同一組暖色，變成一扇「看進牠世界」的窗。 */
 .scene {
   position: relative;
+  width:100%;
+  min-width:0;
+  max-width:100%;
   height: auto;
   aspect-ratio: 16 / 9;
   min-height: 220px;

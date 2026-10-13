@@ -183,12 +183,14 @@ onMounted(async () => {
 
 @media (max-width: 460px) {
   .page { display: none; }
-  .topbar { gap: .45rem; }
+  .topbar { gap: .45rem; flex-wrap:wrap; }
+  .topbar .who { max-width:35vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 }
 
 .content {
   flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
   overflow-y: auto;
   padding: 1rem;
   padding-left: calc(1rem + var(--safe-left));
