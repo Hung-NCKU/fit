@@ -35,8 +35,8 @@ const WEAR = {
   dog: [
     ['hat', '棒球帽'], ['hat', '骨頭漁夫帽'], ['hat', '星星睡帽'],
     ['acc', '點點頭巾'], ['acc', '條紋圍巾'], ['acc', '藍領結'],
-    // 原圖這一格就是帽 T 跟雨衣疊在一起畫的，切不開，索性當成一組賣
-    ['cloth', '雨天兩件組'], ['cloth', '吊帶褲'], ['acc', '骨頭後背包'],
+    // 原圖有兩件並排；角色顯示採左側的帽 T，保留既有商品識別碼。
+    ['cloth', '天藍帽T'], ['cloth', '吊帶褲'], ['acc', '骨頭後背包'],
   ],
   ferret: [
     ['hat', '紅毛線帽'], ['hat', '白貝雷帽'], ['hat', '格紋獵帽'],
@@ -87,6 +87,7 @@ export const WARDROBE = Object.fromEntries(
     species,
     list.map(([slot, name], i) => ({
       id: `wear-${species}-${i + 1}`,
+      species,
       slot,
       group: GROUP[slot],
       name,

@@ -1,6 +1,7 @@
 import {
   SPECIES, shopFor, getPet, adoptPet, ownedItems,
   settleCoins, petState, buyItem, equipItem, unequipSlot, speciesOf, replacePet,
+  listPets, purchasePet, selectPet, renamePet, PET_PRICE, itemOf,
 } from '../pet.js';
 import { behaviorOf } from '../pet-behavior.js';
 import { getUser } from '../users.js';
@@ -40,6 +41,12 @@ export default async function petRoutes(app) {
       state: petState(u),
       // 生活習性（來源：pet/動物特性.txt），前端的行為狀態機吃這份
       behavior: behaviorOf(pet.species),
+      roster: listPets(u).map(p => ({
+        petKey: p.petKey, species: p.species, name: p.name, equipped: p.equipped,
+        speciesName: speciesOf(p.species).name, behavior: behaviorOf(p.species),
+        worn: ['hat', 'cloth', 'acc'].map(slot => itemOf(p.equipped[slot])).filter(item => item && item.species === p.species),
+      })),
+      petsForSale: SPECIES.map(s => ({ species: s.id, name: s.name, nick: s.nick, price: PET_PRICE, img: `/pets/${s.id}-pet.webp` })),
       owned: ownedItems(u),
       shop: shopFor(pet.species),
       settled,
@@ -68,13 +75,26 @@ export default async function petRoutes(app) {
 
   app.post('/pet/buy', async (req) => {
     writeGuard(req);
-    return buyItem(req.userId, req.body?.item);
+    return buyItem(req.userId, req.body?.item, req.body?.petKey);
+  });
+
+  app.post('/pet/purchase', async (req, reply) => {
+    writeGuard(req);
+    return reply.code(201).send(purchasePet(req.userId, req.body?.species, req.body?.name, req.body?.requestId));
+  });
+  app.post('/pet/select', async (req) => {
+    writeGuard(req);
+    return selectPet(req.userId, req.body?.petKey);
+  });
+  app.patch('/pet/name', async (req) => {
+    writeGuard(req);
+    return renamePet(req.userId, req.body?.petKey, req.body?.name);
   });
 
   app.post('/pet/equip', async (req) => {
     writeGuard(req);
     return req.body?.slot
-      ? unequipSlot(req.userId, req.body.slot)
-      : equipItem(req.userId, req.body?.item);
+      ? unequipSlot(req.userId, req.body.slot, req.body?.petKey)
+      : equipItem(req.userId, req.body?.item, req.body?.petKey);
   });
 }

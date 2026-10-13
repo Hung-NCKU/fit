@@ -1,7 +1,8 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, useId } from 'vue';
 import layouts from '../pet-frame-layout.json';
-const props = defineProps({ species: String, pose: String, label: String });
+const props = defineProps({ species: String, pose: String, label: String, resting: Boolean });
+const instanceId = useId();
 const layout = computed(() => layouts[props.species]);
 const frames = computed(() => layout.value.poses[props.pose] || layout.value.poses.idle);
 const duration = computed(() => {
@@ -9,11 +10,11 @@ const duration = computed(() => {
   const slowerWalk = ({ tortoise: 3, hedgehog: 1.5, guinea: 1.2, parrot: 1.2 })[props.species] || 1;
   return `${seconds * (props.pose === 'walk' ? slowerWalk : 1)}s`;
 });
-const clipId = i => `pet-frame-${props.species}-${props.pose}-${i}`;
+const clipId = i => `pet-frame-${instanceId}-${props.species}-${props.pose}-${i}`;
 </script>
 
 <template>
-  <span class="pet-frames" :class="pose" :style="{ '--duration': duration }" role="img" :aria-label="label">
+  <span class="pet-frames" :class="[pose, { resting }]" :style="{ '--duration': duration }" role="img" :aria-label="label">
     <svg v-for="(viewport, i) in frames" :key="i" class="frame" :class="`frame-${i}`" :viewBox="viewport" :style="{ animationDelay: `calc(var(--duration) * ${i ? (i - 4) / 4 : 0})` }" aria-hidden="true">
       <defs><clipPath :id="clipId(i)" clipPathUnits="userSpaceOnUse"><rect v-bind="layout.bounds[pose || 'idle'][i]" /></clipPath></defs>
       <image :href="`/pets/animated-${species}-v2.webp`" :width="layout.width" :height="layout.height" :clip-path="`url(#${clipId(i)})`" />
@@ -34,6 +35,8 @@ const clipId = i => `pet-frame-${props.species}-${props.pose}-${i}`;
 @keyframes eyes-half { 0%, 90%, 100% { opacity: 0; } 88% { opacity: 1; } }
 @keyframes eyes-closed { 0%, 93%, 100% { opacity: 0; } 90% { opacity: 1; } }
 @keyframes eyes-reopen { 0%, 94%, 100% { opacity: 0; } 93% { opacity: 1; } }
+.resting .frame { animation: none; opacity: 0; }
+.resting .frame-2 { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
   .frame { animation: none; opacity: 0; }
   .frame-0 { opacity: 1; }

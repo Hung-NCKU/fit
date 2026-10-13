@@ -106,6 +106,19 @@ CREATE TABLE IF NOT EXISTS pet (
 );
 
 -- 每天熱量達標的 +8 只發一次，用日期當主鍵擋重複
+CREATE TABLE IF NOT EXISTS pet_companions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  species TEXT NOT NULL,
+  name TEXT NOT NULL,
+  equipped TEXT NOT NULL DEFAULT '{}',
+  purchase_id TEXT UNIQUE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+CREATE TABLE IF NOT EXISTS pet_selection (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  pet_key TEXT NOT NULL DEFAULT 'main'
+);
+
 CREATE TABLE IF NOT EXISTS pet_daily_bonus (
   date       TEXT PRIMARY KEY,
   created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))

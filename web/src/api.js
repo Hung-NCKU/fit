@@ -90,9 +90,12 @@ export const api = {
   // confirm 要帶目前這隻的名字，伺服器會核對 —— 這是唯一不可復原的操作
   replacePet: (species, name, confirm) =>
     request('/pet/replace', { method: 'POST', body: { species, name, confirm } }),
-  buyItem: (item) => request('/pet/buy', { method: 'POST', body: { item } }),
-  equipItem: (item) => request('/pet/equip', { method: 'POST', body: { item } }),
-  unequipSlot: (slot) => request('/pet/equip', { method: 'POST', body: { slot } }),
+  purchasePet: (species, name, requestId) => request('/pet/purchase', { method: 'POST', body: { species, name, requestId } }),
+  selectPet: (petKey) => request('/pet/select', { method: 'POST', body: { petKey } }),
+  renamePet: (petKey, name) => request('/pet/name', { method: 'PATCH', body: { petKey, name } }),
+  buyItem: (item, petKey) => request('/pet/buy', { method: 'POST', body: { item, petKey } }),
+  equipItem: (item, petKey) => request('/pet/equip', { method: 'POST', body: { item, petKey } }),
+  unequipSlot: (slot, petKey) => request('/pet/equip', { method: 'POST', body: { slot, petKey } }),
 
   pushConfig: () => request('/push/config'),
   pushSubscribe: (subscription) => request('/push/subscribe', { method: 'POST', body: { subscription } }),

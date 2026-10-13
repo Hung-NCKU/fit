@@ -86,10 +86,92 @@ export const itemOf = (id) => EVERYTHING.find(i => i.id === id) || null;
 
 const parse = (s, fallback) => { try { return JSON.parse(s); } catch { return fallback; } };
 
-export function getPet(userId) {
+export const PET_PRICE = 10_000;
+
+function mainPet(userId) {
   const row = getDb(userId).prepare('SELECT * FROM pet WHERE id = 1').get();
-  if (!row) return null;
-  return { ...row, equipped: parse(row.equipped, {}) };
+  return row ? { ...row, petKey: 'main', equipped: parse(row.equipped, {}) } : null;
+}
+
+export function listPets(userId) {
+  const main = mainPet(userId);
+  if (!main) return [];
+  const companions = getDb(userId).prepare('SELECT * FROM pet_companions ORDER BY id').all();
+  return [main, ...companions.map(row => ({
+    ...row, petKey: `companion-${row.id}`, coins: main.coins, settled_to: main.settled_to,
+    equipped: { ...parse(row.equipped, {}), bg: main.equipped.bg || 'bg_room' },
+  }))];
+}
+
+export function petByKey(userId, key) {
+  const pet = listPets(userId).find(p => p.petKey === key);
+  if (!pet) throw Object.assign(new Error('找不到這隻寵物'), { status: 404 });
+  return pet;
+}
+
+export function getPet(userId) {
+  const pets = listPets(userId);
+  if (!pets.length) return null;
+  const selected = getDb(userId).prepare('SELECT pet_key FROM pet_selection WHERE id = 1').get()?.pet_key;
+  return pets.find(p => p.petKey === selected) || pets[0];
+}
+
+export function selectPet(userId, key) {
+  petByKey(userId, key);
+  getDb(userId).prepare('INSERT INTO pet_selection (id, pet_key) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET pet_key = excluded.pet_key').run(key);
+  return getPet(userId);
+}
+
+function validPetName(value) {
+  const name = String(value ?? '').trim();
+  if (!name || name.length > 20) throw Object.assign(new Error('寵物名字請填 1～20 個字'), { status: 400 });
+  return name;
+}
+
+export function renamePet(userId, key, value) {
+  petByKey(userId, key);
+  const name = validPetName(value);
+  const db = getDb(userId);
+  if (key === 'main') db.prepare('UPDATE pet SET name = ? WHERE id = 1').run(name);
+  else db.prepare('UPDATE pet_companions SET name = ? WHERE id = ?').run(name, Number(key.replace('companion-', '')));
+  return petByKey(userId, key);
+}
+
+/** 購買只增加寵物；錢包、衣櫃、歷史紀錄都保留。requestId 防止重送扣兩次。 */
+export function purchasePet(userId, species, value, requestId) {
+  if (!SPECIES.some(s => s.id === species)) throw Object.assign(new Error('沒有這種寵物'), { status: 400 });
+  const name = validPetName(value);
+  if (!/^[a-zA-Z0-9_-]{12,80}$/.test(String(requestId ?? ''))) throw Object.assign(new Error('缺少有效的購買識別碼'), { status: 400 });
+  if (!mainPet(userId)) throw Object.assign(new Error('請先領養第一隻寵物'), { status: 400 });
+  const db = getDb(userId);
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const previous = db.prepare('SELECT * FROM pet_companions WHERE purchase_id = ?').get(requestId);
+    if (previous) {
+      if (previous.species !== species || previous.name !== name) throw Object.assign(new Error('購買識別碼已使用'), { status: 409 });
+      db.exec('COMMIT');
+      return petByKey(userId, `companion-${previous.id}`);
+    }
+    const paid = db.prepare('UPDATE pet SET coins = coins - ? WHERE id = 1 AND coins >= ?').run(PET_PRICE, PET_PRICE);
+    if (!paid.changes) throw Object.assign(new Error(`代幣不足，購買寵物需要 ${PET_PRICE.toLocaleString()} 枚`), { status: 400 });
+    const result = db.prepare('INSERT INTO pet_companions (species, name, purchase_id) VALUES (?, ?, ?)').run(species, name, requestId);
+    const key = `companion-${result.lastInsertRowid}`;
+    db.prepare('INSERT INTO pet_selection (id, pet_key) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET pet_key = excluded.pet_key').run(key);
+    db.exec('COMMIT');
+    return getPet(userId);
+  } catch (err) {
+    if (db.isTransaction) db.exec('ROLLBACK');
+    throw err;
+  }
+}
+
+function saveEquipment(userId, pet, equipped) {
+  const db = getDb(userId);
+  if (pet.petKey === 'main') db.prepare('UPDATE pet SET equipped = ? WHERE id = 1').run(JSON.stringify(equipped));
+  else {
+    const { bg, ...clothes } = equipped;
+    db.prepare('UPDATE pet_companions SET equipped = ? WHERE id = ?').run(JSON.stringify(clothes), pet.id);
+  }
 }
 
 export function adoptPet(userId, species, name) {
@@ -121,6 +203,7 @@ export function adoptPet(userId, species, name) {
  * 而不是把寵物換掉；任何誤觸也不可能湊出正確的名字。
  */
 export function replacePet(userId, species, name, confirmName) {
+  if (listPets(userId).length > 1) throw Object.assign(new Error('已經多養寵物，請切換照顧或到商城購買；不再使用替換重置'), { status: 409 });
   const current = getPet(userId);
   if (current && String(confirmName ?? '').trim() !== current.name) {
     throw Object.assign(
@@ -144,6 +227,7 @@ export function replacePet(userId, species, name, confirmName) {
     );
   }
 
+  db.exec('DELETE FROM pet_selection');
   db.exec('DELETE FROM pet_items');
   db.exec('DELETE FROM pet');
   const fresh = adoptPet(userId, species, name);
@@ -336,44 +420,44 @@ export function petState(userId) {
 
 /* ---------------- 商城行為 ---------------- */
 
-export function buyItem(userId, itemId) {
+export function buyItem(userId, itemId, petKey = null) {
   const item = itemOf(itemId);
   if (!item) throw Object.assign(new Error('沒有這個商品'), { status: 404 });
-
-  const pet = getPet(userId);
+  const pet = petKey ? petByKey(userId, petKey) : getPet(userId);
   if (!pet) throw Object.assign(new Error('還沒有寵物'), { status: 400 });
-
+  if (item.species && item.species !== pet.species) throw Object.assign(new Error('這件穿搭不適合這隻寵物'), { status: 400 });
   const db = getDb(userId);
-  if (ownedItems(userId).includes(itemId)) {
-    throw Object.assign(new Error('已經買過了'), { status: 409 });
-  }
-  if (pet.coins < item.price) {
-    throw Object.assign(new Error(`代幣不夠，還差 ${item.price - pet.coins} 枚`), { status: 400 });
-  }
-
-  db.prepare('UPDATE pet SET coins = coins - ? WHERE id = 1').run(item.price);
-  db.prepare('INSERT INTO pet_items (item_id) VALUES (?)').run(itemId);
-  return equipItem(userId, itemId);   // 買了就直接換上
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    if (ownedItems(userId).includes(itemId)) throw Object.assign(new Error('已經買過了'), { status: 409 });
+    const paid = db.prepare('UPDATE pet SET coins = coins - ? WHERE id = 1 AND coins >= ?').run(item.price, item.price);
+    if (!paid.changes) throw Object.assign(new Error('代幣不足'), { status: 400 });
+    db.prepare('INSERT INTO pet_items (item_id) VALUES (?)').run(itemId);
+    const result = equipItem(userId, itemId, pet.petKey);
+    db.exec('COMMIT');
+    return result;
+  } catch (err) { if (db.isTransaction) db.exec('ROLLBACK'); throw err; }
 }
 
-export function equipItem(userId, itemId) {
+export function equipItem(userId, itemId, petKey = null) {
   const item = itemOf(itemId);
   if (!item) throw Object.assign(new Error('沒有這個商品'), { status: 404 });
-  if (!ownedItems(userId).includes(itemId)) {
-    throw Object.assign(new Error('還沒有這個東西'), { status: 400 });
-  }
-  const pet = getPet(userId);
-  const equipped = { ...pet.equipped, [item.slot]: itemId };
-  getDb(userId).prepare('UPDATE pet SET equipped = ? WHERE id = 1').run(JSON.stringify(equipped));
+  if (!ownedItems(userId).includes(itemId)) throw Object.assign(new Error('還沒有這個東西'), { status: 400 });
+  const pet = petKey ? petByKey(userId, petKey) : getPet(userId);
+  if (!pet) throw Object.assign(new Error('還沒有寵物'), { status: 400 });
+  if (item.species && item.species !== pet.species) throw Object.assign(new Error('這件穿搭不適合這隻寵物'), { status: 400 });
+  const target = item.slot === 'bg' ? mainPet(userId) : pet;
+  saveEquipment(userId, target, { ...target.equipped, [item.slot]: itemId });
   return getPet(userId);
 }
 
-/** 脫掉某一格的裝備（背景不給脫，不然場景會空掉） */
-export function unequipSlot(userId, slot) {
+export function unequipSlot(userId, slot, petKey = null) {
   if (slot === 'bg') throw Object.assign(new Error('背景不能移除'), { status: 400 });
-  const pet = getPet(userId);
+  if (!['hat', 'cloth', 'acc'].includes(slot)) throw Object.assign(new Error('沒有這個穿搭部位'), { status: 400 });
+  const pet = petKey ? petByKey(userId, petKey) : getPet(userId);
+  if (!pet) throw Object.assign(new Error('還沒有寵物'), { status: 400 });
   const equipped = { ...pet.equipped };
   delete equipped[slot];
-  getDb(userId).prepare('UPDATE pet SET equipped = ? WHERE id = 1').run(JSON.stringify(equipped));
+  saveEquipment(userId, pet, equipped);
   return getPet(userId);
 }
