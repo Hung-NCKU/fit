@@ -100,6 +100,13 @@ web/tools/build-petgame.sh   # --import、--export-release Web，最後產生 .g
 
 ## 新增使用者
 
+臨時試用的話不必改程式：登入後在主頁（寵物頁）按「＋ 新增訪客」，
+會當場建一個獨立帳號並顯示密碼（只顯示一次）。資料存在
+`server/data/guests.json`，不進版控，也不必重啟。要刪掉就打
+`DELETE /api/guests/<id>`。
+
+下面是「固定帳號」的加法（像 Martina、Eli 那種長期的）。
+
 每位使用者一個獨立的 SQLite 檔（`server/data/fit-<id>.db`），第一次有人用那個身分
 登入時自動建立。所以新增一位只要兩個步驟：
 

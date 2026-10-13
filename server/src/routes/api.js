@@ -1,7 +1,7 @@
 import { getProfile, updateProfile } from '../db.js';
 import { quotaStatus } from '../gemini.js';
 import { lastBackup } from '../autobackup.js';
-import { getUser, USERS } from '../users.js';
+import { addGuest, getUser, removeGuest, USERS } from '../users.js';
 import {
   addMeal, listMeals, listMealDates, updateMeal, deleteMeal,
   addWorkout, listWorkouts, updateWorkout, deleteWorkout,
@@ -35,7 +35,33 @@ export default async function apiRoutes(app) {
     id: u.id,
     name: u.name,
     isMe: u.id === req.userId,
+    guest: Boolean(u.guest),
   })));
+
+  /**
+   * 新增一個臨時訪客帳號。
+   *
+   * 要先登入才能建——這個服務是對外開放的（Tailscale Funnel），
+   * 不擋的話任何人都能自己開帳號進來。
+   *
+   * 回應裡的明碼密碼**只有這一次**拿得到，之後只存在 server/data/guests.json。
+   */
+  app.post('/guests', async (req, reply) => {
+    const g = addGuest();
+    req.log.warn({ by: req.userId, guest: g.id }, '新增訪客帳號');
+    return reply.code(201).send({ id: g.id, name: g.name, password: g.password });
+  });
+
+  app.delete('/guests/:id', async (req) => {
+    if (req.params.id === req.userId) {
+      throw Object.assign(new Error('不能刪掉自己正在用的帳號'), { status: 400 });
+    }
+    if (!removeGuest(req.params.id)) {
+      throw Object.assign(new Error('沒有這個訪客帳號（固定帳號不能從這裡刪）'), { status: 404 });
+    }
+    req.log.warn({ by: req.userId, guest: req.params.id }, '刪除訪客帳號');
+    return { ok: true };
+  });
 
   /* ---- 個人檔案 ---- */
 

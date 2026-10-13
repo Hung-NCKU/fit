@@ -11,9 +11,21 @@ export const authRequired = () => anyPasswordSet();
  * Cookie 簽章金鑰由所有密碼推導，所以改任何一個密碼＝所有裝置自動登出，
  * 也省去另外管理一組 secret。
  */
+/**
+ * Cookie 的簽章金鑰。
+ *
+ * 從密碼推導出來是刻意的：改了密碼，舊的登入就自動失效，不必另外做撤銷。
+ *
+ * 但**只看固定帳號**（.env 那幾組）。訪客是主頁按鈕隨時新增的，
+ * 如果把他們也算進去，每按一次「新增訪客」就等於換了一把鑰匙，
+ * 連自己都會被登出——那個按鈕就沒人敢按了。
+ */
 export const sessionSecret = () =>
   createHash('sha256')
-    .update('fit-session:' + USERS.map(u => `${u.id}=${passwordOf(u)}`).join('|'))
+    .update('fit-session:' + USERS
+      .filter(u => !u.guest)
+      .map(u => `${u.id}=${passwordOf(u)}`)
+      .join('|'))
     .digest('hex');
 
 /** 定時比較，避免用回應時間猜密碼 */

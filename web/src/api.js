@@ -51,6 +51,10 @@ export const api = {
 
   users: () => request('/users'),
 
+  // 新增訪客。回應裡的密碼只有這一次拿得到，拿到就要顯示給使用者看。
+  addGuest: () => request('/guests', { method: 'POST' }),
+  deleteGuest: (id) => request(`/guests/${id}`, { method: 'DELETE' }),
+
   listMeals: (p) => request('/meals' + qs(p)),
   mealDates: (user) => request('/meals/dates' + qs({ user })),
   addMeal: (body) => request('/meals', { method: 'POST', body }),

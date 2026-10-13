@@ -246,11 +246,76 @@ function confirmChange() {
   }, 'change');
 }
 const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
+
+/* ---------------- 新增訪客 ---------------- */
+
+/**
+ * 主頁的「新增訪客」按鈕。
+ *
+ * 要讓別人臨時試用，原本得改 users.js、填 .env、重開服務。改成按一下就建一個
+ * 獨立帳號（自己的資料庫、自己的寵物），密碼當場產生。
+ *
+ * 沒設密碼就不顯示：那代表整個服務沒在驗證，誰都進得來，多開帳號沒有意義。
+ */
+const canInvite = computed(() => session.authRequired && mine.value);
+const newGuest = ref(null);
+const copied = ref(false);
+
+async function invite() {
+  if (busy.value) return;
+  busy.value = 'guest';
+  error.value = '';
+  copied.value = false;
+  try {
+    newGuest.value = await api.addGuest();
+    // 分頁列是吃 session.users 的，重抓一次新帳號才會出現
+    session.users = await api.users();
+  } catch (e) {
+    error.value = e.message;
+  } finally {
+    busy.value = null;
+  }
+}
+
+async function copyPassword() {
+  try {
+    await navigator.clipboard.writeText(newGuest.value.password);
+    copied.value = true;
+  } catch {
+    // 沒有剪貼簿權限（非 https 或使用者拒絕）就算了，密碼本來就看得到
+    copied.value = false;
+  }
+}
 </script>
 
 <template>
   <div class="stack">
     <UserTabs v-model="viewing" />
+
+    <!-- 新增訪客：建一個獨立帳號給別人試用，密碼只顯示這一次 -->
+    <div v-if="canInvite" class="row invite">
+      <button class="icon" :disabled="busy" @click="invite">
+        {{ busy === 'guest' ? '建立中…' : '＋ 新增訪客' }}
+      </button>
+    </div>
+
+    <div v-if="newGuest" class="card stack guest-card">
+      <div class="spread">
+        <b>{{ newGuest.name }} 建好了</b>
+        <button class="icon" @click="newGuest = null">關閉</button>
+      </div>
+      <p class="small muted" style="margin:0">
+        把這組密碼給對方，他登入後就是一個獨立的帳號——自己的飲食紀錄、自己的寵物。
+      </p>
+      <div class="row pw">
+        <code>{{ newGuest.password }}</code>
+        <button class="icon" @click="copyPassword">{{ copied ? '已複製' : '複製' }}</button>
+      </div>
+      <p class="small" style="margin:0; color: var(--danger)">
+        密碼只會顯示這一次，關掉就看不到了。
+      </p>
+    </div>
+
     <div v-if="error" class="error">{{ error }}</div>
     <div v-if="loading && !data" class="card empty">載入中…</div>
 
@@ -414,6 +479,22 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
 </template>
 
 <style scoped>
+/* ---- 新增訪客 ---- */
+.invite { justify-content: flex-end; }
+.guest-card .pw {
+  gap: .6rem;
+  align-items: center;
+}
+.guest-card code {
+  flex: 1;
+  padding: .5rem .7rem;
+  border-radius: 10px;
+  background: var(--surface-2);
+  font-size: 1.05rem;
+  letter-spacing: .04em;
+  user-select: all;      /* 點一下就整組選起來，手機上好複製 */
+}
+
 /* 換寵物是唯一不可復原的動作，勾選框故意放在按鈕上方一段距離 */
 .agree {
   gap: .5rem;

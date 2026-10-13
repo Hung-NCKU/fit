@@ -5,9 +5,14 @@
  *
  * 身分由密碼決定：輸入誰的密碼就以誰的身分登入（見 auth.js）。
  * envKey 指向 server/.env 裡的欄位；留空＝該帳號停用，無法登入。
+ *
+ * 固定帳號寫在下面這份 BUILTIN；主頁「新增訪客」按鈕建立的臨時帳號
+ * 存在 server/data/guests.json（見 guests.js），開機時併進 USERS。
+ * 兩者的差別只有密碼放哪裡：固定帳號在 .env，訪客在那份 JSON 裡。
  */
+import { createGuest, deleteGuest, loadGuests } from './guests.js';
 
-export const USERS = [
+const BUILTIN = [
   {
     id: 'martina',
     name: 'Martina',
@@ -44,6 +49,30 @@ export const USERS = [
   },
 ];
 
+/**
+ * 所有使用者。**就地新增，不要重新指派**——其他模組是 `import { USERS }`
+ * 拿到同一個陣列參照，整個換掉的話它們會繼續看著舊的那個。
+ */
+export const USERS = [...BUILTIN, ...loadGuests()];
+
+/** 新增一個訪客，馬上生效（不必重啟）。回傳含明碼密碼，只有這一次拿得到。 */
+export function addGuest() {
+  const g = createGuest();
+  USERS.push(g);
+  return g;
+}
+
+/** 移除訪客。固定帳號不給刪——那要改程式碼。 */
+export function removeGuest(id) {
+  const i = USERS.findIndex(u => u.id === id && u.guest);
+  if (i < 0) return false;
+  if (!deleteGuest(id)) return false;
+  USERS.splice(i, 1);
+  return true;
+}
+
+export const guestUsers = () => USERS.filter(u => u.guest);
+
 export const userIds = () => USERS.map(u => u.id);
 
 export const getUser = (id) => USERS.find(u => u.id === id) || null;
@@ -53,8 +82,12 @@ export const userName = (id) => getUser(id)?.name ?? id;
 /** 另一個人（目前只有兩位，之後要擴充再改成回傳陣列） */
 export const otherUsers = (id) => USERS.filter(u => u.id !== id);
 
-/** 該使用者目前設定的密碼；沒設定就回空字串（代表這個帳號停用） */
-export const passwordOf = (user) => String(process.env[user.envKey] ?? '');
+/**
+ * 該使用者目前設定的密碼；沒設定就回空字串（代表這個帳號停用）。
+ * 訪客的密碼跟著帳號本身走，固定帳號的在 .env。
+ */
+export const passwordOf = (user) =>
+  String(user?.password ?? process.env[user?.envKey] ?? '');
 
 /** 有任何一個帳號設了密碼就代表要驗證 */
 export const anyPasswordSet = () => USERS.some(u => passwordOf(u).length > 0);
