@@ -6,6 +6,7 @@ import { session } from './auth.js';
 import LoginView from './views/LoginView.vue';
 import PhotoViewer from './components/PhotoViewer.vue';
 import NotifyToggle from './components/NotifyToggle.vue';
+import DeleteAccount from './components/DeleteAccount.vue';
 import NewAccount from './components/NewAccount.vue';
 
 const route = useRoute();
@@ -62,6 +63,7 @@ onMounted(async () => {
     session.name = s.name;
     session.users = s.users || [];
     session.trial = Boolean(s.trial);
+    session.guest = Boolean(s.guest);
   } catch {
     session.authRequired = true;
     session.authed = false;
@@ -89,6 +91,7 @@ onMounted(async () => {
         <span class="muted small page">{{ title }}</span>
         <span v-if="session.name" class="who">{{ session.name }}</span>
         <span class="bell-spacer"></span>
+        <DeleteAccount v-if="session.authed" />
         <NewAccount v-if="session.authed" />
         <NotifyToggle />
         <button v-if="canShowInstall" class="icon install" @click="install">📲 安裝</button>

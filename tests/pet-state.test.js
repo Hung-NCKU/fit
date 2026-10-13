@@ -48,9 +48,9 @@ describe('寵物狀態看的是哪幾天', () => {
     expect(s.days).toBeGreaterThan(0);
   });
 
-  it('完全沒有紀錄的使用者才會餓著', () => {
+  it('從未記錄的新帳號不累計缺席天數', () => {
     const s = pet.petState('martina');   // 這個拋棄式資料庫裡沒有餵過
-    expect(s.silent).toBeGreaterThan(0);
+    expect(s.silent).toBe(0);
     expect(s.ateToday).toBe(false);
   });
 });

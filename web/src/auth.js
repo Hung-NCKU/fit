@@ -9,7 +9,7 @@ export const session = reactive({
   name: null,      // 顯示用的名字
   users: [],       // 所有使用者 [{ id, name }]
   trial: false,    // 還在試用（訪客），還沒建帳號
-  trial: false,    // 還在試用（訪客），還沒建帳號
+  guest: false,    // 後台建立的帳號（可自己刪除）
 });
 
 /** 另一位使用者（目前只有兩人） */

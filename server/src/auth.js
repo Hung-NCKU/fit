@@ -130,6 +130,7 @@ export default async function authRoutes(app) {
       name: id ? getUser(id).name : null,
       // 還在試用＝還沒建帳號。前端用它決定右上角要寫「建立帳號」還是「新增使用者」
       trial: Boolean(id && getUser(id)?.temp),
+      guest: Boolean(id && getUser(id)?.guest),
       users: USERS.map(u => ({ id: u.id, name: u.name })),
     };
   });

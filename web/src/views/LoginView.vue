@@ -17,6 +17,7 @@ async function adoptSession() {
   session.users = s.users || [];
   session.authed = s.authed;
   session.trial = Boolean(s.trial);
+  session.guest = Boolean(s.guest);
 }
 
 /**

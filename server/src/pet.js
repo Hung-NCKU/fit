@@ -291,6 +291,14 @@ export function petState(userId) {
     if (dailySummary(userId, daysAgo(i)).nutrition.items) break;
     silent++;
   }
+  // 從來沒記錄過的新帳號不算「沒看到你」：往前找 60 天都沒有就當作還沒開始
+  if (silent > WINDOW) {
+    let ever = false;
+    for (let i = WINDOW + 1; i <= 60 && !ever; i++) {
+      ever = Boolean(dailySummary(userId, daysAgo(i)).nutrition.items);
+    }
+    if (!ever) silent = 0;
+  }
 
   const avg = (k) => (days.length ? days.reduce((a, b) => a + b[k], 0) / days.length : 0);
   const kcal = avg('kcalRatio');

@@ -60,6 +60,7 @@ async function submit() {
     session.user = s.user;
     session.name = s.name;
     session.trial = s.trial;
+    session.guest = Boolean(s.guest);
     session.users = await api.users();
     done.value = r;
     open.value = false;
@@ -87,7 +88,7 @@ async function submit() {
       </div>
 
       <p v-if="session.trial" class="small muted" style="margin:0">
-        你現在是訪客，關掉就沒了。填完就會變成正式帳號，剛剛記的東西都會留著。
+        你現在是試用訪客。建立帳號後會保留剛剛記的東西；沒建立的話，閒置一段時間會被清掉，之後只能用開始試用時給的密碼登入。
       </p>
 
       <label class="f">

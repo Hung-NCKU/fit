@@ -35,20 +35,6 @@ const BUILTIN = [
       notes: '體重與身高比例正常，目標是穩定增肌、控制體脂。',
     },
   },
-  {
-    id: 'guest',
-    name: '訪客',
-    envKey: 'PASSWORD_GUEST',
-    // seed 是建資料庫時才用的一次性初始值，而且每個欄位都必填，
-    // 所以這裡放一組中性的暫定數字。登入之後直接跟教練說
-    //「我 30 歲、170 公分、65 公斤、想增肌」就會重算每日目標
-    //（update_goal 工具），不必改這個檔案。
-    seed: {
-      sex: 'female', age: 30, height_cm: 170, weight_kg: 65,
-      goal_weight_kg: 65, activity: 1.55, goal: 'maintain',
-      notes: '這是通用帳號，身體數據還是暫定的。跟教練說一次真實的年齡、身高、體重與目標，牠會重算。',
-    },
-  },
 ];
 
 /**

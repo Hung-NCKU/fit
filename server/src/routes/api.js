@@ -1,4 +1,4 @@
-import { getProfile, updateProfile } from '../db.js';
+import { destroyDb, getProfile, updateProfile } from '../db.js';
 import { quotaStatus } from '../gemini.js';
 import { rewardMealSaved } from '../pet.js';
 import { lastBackup } from '../autobackup.js';
@@ -90,6 +90,25 @@ export default async function apiRoutes(app) {
       // 升級的人密碼沒變（試用開始時就給過了），新帳號才需要回傳
       password: upgrading ? null : target.password,
     });
+  });
+
+  /**
+   * 刪除「自己」的帳號（header 的刪除鈕）。
+   * 只有後台建立的帳號（試用訪客、新增的使用者）能刪；固定帳號寫在 users.js，
+   * 不能從這裡刪。資料庫檔案會一起刪，無法復原。
+   */
+  app.delete('/account', async (req, reply) => {
+    const u = getUser(req.userId);
+    if (!u || !u.guest) {
+      throw Object.assign(new Error('固定帳號不能從這裡刪除'), { status: 403 });
+    }
+    if (!removeGuest(u.id)) {
+      throw Object.assign(new Error('刪除失敗'), { status: 500 });
+    }
+    destroyDb(u.id);
+    req.log.warn({ account: u.id }, '使用者刪除了自己的帳號');
+    reply.clearCookie('fit_auth', { path: '/' });
+    return { ok: true };
   });
 
   // 建立訪客的端點在 auth.js（POST /api/guest）——它要發 cookie 直接登入，

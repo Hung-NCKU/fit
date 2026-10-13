@@ -1,5 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
-import { mkdirSync, readdirSync, readFileSync, existsSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { USERS, getUser } from './users.js';
@@ -194,6 +194,15 @@ function seedProfile(db, user) {
 /* ---------------- 連線管理 ---------------- */
 
 const connections = new Map();
+
+/** 關掉某位使用者的連線並刪掉資料庫檔（刪除帳號用，無法復原） */
+export function destroyDb(userId) {
+  const db = connections.get(userId);
+  if (db) { try { db.close(); } catch { /* 已經關了 */ } connections.delete(userId); }
+  for (const suffix of ['', '-shm', '-wal']) {
+    try { rmSync(`${dbPath(userId)}${suffix}`, { force: true }); } catch { /* 清不掉就算了 */ }
+  }
+}
 
 /** 取得某位使用者的資料庫連線（第一次呼叫時建立檔案與 schema） */
 export function getDb(userId) {
