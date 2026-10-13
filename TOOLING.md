@@ -50,7 +50,8 @@ sudo apt-get install imagemagick webp
 
 web/tools/slice-pets.sh      # 十隻角色卡與去背本體
 web/tools/slice-actions.sh   # 十隻 × 五個動作（待機/行走/進食/睡覺/玩耍）
-web/tools/build-catalog.sh   # pet/素材 -> 213 件商品 + server/src/pet-catalog.json
+web/tools/build-catalog.sh   # pet/素材 -> 去背小物（給 build-scenes.sh 組場景用）
+web/tools/slice-wear.sh      # pet/穿搭 -> 每隻動物自己的衣櫃（商城賣的就是這些）
 web/tools/build-anim.sh      # 十張 sprite sheet -> server/src/pet-anim.json
 web/tools/build-scenes.sh    # 用乾淨的素材組出五張沒有動物的場景背景
 ```

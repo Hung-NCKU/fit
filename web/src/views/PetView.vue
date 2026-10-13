@@ -187,12 +187,12 @@ const worn = computed(() => [hat.value, cloth.value, shoe.value, acc.value].filt
 /** 體態只影響顯示大小，不改 emoji —— 同一隻動物胖瘦用縮放表現最直覺 */
 const bodyScale = computed(() => ({ thin: .82, normal: 1, round: 1.18 }[state.value?.body] ?? 1));
 
+// 穿搭素材只有帽子、衣服、配件三個部位，沒有鞋襪；
+// 擺飾也退場了——場景背景本來就把家具畫進去了（build-scenes.sh）。
 const SLOTS = [
   { id: 'bg',    label: '環境' },
-  { id: 'decor', label: '擺飾' },
   { id: 'hat',   label: '帽子' },
   { id: 'cloth', label: '衣服' },
-  { id: 'shoe',  label: '鞋襪' },
   { id: 'acc',   label: '配件' },
 ];
 
@@ -592,10 +592,12 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
   z-index: 2;
   filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .2));
 }
-.worn.hat   { top: -14%; width: 42%; }
-.worn.cloth { top: 36%;  width: 54%; opacity: .95; }
-.worn.shoe  { bottom: -6%; width: 34%; }
-.worn.acc   { top: 22%;  width: 32%; }
+/* 動作圖是去邊裁出來的，動物本身就貼著上緣，所以帽子只要再往上一點點就好；
+   -14% 會整頂浮在頭頂上方。配件與衣服的位置是三個部位的折衷——
+   同一個 acc 槽裡既有頭圈也有側背包，不可能都剛好。 */
+.worn.hat   { top: -5%; width: 40%; }
+.worn.cloth { top: 38%; width: 52%; opacity: .95; }
+.worn.acc   { top: 24%; width: 32%; }
 
 .says { margin: .8rem 0 .2rem; }
 .doing { margin: 0 0 .5rem; }

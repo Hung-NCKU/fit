@@ -1,5 +1,5 @@
 import {
-  SPECIES, SHOP, getPet, adoptPet, ownedItems,
+  SPECIES, shopFor, getPet, adoptPet, ownedItems,
   settleCoins, petState, buyItem, equipItem, unequipSlot, speciesOf, replacePet,
 } from '../pet.js';
 import { behaviorOf } from '../pet-behavior.js';
@@ -38,10 +38,10 @@ export default async function petRoutes(app) {
       species: SPECIES,
       pet: { ...pet, speciesName: speciesOf(pet.species).name, tint: speciesOf(pet.species).tint },
       state: petState(u),
-      // 生活習性（來源：pet/動物特性.txt），Godot 的狀態機吃這份
+      // 生活習性（來源：pet/動物特性.txt），前端的行為狀態機吃這份
       behavior: behaviorOf(pet.species),
       owned: ownedItems(u),
-      shop: SHOP,
+      shop: shopFor(pet.species),
       settled,
     };
   });

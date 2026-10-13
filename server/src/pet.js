@@ -10,7 +10,7 @@
  */
 import { getDb } from './db.js';
 import { dailySummary, today, daysAgo } from './records.js';
-import CATALOG from './pet-catalog.json' with { type: 'json' };
+import { ALL_WEAR, wardrobeOf } from './pet-wardrobe.js';
 
 /* ---------------- 可選的寵物 ---------------- */
 
@@ -40,14 +40,16 @@ export const speciesOf = (id) => SPECIES.find(s => s.id === id) || SPECIES[0];
 /**
  * 商城。
  *
- * 商品來自 pet/素材/（使用者畫的兩本圖鑑，已經去背分類，還附一份
- * 素材索引.csv 標了真實名稱）。web/tools/build-catalog.sh 把它轉成
- * WebP 並產生 pet-catalog.json，這裡直接讀那份目錄。
+ * 賣兩種東西：五個環境，以及「目前這隻的衣服」。
  *
- * 之前是用 ImageMagick 的連通區域分析自動從整張商品圖切，名稱只能用猜的；
- * 有了圖鑑就沒必要再猜。切圖那套做法留在 web/tools/slice-items.sh。
+ * 衣服是跟著物種走的——pet/穿搭/ 裡每隻動物有一張自己的衣櫃，配色也不一樣，
+ * 所以同一頂草帽在天竺鼠身上是草綠色、在貓身上是橘色。清單因此由
+ * shopFor(species) 組出來，不是一份固定的 SHOP。
  *
- * slot 相同的東西互相取代（同時只能戴一頂帽子、擺一樣擺飾）。
+ * 先前賣的是圖鑑切出來的兩百多件通用道具（pet-catalog.json）。那份素材還在，
+ * 現在的用途是給 build-scenes.sh 組場景背景，不再上架。
+ *
+ * slot 相同的東西互相取代（同時只能戴一頂帽子）。
  * group 只影響商城怎麼分區顯示，不影響穿戴規則。
  */
 
@@ -60,18 +62,25 @@ const SCENES = [
   ['bg_space',  '太空艙',  400, '誰說寵物不能上太空'],
 ];
 
-export const SHOP = [
-  ...SCENES.map(([id, name, price, desc]) => ({
-    id, slot: 'bg', group: '環境', name, price, desc,
-    img: `/pets/scene-${id.replace(/^bg_/, '')}.webp`,
-  })),
-  ...CATALOG.map(i => ({ ...i, desc: '' })),
-];
+/** 五個環境是所有物種共用的 */
+const SCENE_ITEMS = SCENES.map(([id, name, price, desc]) => ({
+  id, slot: 'bg', group: '環境', name, price, desc,
+  img: `/pets/scene-${id.replace(/^bg_/, '')}.webp`,
+}));
+
+/** 這隻看得到的商城內容 */
+export const shopFor = (species) => [...SCENE_ITEMS, ...wardrobeOf(species)];
+
+/**
+ * 查一件商品。要涵蓋所有物種的衣服，不能只看目前這隻的——
+ * 換寵物之後舊的穿戴紀錄還在 pet_history 裡，查得到才顯示得出來。
+ */
+const EVERYTHING = [...SCENE_ITEMS, ...ALL_WEAR];
 
 /** 商城的分區順序，前端照這個排 */
-export const SHOP_GROUPS = [...new Set(SHOP.map(i => i.group))];
+export const shopGroupsFor = (species) => [...new Set(shopFor(species).map(i => i.group))];
 
-export const itemOf = (id) => SHOP.find(i => i.id === id) || null;
+export const itemOf = (id) => EVERYTHING.find(i => i.id === id) || null;
 
 /* ---------------- 存取 ---------------- */
 
