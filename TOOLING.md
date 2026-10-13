@@ -100,10 +100,13 @@ web/tools/build-petgame.sh   # --import、--export-release Web，最後產生 .g
 
 ## 新增使用者
 
-臨時試用的話不必改程式：登入後在主頁（寵物頁）按「＋ 新增訪客」，
-會當場建一個獨立帳號並顯示密碼（只顯示一次）。資料存在
-`server/data/guests.json`，不進版控，也不必重啟。要刪掉就打
-`DELETE /api/guests/<id>`。
+臨時試用的話不必改程式：**登入頁**有一個「以訪客身分試用」，按一下就當場建一個
+獨立帳號並直接登入，密碼只顯示那一次。資料存在 `server/data/guests.json`，
+不進版控，也不必重啟。
+
+這個端點（`POST /api/guest`）是公開的——登入頁本來就還沒登入。所以它吃登入那組
+頻率限制（同一 IP 十分鐘八次），而且訪客總數上限 20（`MAX_GUESTS`）。
+要清理就用 `DELETE /api/guests/<id>`，那個要先用固定帳號登入，訪客不能刪。
 
 下面是「固定帳號」的加法（像 Martina、Eli 那種長期的）。
 

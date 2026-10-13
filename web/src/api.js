@@ -51,8 +51,9 @@ export const api = {
 
   users: () => request('/users'),
 
-  // 新增訪客。回應裡的密碼只有這一次拿得到，拿到就要顯示給使用者看。
-  addGuest: () => request('/guests', { method: 'POST' }),
+  // 以訪客身分試用：當場開一個帳號並直接登入（不用先登入就能打）。
+  // 回應裡的密碼只有這一次拿得到，要顯示給使用者抄下來。
+  guestLogin: () => request('/guest', { method: 'POST' }),
   deleteGuest: (id) => request(`/guests/${id}`, { method: 'DELETE' }),
 
   listMeals: (p) => request('/meals' + qs(p)),

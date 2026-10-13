@@ -1,5 +1,5 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { USERS, getUser, passwordOf, anyPasswordSet } from './users.js';
+import { USERS, addGuest, getUser, guestUsers, passwordOf, anyPasswordSet } from './users.js';
 
 export const COOKIE = 'fit_auth';
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 天
@@ -78,7 +78,16 @@ setInterval(() => {
 
 /* ---------------- 路徑與 cookie ---------------- */
 
-const PUBLIC_API = new Set(['/api/session', '/api/login', '/api/logout']);
+const PUBLIC_API = new Set(['/api/session', '/api/login', '/api/logout', '/api/guest']);
+
+/**
+ * 最多同時存在幾個訪客。
+ *
+ * 「以訪客身分試用」是放在登入頁的，也就是**還沒登入就能按**。這個服務對外開放
+ * （Tailscale Funnel），不設上限的話外面的人可以一直按，把磁碟塞滿一堆空資料庫。
+ * 搭配 rateLimit（同一個 IP 十分鐘八次）足以擋住隨手亂按。
+ */
+export const MAX_GUESTS = 20;
 
 export const isPublicPath = (url) => {
   const path = url.split('?')[0];
@@ -138,6 +147,33 @@ export default async function authRoutes(app) {
     clearAttempts(ip);
     reply.setCookie(COOKIE, user.id, cookieOptions(req));
     return { ok: true, user: user.id, name: user.name };
+  });
+
+  /**
+   * 以訪客身分試用：當場開一個新帳號並直接登入。
+   *
+   * 這是整個 API 裡唯一不用登入就能寫入的端點，所以限制寫得比較緊：
+   * 同一個 IP 吃登入那組頻率限制，而且訪客總數有上限。
+   */
+  app.post('/guest', async (req, reply) => {
+    if (!authRequired()) {
+      // 沒設任何密碼＝根本沒在驗證，大家都是同一個身分，開訪客沒有意義
+      throw Object.assign(new Error('這台沒有啟用密碼，不需要訪客帳號'), { status: 400 });
+    }
+
+    const limit = rateLimit(req.ip);
+    if (!limit.allowed) {
+      return reply.code(429).send({ error: `太頻繁了，請 ${limit.retryInMin} 分鐘後再試` });
+    }
+
+    if (guestUsers().length >= MAX_GUESTS) {
+      return reply.code(429).send({ error: '訪客帳號已經滿了，請稍後再試' });
+    }
+
+    const g = addGuest();
+    req.log.warn({ guest: g.id, ip: req.ip }, '建立訪客帳號並登入');
+    reply.setCookie(COOKIE, g.id, cookieOptions(req));
+    return reply.code(201).send({ ok: true, user: g.id, name: g.name, password: g.password });
   });
 
   app.post('/logout', async (req, reply) => {
