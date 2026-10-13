@@ -83,7 +83,7 @@ onMounted(() => input.value?.focus());
         {{ busy ? '準備中…' : '以訪客身分試用' }}
       </button>
       <p class="muted small foot">
-        不用提供密碼或 Gemini API 金鑰，直接開始試用。登出後會刪除所有試用紀錄。
+        不用提供密碼或 Gemini API 金鑰，直接開始試用。試用中可建立帳號保留紀錄；未建立帳號就登出，會刪除試用紀錄。
       </p>
 
       <p class="muted small foot">輸入誰的密碼就以誰的身分登入（設定在 <code>server/.env</code>）</p>

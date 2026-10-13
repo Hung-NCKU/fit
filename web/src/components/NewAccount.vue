@@ -88,7 +88,7 @@ async function submit() {
       </div>
 
       <p v-if="session.trial" class="small muted" style="margin:0">
-        你現在是試用訪客。建立帳號後會保留剛剛記的東西；沒建立的話，閒置一段時間會被清掉，之後只能用開始試用時給的密碼登入。
+        你現在是試用訪客。建立帳號後會保留試用紀錄，並提供登入密碼；未建立帳號就登出，試用紀錄會刪除，閒置超過一小時也會清除。
       </p>
 
       <label class="f">
@@ -160,12 +160,12 @@ async function submit() {
     <div class="card stack panel">
       <h3 style="margin:0">{{ done.name }} 建好了</h3>
       <template v-if="done.password">
-        <p class="small muted" style="margin:0">把這組密碼給對方，他用它登入就是自己的帳號。</p>
+        <p class="small muted" style="margin:0">{{ done.upgrading ? '請保存這組密碼，下次可登入你的正式帳號。' : '把這組密碼給對方，他用它登入就是自己的帳號。' }}</p>
         <code class="pw">{{ done.password }}</code>
         <p class="small" style="margin:0; color: var(--danger)">密碼只會顯示這一次。</p>
       </template>
       <p v-else class="small muted" style="margin:0">
-        從現在開始這是你的正式帳號，密碼還是試用開始時給你的那一組。
+        從現在開始這是你的正式帳號，試用紀錄會保留。
       </p>
       <button class="primary" @click="done = null">知道了</button>
     </div>

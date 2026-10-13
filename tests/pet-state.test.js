@@ -52,5 +52,13 @@ describe('寵物狀態看的是哪幾天', () => {
     const s = pet.petState('martina');   // 這個拋棄式資料庫裡沒有餵過
     expect(s.silent).toBe(0);
     expect(s.ateToday).toBe(false);
+    expect(s.says).toContain('歡迎');
+  });
+
+  it('超過六十天未記錄仍累計真實缺席天數', () => {
+    records.addMeal('martina', { date: records.daysAgo(70), name: '舊記錄', kcal: 100 });
+    const s = pet.petState('martina');
+    expect(s.silent).toBe(70);
+    expect(s.says).toContain('70 天');
   });
 });

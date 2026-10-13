@@ -87,8 +87,9 @@ export default async function apiRoutes(app) {
       ok: true,
       user: target.id,
       name: promoted.name,
-      // 升級的人密碼沒變（試用開始時就給過了），新帳號才需要回傳
-      password: upgrading ? null : target.password,
+      // 試用不顯示密碼；建立正式帳號時才提供登入密碼
+      password: target.password,
+      upgrading,
     });
   });
 
@@ -146,7 +147,7 @@ export default async function apiRoutes(app) {
   app.post('/meals', async (req, reply) => {
     readOnlyGuard(req);
     const meal = addMeal(req.userId, req.body);
-    rewardMealSaved(req.userId, meal.date);
+    rewardMealSaved(req.userId, meal.date, { isNew: true, mealId: meal.id });
     return reply.code(201).send(meal);
   });
   app.patch('/meals/:id', async (req, reply) => {

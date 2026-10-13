@@ -111,6 +111,13 @@ CREATE TABLE IF NOT EXISTS pet_daily_bonus (
   created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
+-- 新增獎勵保留憑證，刪除飲食也不能重置每日額度
+CREATE TABLE IF NOT EXISTS pet_meal_rewards (
+  meal_id INTEGER PRIMARY KEY,
+  date TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS pet_meal_rewards_date ON pet_meal_rewards(date);
+
 CREATE TABLE IF NOT EXISTS pet_items (
   item_id     TEXT PRIMARY KEY,
   acquired_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))

@@ -12,6 +12,8 @@ beforeAll(async () => {
   const auth = await import('../server/src/auth.js');
   routes = new Map();
   await auth.default({ get() {}, post(path, handler) { routes.set(path, handler); } });
+  const api = await import('../server/src/routes/api.js');
+  await api.default({ get() {}, put() {}, patch() {}, delete() {}, post(path, handler) { routes.set(path, handler); } });
 });
 afterAll(() => vi.unstubAllEnvs());
 const request = (id) => ({ cookies: { fit_auth: id }, unsignCookie: value => ({ valid: true, value }) });
@@ -37,4 +39,19 @@ it('正式使用者登出只清除 cookie，不刪除資料庫', async () => {
   expect(r.clearCookie).toHaveBeenCalledWith('fit_auth', { path: '/' });
   expect(users.getUser('eli')).toBeDefined();
   expect(existsSync(db.dbPath('eli'))).toBe(true);
+});
+
+it('試用升級提供密碼，登出後保留正式帳號與紀錄', async () => {
+  const guest = users.addGuest();
+  const r = { code: () => r, send: value => value };
+  const result = await routes.get('/account')({
+    userId: guest.id, log: { warn() {} },
+    body: { name: '正式測試帳號', age: 30, height_cm: 170, weight_kg: 65, goal_weight_kg: 65, activity: 1.55 },
+  }, r);
+  expect(result.upgrading).toBe(true);
+  expect(result.password).toBe(guest.password);
+  expect(users.getUser(guest.id).temp).toBeUndefined();
+  await routes.get('/logout')(request(guest.id), reply());
+  expect(users.getUser(guest.id).name).toBe('正式測試帳號');
+  expect(existsSync(db.dbPath(guest.id))).toBe(true);
 });

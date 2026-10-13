@@ -1,4 +1,5 @@
 <script setup>
+import { confirmAction } from '../confirm.js';
 import { ref, computed, onMounted, watch } from 'vue';
 import { api, photoUrl, todayStr, MEAL_TYPES } from '../api.js';
 import { session } from '../auth.js';
@@ -122,7 +123,7 @@ function edit(m) {
 }
 
 async function remove(m) {
-  if (!confirm(`刪除「${m.name}」？`)) return;
+  if (!await confirmAction(`刪除「${m.name}」？`)) return;
   await api.deleteMeal(m.id);
   await load();
 }

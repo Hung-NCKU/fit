@@ -8,6 +8,7 @@ import PhotoViewer from './components/PhotoViewer.vue';
 import NotifyToggle from './components/NotifyToggle.vue';
 import DeleteAccount from './components/DeleteAccount.vue';
 import NewAccount from './components/NewAccount.vue';
+import ConfirmDialog from './components/ConfirmDialog.vue';
 
 const route = useRoute();
 
@@ -85,6 +86,7 @@ onMounted(async () => {
 </script>
 
 <template>
+  <ConfirmDialog />
   <div class="shell">
     <div v-if="!session.ready" class="boot muted small">載入中…</div>
 
@@ -102,7 +104,7 @@ onMounted(async () => {
         <span v-if="session.name" class="who">{{ session.name }}</span>
         <span class="bell-spacer"></span>
         <DeleteAccount v-if="session.authed" />
-        <NewAccount v-if="session.authed && !session.trial" />
+        <NewAccount v-if="session.authed" />
         <NotifyToggle />
         <button v-if="canShowInstall" class="icon install" @click="install">📲 安裝</button>
         <button v-if="session.authRequired" class="icon logout" @click="logout">登出</button>

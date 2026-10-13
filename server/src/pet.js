@@ -169,7 +169,8 @@ const COIN_PROTEIN = 8;     // 蛋白質達到目標九成
  * 否則上線前還沒結算到的日子會少拿。
  */
 const INSTANT_FROM = '2026-10-14';
-const COIN_PER_UPDATE = 2;   // 每次新增或修改飲食
+const COIN_PER_MEAL = 2;
+const MAX_REWARDED_MEALS = 3; // 每天最多 +6；修改不算新增
 
 /** 某一天結算時可以拿幾枚 */
 export function coinsForDay(userId, date) {
@@ -185,30 +186,34 @@ export function coinsForDay(userId, date) {
   return c;
 }
 
-/**
- * 新增或修改一筆飲食之後呼叫：自動入帳，不用按領取。
- *   每次 +2（新增、修改都算，刪除不算）
- *   該日熱量第一次落在目標 ±10% 再 +8（每天最多一次）
- * 沒有寵物就不發。回傳這次發了幾枚。
- *
- * 注意：+2 沒有次數上限，新增再刪除、反覆修改都能刷。這是使用者指定的規則。
- */
-export function rewardMealSaved(userId, date) {
-  const pet = getPet(userId);
-  if (!pet) return 0;
+/** 今日新增飲食每筆 +2、最多三筆；新增或修改首次熱量達標 +8。 */
+export function rewardMealSaved(userId, date, { isNew = false, mealId = null } = {}) {
+  if (!getPet(userId) || date !== today() || date < INSTANT_FROM) return 0;
   const db = getDb(userId);
-  let earned = COIN_PER_UPDATE;
-
-  if (date && date >= INSTANT_FROM) {
-    const s = dailySummary(userId, date);
-    const tk = s.targets.kcal || 0;
-    if (tk && Math.abs(s.nutrition.kcal - tk) <= tk * 0.1) {
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    let earned = 0;
+    const count = db.prepare('SELECT COUNT(*) AS n FROM pet_meal_rewards WHERE date = ?').get(date).n;
+    if (isNew && Number.isInteger(mealId) && count < MAX_REWARDED_MEALS) {
+      const meal = db.prepare('SELECT date, kcal FROM meals WHERE id = ?').get(mealId);
+      if (meal?.date === date && meal.kcal > 0) {
+        const r = db.prepare('INSERT OR IGNORE INTO pet_meal_rewards (meal_id, date) VALUES (?, ?)').run(mealId, date);
+        if (r.changes) earned += COIN_PER_MEAL;
+      }
+    }
+    const summary = dailySummary(userId, date);
+    const tk = summary.targets.kcal || 0;
+    if (tk && summary.nutrition.items && Math.abs(summary.nutrition.kcal - tk) <= tk * 0.1) {
       const r = db.prepare('INSERT OR IGNORE INTO pet_daily_bonus (date) VALUES (?)').run(date);
       if (r.changes) earned += COIN_KCAL;
     }
+    if (earned) db.prepare('UPDATE pet SET coins = coins + ? WHERE id = 1').run(earned);
+    db.exec('COMMIT');
+    return earned;
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
   }
-  db.prepare('UPDATE pet SET coins = coins + ? WHERE id = 1').run(earned);
-  return earned;
 }
 
 /**
@@ -284,21 +289,11 @@ export function petState(userId) {
     days.push(todayRow);
   }
 
-  // 連續幾天沒記錄了。**要從今天開始數**：今天明明記了十八筆，
-  // 卻因為迴圈從昨天起算而顯示「3 天沒看到你記錄了」，寵物就一直討食。
-  let silent = 0;
-  for (let i = 0; i <= WINDOW; i++) {
-    if (dailySummary(userId, daysAgo(i)).nutrition.items) break;
-    silent++;
-  }
-  // 從來沒記錄過的新帳號不算「沒看到你」：往前找 60 天都沒有就當作還沒開始
-  if (silent > WINDOW) {
-    let ever = false;
-    for (let i = WINDOW + 1; i <= 60 && !ever; i++) {
-      ever = Boolean(dailySummary(userId, daysAgo(i)).nutrition.items);
-    }
-    if (!ever) silent = 0;
-  }
+  // 新帳號沒有缺席天數；舊帳號依最後記錄的日期計算，不限制在八天。
+  const lastDate = getDb(userId).prepare('SELECT MAX(date) AS date FROM meals WHERE date <= ?').get(today()).date;
+  const silent = lastDate
+    ? Math.max(0, Math.round((Date.parse(today()) - Date.parse(lastDate)) / 86_400_000))
+    : 0;
 
   const avg = (k) => (days.length ? days.reduce((a, b) => a + b[k], 0) / days.length : 0);
   const kcal = avg('kcalRatio');
@@ -310,7 +305,7 @@ export function petState(userId) {
     says = `${silent} 天沒看到你記錄了，牠在等你`;
   } else if (!days.length) {
     mood = 'ok'; body = 'normal';
-    says = '還沒有足夠的紀錄，先吃幾餐讓牠認識你';
+    says = lastDate ? '還沒有足夠的紀錄，先吃幾餐讓牠認識你' : '歡迎！先記錄第一餐，讓牠認識你';
   } else if (kcal < 0.7) {
     mood = 'thin'; body = 'thin';
     says = `最近平均只吃到目標的 ${Math.round(kcal * 100)}%，牠跟著瘦了`;

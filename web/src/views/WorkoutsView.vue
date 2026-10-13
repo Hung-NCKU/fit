@@ -1,4 +1,5 @@
 <script setup>
+import { confirmAction } from '../confirm.js';
 import { ref, computed, onMounted, watch } from 'vue';
 import { api, todayStr, CATEGORIES } from '../api.js';
 import { session } from '../auth.js';
@@ -67,7 +68,7 @@ function edit(w) {
 }
 
 async function remove(w) {
-  if (!confirm(`刪除「${w.exercise}」？`)) return;
+  if (!await confirmAction(`刪除「${w.exercise}」？`)) return;
   await api.deleteWorkout(w.id);
   await load();
 }

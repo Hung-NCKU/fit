@@ -1,4 +1,5 @@
 <script setup>
+import { confirmAction } from '../confirm.js';
 import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue';
 import { api, compressImage, photoUrl, MEAL_TYPES, CATEGORIES } from '../api.js';
 import { openPhoto } from '../components/PhotoViewer.vue';
@@ -128,7 +129,7 @@ async function syncHistory() {
 onUnmounted(() => clearTimeout(pollTimer));
 
 async function clearAll() {
-  if (!confirm('確定要清空所有對話紀錄嗎？（訓練與飲食紀錄不會被刪除）')) return;
+  if (!await confirmAction('確定要清空所有對話紀錄嗎？（訓練與飲食紀錄不會被刪除）')) return;
   await api.clearChat();
   messages.value = [];
 }

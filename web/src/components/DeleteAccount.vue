@@ -1,4 +1,5 @@
 <script setup>
+import { confirmAction } from '../confirm.js';
 import { computed } from 'vue';
 import { api } from '../api.js';
 import { session } from '../auth.js';
@@ -10,7 +11,7 @@ import { session } from '../auth.js';
 const show = computed(() => session.guest);
 
 async function remove() {
-  const ok = window.confirm(
+  const ok = await confirmAction(
     `要刪除「${session.name}」嗎？\n會刪掉所有飲食、訓練、寵物紀錄，無法復原。`,
   );
   if (!ok) return;
