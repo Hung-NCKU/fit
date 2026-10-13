@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import { session } from '../auth.js';
 import UserTabs from '../components/UserTabs.vue';
 import PetCarousel from '../components/PetCarousel.vue';
+import PetFrames from '../components/PetFrames.vue';
 import { pickNext } from '../pet-fsm.js';
 
 const viewing = ref(session.user);
@@ -91,6 +92,9 @@ const activityText = computed(() => current.value?.label || '發呆中');
  * pet/十種可愛動物動作精靈圖鑑.png 切出來。先前只有貓有動作圖，
  * 其他九種不管在做什麼都是同一張靜態本體。
  */
+const animatedPet = computed(() => ['cat', 'chinchilla'].includes(pet.value?.species));
+const spritePose = computed(() => current.value?.pose || 'idle');
+
 const ACT_SPRITES = new Set(['idle', 'walk', 'eat', 'sleep', 'play']);
 
 /** 場景的高度。CSS 裡的 .scene { height } 要跟這個數字一致。 */
@@ -109,8 +113,8 @@ const SCENE_H = 230;
 const petHeight = computed(() => {
   const size = behavior.value?.size ?? 0.3;
   // 趴著的時候看起來會比站著矮一點，給一點補償，不然睡覺時特別小
-  const lying = current.value?.css === 'sleep';
-  return `${Math.round(SCENE_H * size * (lying ? 1.15 : 1))}px`;
+  const lying = !animatedPet.value && current.value?.css === 'sleep';
+  return `${Math.round(SCENE_H * size * (animatedPet.value ? 1.25 : lying ? 1.15 : 1))}px`;
 });
 
 /** 貓才有八張動作圖；那幾張本身就畫了 Z、碗、毛線球，不要再疊 emoji 道具 */
@@ -295,9 +299,14 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
         <div class="scene" :style="{ '--tint': pet.tint || '#f6efdf' }">
           <img class="scene-bg" :src="sceneImg" :alt="bg?.name || '小房間'" />
           <img v-if="decor" class="scene-decor" :src="decor.img" :alt="decor.name" />
-          <span class="scene-pet" :class="activity" :style="{ '--body': bodyScale, '--pet-h': petHeight }">
+          <span class="scene-pet" :class="[activity, { 'has-frames': animatedPet }]" :style="{ '--body': bodyScale, '--pet-h': petHeight }">
             <img v-for="w in worn" :key="w.id" class="worn" :class="w.slot" :src="w.img" :alt="w.name" />
-            <img class="scene-img" :src="petSprite" :alt="pet.speciesName" />
+            <span class="pet-facing">
+              <Transition name="pet-pose">
+                <PetFrames v-if="animatedPet" :key="pet.species + spritePose" class="pose-art" :species="pet.species" :pose="spritePose" :label="pet.speciesName" />
+                <img v-else :key="petSprite" class="scene-img pose-art" :src="petSprite" :alt="pet.speciesName" />
+              </Transition>
+            </span>
             <!-- 作息的小道具。貓的動作圖本身就畫了 Z 與毛線球，疊上去會變兩份 -->
             <template v-if="!usesActSprite">
               <span v-if="activity === 'sleep'" class="prop zzz">💤</span>
@@ -483,13 +492,16 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
      百分比高度在這個情況下不會解析，圖會用自然大小撐破場景。 */
   /* 由 petHeight 依物種的真實體型比例算出來 */
   height: var(--pet-h, 100px);
+  width: var(--pet-h, 100px);
+  transition: height .4s ease, width .4s ease;
   transform-origin: center bottom;
   /* 呼吸：所有狀態共用，讓牠看起來是活的而不是一張貼紙 */
   animation: breathe 3.6s ease-in-out infinite;
 }
 .scene-img {
   height: 100%;
-  width: auto;
+  width: 100%;
+  object-fit: contain;
   display: block;
   /* 素材本身已去背，疊在場景插畫上。加一點落地陰影才不會像貼紙 */
   filter: drop-shadow(0 6px 6px rgba(0, 0, 0, .28));
@@ -497,41 +509,58 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
 
 @keyframes breathe {
   0%, 100% { transform: scale(var(--body)); }
-  50%      { transform: scale(calc(var(--body) * 1.03)); }
+  50%      { transform: scale(calc(var(--body) * 1.012)); }
 }
 
 /* 各作息的動作。插畫本身是靜態的，靠位移與傾斜做出活著的感覺。 */
 .scene-pet.sleep { animation: breathe 6s ease-in-out infinite; }
-.scene-pet.play  { animation: hop .7s ease-in-out infinite; }
-.scene-pet.eat   { animation: nibble .9s ease-in-out infinite; }
+.scene-pet.play  { animation: hop 2.6s ease-in-out infinite; }
+.scene-pet.eat   { animation: nibble 2.2s ease-in-out infinite; }
 .scene-pet.groom { animation: groom 2.4s ease-in-out infinite; }
 .scene-pet.beg   { animation: tilt 2.2s ease-in-out infinite; }
 /* 走動與發呆是狀態機才有的兩個狀態：走動左右晃，發呆只是慢慢呼吸 */
 .scene-pet.walk  { animation: wander 7s ease-in-out infinite; }
 .scene-pet.idle  { animation: breathe 9s ease-in-out infinite; }
 
+/* 移動與轉向分開，轉向時先停下，避免整張角色瞬間翻面。 */
+.pet-facing { display: block; position: relative; width: 100%; height: 100%; transform-origin: center bottom; transform: translateY(var(--ground-shift, 0%)); }
+.scene-pet.has-frames { --ground-shift: 12%; }
+.scene-pet.has-frames .worn.hat { top: 10%; width: 38%; }
+.scene-pet.has-frames .worn.cloth { top: 43%; width: 43%; }
+.scene-pet.has-frames .worn.acc { top: 31%; width: 27%; }
+.pose-art { position: absolute; inset: 0; }
+.scene-pet.walk .pet-facing { animation: turn 10s ease-in-out infinite; }
+.scene-pet.walk { animation-duration: 10s; }
+.pet-pose-enter-active, .pet-pose-leave-active { transition: opacity .22s ease; }
+.pet-pose-enter-from, .pet-pose-leave-to { opacity: 0; }
+.scene-pet.has-frames.play, .scene-pet.has-frames.eat, .scene-pet.has-frames.groom,
+.scene-pet.has-frames.sleep { animation: breathe 6s ease-in-out infinite; }
 @keyframes wander {
-  0%, 100% { transform: translateX(-16%) scaleX(-1) scale(var(--body)); }
-  48%      { transform: translateX(16%)  scaleX(-1) scale(var(--body)); }
-  50%      { transform: translateX(16%)  scale(var(--body)); }
-  98%      { transform: translateX(-16%) scale(var(--body)); }
+  0%, 100% { transform: translateX(-28px) scale(var(--body)); }
+  40%, 50% { transform: translateX(28px) scale(var(--body)); }
+  90% { transform: translateX(-28px) scale(var(--body)); }
 }
-
+@keyframes turn {
+  0%, 40%, 100% { transform: translateY(var(--ground-shift, 0%)) scaleX(1); }
+  50%, 90% { transform: translateY(var(--ground-shift, 0%)) scaleX(-1); }
+}
 @keyframes hop {
-  0%, 100% { transform: translateY(0) scale(var(--body)); }
-  40%      { transform: translateY(-10px) scale(calc(var(--body) * 1.02)); }
+  0%, 65%, 100% { transform: translateY(0) scale(var(--body)); }
+  25% { transform: translateY(-5px) scale(var(--body)); }
+  48% { transform: translateY(1px) scale(var(--body)); }
 }
 @keyframes nibble {
-  0%, 100% { transform: translateY(0) rotate(0deg) scale(var(--body)); }
-  50%      { transform: translateY(5px) rotate(2deg) scale(var(--body)); }
+  0%, 70%, 100% { transform: rotate(0) scale(var(--body)); }
+  30% { transform: translateY(1px) rotate(1deg) scale(var(--body)); }
 }
 @keyframes groom {
-  0%, 100% { transform: rotate(0deg) scale(var(--body)); }
-  50%      { transform: rotate(5deg) scale(var(--body)); }
+  0%, 65%, 100% { transform: rotate(0) scale(var(--body)); }
+  30% { transform: rotate(2deg) scale(var(--body)); }
 }
 @keyframes tilt {
-  0%, 100% { transform: rotate(-4deg) scale(var(--body)); }
-  50%      { transform: rotate(4deg) scale(var(--body)); }
+  0%, 75%, 100% { transform: rotate(0) scale(var(--body)); }
+  30% { transform: rotate(-2deg) scale(var(--body)); }
+  50% { transform: rotate(2deg) scale(var(--body)); }
 }
 
 /* 作息小道具 */
@@ -562,7 +591,8 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
 
 /* 使用者偏好減少動態時全部停掉 */
 @media (prefers-reduced-motion: reduce) {
-  .scene-pet, .prop { animation: none !important; }
+  .scene-pet, .pet-facing, .prop { animation: none !important; }
+  .pet-pose-enter-active, .pet-pose-leave-active { transition: none; }
   /* 動畫關掉後沒人套用 scale，體態縮放要自己補上 */
   .scene-pet { transform: scale(var(--body)); }
 }
