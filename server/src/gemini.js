@@ -17,8 +17,8 @@ export class GeminiError extends Error {
  * 但速度快 5 倍。注意 gemini-3.5-flash-lite 會漏記食物項目，不放進鏈裡。
  */
 const DEFAULT_CHAIN = [
-  'gemini-flash-lite-latest',
   'gemini-3.1-flash-lite',
+  'gemini-flash-lite-latest',
   'gemini-3.6-flash',
   'gemini-3.5-flash',
 ];
@@ -35,6 +35,7 @@ const exhaustedUntil = new Map();   // model -> 恢復時間（毫秒）
 // 已知不吃 thinkingConfig 的模型先寫死，否則每次重啟都要浪費一次請求去試探；
 // 清單外的模型若回 400 仍會自動偵測並加入
 const noThinking = new Set(['gemini-flash-lite-latest']);
+const coolingUntil = new Map(); // 壅塞的模型暫停一分鐘再試
 const usedToday = new Map();        // model -> 今天已送出的請求數
 let usageDate = new Date().toLocaleDateString('sv-SE');
 
@@ -137,9 +138,9 @@ function buildBody({ contents, systemInstruction, tools, model }) {
     generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
   };
   if (!noThinking.has(model)) {
-    body.generationConfig.thinkingConfig = {
-      thinkingBudget: Number(process.env.GEMINI_THINKING_BUDGET ?? 0),
-    };
+    body.generationConfig.thinkingConfig = /^gemini-3/.test(model)
+      ? { thinkingLevel: /flash-lite|3\.6-flash/.test(model) ? 'minimal' : 'low' }
+      : { thinkingBudget: Number(process.env.GEMINI_THINKING_BUDGET ?? 0) };
   }
   if (tools?.length) {
     body.tools = [{ functionDeclarations: tools }];
@@ -172,6 +173,10 @@ export async function generateContent({ contents, systemInstruction, tools, pref
 
   for (const model of ordered) {
     if (isExhausted(model)) { skipped.push(model); continue; }
+    if ((coolingUntil.get(model) || 0) > Date.now()) {
+      lastError = new GeminiError('AI 模型暫時忙碌，請稍後再試。', 503);
+      continue;
+    }
     if (deadline && deadline - Date.now() < 3000) throw timeoutError();
 
     try {
@@ -179,11 +184,16 @@ export async function generateContent({ contents, systemInstruction, tools, pref
       return { candidate, model };
     } catch (err) {
       lastError = err;
-      if (err.moveToNextModel) { skipped.push(model); continue; }
+      if (err.moveToNextModel) {
+        if (err.status === 503 || err.status === 504) coolingUntil.set(model, Date.now() + 60_000);
+        else skipped.push(model);
+        continue;
+      }
       throw err;   // 不是額度問題就不用再換模型了
     }
   }
 
+  if (lastError?.status === 503 || lastError?.status === 504) throw lastError;
   const detail = skipped.length ? `（${skipped.join('、')} 今日額度都已用完）` : '';
   throw new GeminiError(
     lastError?.quotaPerDay || skipped.length
@@ -197,7 +207,7 @@ const timeoutError = () => new GeminiError(
   'AI 回應逾時（Gemini 太慢或排隊中）。你的訊息有留著，稍後再送一次，或在模型選單換成 Flash-Lite。', 504);
 
 /** 單次請求最久等多久；整輪對話另有 deadline 總上限（見 coach.js） */
-const REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_REQUEST_TIMEOUT_MS ?? 30_000);
+const REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_REQUEST_TIMEOUT_MS ?? 15_000);
 
 /** 對單一模型發送請求，含重試 */
 async function callModel({ model, key, contents, systemInstruction, tools, deadline }) {
@@ -220,6 +230,9 @@ async function callModel({ model, key, contents, systemInstruction, tools, deadl
       });
       text = await res.text();
     } catch (err) {
+      if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+        throw Object.assign(timeoutError(), { moveToNextModel: true });
+      }
       if (attempt >= MAX_ATTEMPTS || (deadline && deadline - Date.now() < 3000)) {
         if (err.name === 'TimeoutError' || err.name === 'AbortError') throw timeoutError();
         throw new GeminiError(`連線 Gemini 失敗：${err.message}`, 504);
@@ -257,7 +270,7 @@ async function callModel({ model, key, contents, systemInstruction, tools, deadl
     }
 
     // 這個模型不吃 thinkingConfig：記住並立刻重來，不算一次重試
-    if (res.status === 400 && !noThinking.has(model)) {
+    if (res.status === 400 && !noThinking.has(model) && /thinking/i.test(msg)) {
       noThinking.add(model);
       continue;
     }
@@ -266,6 +279,10 @@ async function callModel({ model, key, contents, systemInstruction, tools, deadl
     if (res.status === 404) {
       markExhaustedForToday(model);
       throw Object.assign(new GeminiError(msg, 404), { moveToNextModel: true });
+    }
+
+    if (res.status === 503) {
+      throw Object.assign(new GeminiError(`${model} 目前忙碌，已嘗試備援模型。`, 503), { moveToNextModel: true });
     }
 
     if (RETRIABLE.has(res.status) && attempt < MAX_ATTEMPTS) {

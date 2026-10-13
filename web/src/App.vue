@@ -50,8 +50,18 @@ const title = computed(() => tabs.find(t => t.to === route.path)?.label ?? '增�
 const locked = computed(() => session.authRequired && !session.authed);
 
 async function logout() {
-  await api.logout().catch(() => {});
+  try {
+    await api.logout();
+  } catch (e) {
+    window.alert(`登出失敗：${e.message}`);
+    return;
+  }
   session.authed = false;
+  session.user = null;
+  session.name = null;
+  session.users = [];
+  session.trial = false;
+  session.guest = false;
 }
 
 onMounted(async () => {
@@ -92,7 +102,7 @@ onMounted(async () => {
         <span v-if="session.name" class="who">{{ session.name }}</span>
         <span class="bell-spacer"></span>
         <DeleteAccount v-if="session.authed" />
-        <NewAccount v-if="session.authed" />
+        <NewAccount v-if="session.authed && !session.trial" />
         <NotifyToggle />
         <button v-if="canShowInstall" class="icon install" @click="install">📲 安裝</button>
         <button v-if="session.authRequired" class="icon logout" @click="logout">登出</button>

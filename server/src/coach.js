@@ -317,7 +317,23 @@ ${context}`;
 // 每一輪都是一次 API 請求，免費額度以「每天幾次」計算，所以壓低輪數
 const MAX_TOOL_ROUNDS = 3;
 
+// 明確的一般知識問答不需要載入紀錄或提供寫入工具。
+export function isGeneralAdvice(text) {
+  const q = String(text).replace(/不要記錄[^。！？]*/g, '');
+  return !/(記錄|新增|修改|刪除|今天|昨天|這週|上週|剛|照片|我吃)/.test(q)
+    && /((運動|訓練)後.*(吃什麼|補充什麼)|怎麼(增肌|減脂)|如何(增肌|減脂)|增肌.*(怎麼吃|如何吃))/.test(q);
+}
+
 export async function chat(userId, userText, history, image = null, model = null) {
+  if (!image && isGeneralAdvice(userText)) {
+    const result = await generateContent({
+      contents: [{ role: 'user', parts: [{ text: userText }] }],
+      systemInstruction: '你是飲食與訓練教練。用繁體中文提供簡短、實用的一般建議，不宣稱已新增或修改任何紀錄。',
+      preferModel: model,
+      deadline: Date.now() + Number(process.env.COACH_TOTAL_TIMEOUT_MS ?? 75_000),
+    });
+    return { reply: partsToText(result.candidate.content?.parts), actions: [], model: result.model };
+  }
   const systemInstruction = buildSystemPrompt(userId, recentContext(userId, 7));
 
   // 圖片放在文字前面，Gemini 對「先看圖再讀指令」的理解比較穩

@@ -8,6 +8,7 @@ async function request(path, options = {}) {
   let res;
   try {
     res = await fetch(BASE + path, {
+      signal: options.signal || AbortSignal.timeout(path === '/chat' ? 90_000 : 15_000),
       credentials: 'same-origin',
       ...options,
       // 只有真的帶 body 才宣告 JSON：Fastify 對「content-type 是 JSON 但 body 空的」
@@ -18,7 +19,10 @@ async function request(path, options = {}) {
       },
       body: hasBody ? JSON.stringify(options.body) : undefined,
     });
-  } catch {
+  } catch (err) {
+    if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+      throw new Error('伺服器回應逾時，請稍後再試。');
+    }
     // fetch 連不上時只會丟 "Failed to fetch"，對使用者沒意義，換成看得懂的說明
     throw new Error('連不到伺服器。請確認電腦上的服務還在執行（./start.sh），網路也正常。');
   }

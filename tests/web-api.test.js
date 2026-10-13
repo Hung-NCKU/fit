@@ -69,6 +69,12 @@ describe('既有 API 客戶端', () => {
     await expect(api.health()).rejects.toThrow('連不到伺服器');
   });
 
+  it('請求逾時回傳錯誤，不讓聊天一直等待', async () => {
+    fetchMock.mockRejectedValue(Object.assign(new Error('timeout'), { name: 'TimeoutError' }));
+    await expect(api.sendChat('test')).rejects.toThrow('伺服器回應逾時');
+    expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+  });
+
   it('照片不存在時不產生錯誤網址', () => {
     expect(photoUrl('', 'test')).toBe('');
     expect(photoUrl('example.jpg', 'test')).toBe('/uploads/example.jpg?user=test');

@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { USERS, addGuest, getUser, guestUsers, passwordOf, anyPasswordSet } from './users.js';
+import { USERS, addGuest, getUser, guestUsers, passwordOf, anyPasswordSet, removeGuest } from './users.js';
+import { destroyDb } from './db.js';
 
 export const COOKIE = 'fit_auth';
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 天
@@ -176,10 +177,15 @@ export default async function authRoutes(app) {
     const g = addGuest();
     req.log.warn({ guest: g.id, ip: req.ip }, '建立訪客帳號並登入');
     reply.setCookie(COOKIE, g.id, cookieOptions(req));
-    return reply.code(201).send({ ok: true, user: g.id, name: g.name, password: g.password });
+    return reply.code(201).send({ ok: true, user: g.id, name: g.name, trial: true });
   });
 
   app.post('/logout', async (req, reply) => {
+    const id = currentUser(req);
+    if (id && getUser(id)?.temp) {
+      destroyDb(id);
+      removeGuest(id);
+    }
     reply.clearCookie(COOKIE, { path: '/' });
     return { ok: true };
   });
