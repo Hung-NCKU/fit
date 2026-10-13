@@ -451,12 +451,11 @@ function confirmRename() {
 .pet-title { min-width:0; overflow-wrap:anywhere; }
 .scene-actions { margin-left:auto; }
 .family button { max-width:100%; white-space:normal; overflow-wrap:anywhere; }
-.scene-card.shop-preview { position:sticky; top:0; z-index:6; box-shadow:0 8px 18px #0006; }
+.scene-card.shop-preview { position:sticky; top:0; z-index:6; padding:0; box-shadow:0 8px 18px #0006; }
 .shop-preview .scene { min-height:130px; max-height:clamp(130px, 26vh, 240px); }
-.shop-preview .family { margin-top:.5rem; }
-.shop-preview .says, .shop-preview .stats { display:none; }
-.shop-preview > p.small { margin:.4rem 0 0; }
-.shop-preview .family button { padding:.3rem .5rem; font-size:.75rem; }
+.shop-preview .scene-heading, .shop-preview .family,
+.shop-preview .says, .shop-preview .stats, .shop-preview > p.small,
+.shop-preview :deep(.name) { display:none; }
 @media(max-height:600px) { .shop-preview .scene { min-height:100px; max-height:120px; } }
 .scene-card .says { color: var(--text); }
 /* 插畫本身是米白底的，疊在深色上一定像貼紙。
