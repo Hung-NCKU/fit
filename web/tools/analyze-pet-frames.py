@@ -1,13 +1,16 @@
 """Read alpha silhouettes to generate SVG viewports; never modify raster assets."""
 import json
+from math import ceil
 from pathlib import Path
 from PIL import Image
 
 root = Path(__file__).resolve().parents[2]
 result = {}
 poses = ['idle', 'walk', 'eat', 'sleep', 'play']
-for species in ['cat', 'chinchilla']:
-    image = Image.open(root / 'pet' / 'animation-v2' / f'{species}-source.png')
+sources = sorted((root / 'pet' / 'animation-v2').glob('*-source.png'))
+for source in sources:
+    species = source.name.removesuffix('-source.png')
+    image = Image.open(source)
     width, height = image.size
     mask = bytearray(image.getchannel('A').point(lambda a: 255 if a > 128 else 0).tobytes())
     components = []
@@ -36,15 +39,20 @@ for species in ['cat', 'chinchilla']:
             candidates = [b for b in components if int((b[0] + b[2]) / 2 / (width / 4)) == col and int((b[1] + b[3]) / 2 / (height / 5)) == row]
             if not candidates:
                 raise ValueError(f'Missing silhouette: {species}/{row}/{col}')
-            row_boxes.append(max(candidates, key=lambda b: b[4]))
+            row_boxes.append((min(b[0] for b in candidates), min(b[1] for b in candidates),
+                              max(b[2] for b in candidates), max(b[3] for b in candidates),
+                              sum(b[4] for b in candidates)))
         boxes.append(row_boxes)
-    size = max(max(b[2] - b[0], b[3] - b[1]) for row in boxes for b in row) + 32
-    result[species] = {'width': width, 'height': height, 'poses': {}}
+    size = ceil(max(max(b[2] - b[0], b[3] - b[1]) for row in boxes for b in row) / .8)
+    result[species] = {'width': width, 'height': height, 'poses': {}, 'bounds': {}}
     for pose, row in zip(poses, boxes):
         # Shared canvas and baseline; leave lift in play's jump frame intact.
         baseline = max(b[3] for b in row)
         result[species]['poses'][pose] = [
             f'{round((b[0] + b[2]) / 2 - size / 2, 1)} {round(baseline - size * .88, 1)} {size} {size}' for b in row
         ]
+        result[species]['bounds'][pose] = [
+            {'x': b[0] - 3, 'y': b[1] - 3, 'width': b[2] - b[0] + 6, 'height': b[3] - b[1] + 6} for b in row
+        ]
 (root / 'web' / 'src' / 'pet-frame-layout.json').write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
-print('Analyzed 40 frames; source images unchanged.')
+print(f'Analyzed {len(sources) * 20} frames; source images unchanged.')

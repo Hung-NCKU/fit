@@ -4,13 +4,19 @@ import layouts from '../pet-frame-layout.json';
 const props = defineProps({ species: String, pose: String, label: String });
 const layout = computed(() => layouts[props.species]);
 const frames = computed(() => layout.value.poses[props.pose] || layout.value.poses.idle);
-const duration = computed(() => ({ idle: '6.8s', walk: '.8s', eat: '2.2s', sleep: '6s', play: '2.6s' })[props.pose] || '6.8s');
+const duration = computed(() => {
+  const seconds = ({ idle: 6.8, walk: .8, eat: 2.2, sleep: 6, play: 2.6 })[props.pose] || 6.8;
+  const slowerWalk = ({ tortoise: 3, hedgehog: 1.5, guinea: 1.2, parrot: 1.2 })[props.species] || 1;
+  return `${seconds * (props.pose === 'walk' ? slowerWalk : 1)}s`;
+});
+const clipId = i => `pet-frame-${props.species}-${props.pose}-${i}`;
 </script>
 
 <template>
   <span class="pet-frames" :class="pose" :style="{ '--duration': duration }" role="img" :aria-label="label">
     <svg v-for="(viewport, i) in frames" :key="i" class="frame" :class="`frame-${i}`" :viewBox="viewport" :style="{ animationDelay: `calc(var(--duration) * ${i ? (i - 4) / 4 : 0})` }" aria-hidden="true">
-      <image :href="`/pets/animated-${species}-v2.webp`" :width="layout.width" :height="layout.height" />
+      <defs><clipPath :id="clipId(i)" clipPathUnits="userSpaceOnUse"><rect v-bind="layout.bounds[pose || 'idle'][i]" /></clipPath></defs>
+      <image :href="`/pets/animated-${species}-v2.webp`" :width="layout.width" :height="layout.height" :clip-path="`url(#${clipId(i)})`" />
     </svg>
   </span>
 </template>

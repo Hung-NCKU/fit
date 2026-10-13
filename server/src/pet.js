@@ -65,7 +65,7 @@ const SCENES = [
 /** 五個環境是所有物種共用的 */
 const SCENE_ITEMS = SCENES.map(([id, name, price, desc]) => ({
   id, slot: 'bg', group: '環境', name, price, desc,
-  img: `/pets/scene-${id.replace(/^bg_/, '')}.webp`,
+  img: `/pets/scene-${id.replace(/^bg_/, '')}-v2.webp`,
 }));
 
 /** 這隻看得到的商城內容 */

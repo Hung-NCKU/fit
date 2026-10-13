@@ -5,6 +5,7 @@ import { session } from '../auth.js';
 import UserTabs from '../components/UserTabs.vue';
 import PetCarousel from '../components/PetCarousel.vue';
 import PetFrames from '../components/PetFrames.vue';
+import frameLayouts from '../pet-frame-layout.json';
 import { pickNext } from '../pet-fsm.js';
 
 const viewing = ref(session.user);
@@ -92,13 +93,23 @@ const activityText = computed(() => current.value?.label || '發呆中');
  * pet/十種可愛動物動作精靈圖鑑.png 切出來。先前只有貓有動作圖，
  * 其他九種不管在做什麼都是同一張靜態本體。
  */
-const animatedPet = computed(() => ['cat', 'chinchilla'].includes(pet.value?.species));
+const animatedPet = computed(() => Boolean(frameLayouts[pet.value?.species]));
 const spritePose = computed(() => current.value?.pose || 'idle');
 
 const ACT_SPRITES = new Set(['idle', 'walk', 'eat', 'sleep', 'play']);
 
-/** 場景的高度。CSS 裡的 .scene { height } 要跟這個數字一致。 */
-const SCENE_H = 230;
+/** 場景依手機／桌機宽度變化，寵物與落地位置跟著實際高度縮放。 */
+const sceneEl = ref(null);
+const sceneHeight = ref(230);
+let sceneObserver;
+watch(sceneEl, el => {
+  sceneObserver?.disconnect();
+  if (!el) return;
+  sceneHeight.value = el.clientHeight || 230;
+  sceneObserver = new ResizeObserver(() => { sceneHeight.value = el.clientHeight; });
+  sceneObserver.observe(el);
+});
+onUnmounted(() => sceneObserver?.disconnect());
 
 /**
  * 牠該多高。
@@ -114,7 +125,7 @@ const petHeight = computed(() => {
   const size = behavior.value?.size ?? 0.3;
   // 趴著的時候看起來會比站著矮一點，給一點補償，不然睡覺時特別小
   const lying = !animatedPet.value && current.value?.css === 'sleep';
-  return `${Math.round(SCENE_H * size * (animatedPet.value ? 1.25 : lying ? 1.15 : 1))}px`;
+  return `${Math.round(sceneHeight.value * size * (animatedPet.value ? 1.25 : lying ? 1.15 : 1))}px`;
 });
 
 /** 貓才有八張動作圖；那幾張本身就畫了 Z、碗、毛線球，不要再疊 emoji 道具 */
@@ -141,7 +152,7 @@ const petBody = (id) => `/pets/${id}-pet.webp`;
 
 const sceneImg = computed(() => {
   const id = shown.value.bg || 'bg_room';
-  return `/pets/scene-${id.replace(/^bg_/, '')}.webp`;
+  return `/pets/scene-${id.replace(/^bg_/, '')}-v2.webp`;
 });
 
 
@@ -296,7 +307,7 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
         </div>
 
         <!-- 場景：背景、寵物、裝備疊出來，動作由 pet-fsm.js 的狀態機決定 -->
-        <div class="scene" :style="{ '--tint': pet.tint || '#f6efdf' }">
+        <div ref="sceneEl" class="scene" :style="{ '--tint': pet.tint || '#f6efdf', '--floor-lift': sceneHeight * .12 + 'px' }">
           <img class="scene-bg" :src="sceneImg" :alt="bg?.name || '小房間'" />
           <img v-if="decor" class="scene-decor" :src="decor.img" :alt="decor.name" />
           <span class="scene-pet" :class="[activity, { 'has-frames': animatedPet }]" :style="{ '--body': bodyScale, '--pet-h': petHeight }">
@@ -468,13 +479,16 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
    索性讓整個場景用同一組暖色，變成一扇「看進牠世界」的窗。 */
 .scene {
   position: relative;
-  height: 230px;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  min-height: 220px;
+  max-height: 420px;
   border-radius: 14px;
   overflow: hidden;
   background: var(--tint, #f6efdf);   /* 場景圖載入前的底色 */
   display: grid;
   place-items: end center;   /* 讓牠站在地上，不要浮在正中間 */
-  padding-bottom: 6px;
+  padding-bottom: var(--floor-lift, 28px);
 }
 /* 環境是整張插畫，鋪滿整個場景當背景 */
 .scene-bg {
@@ -483,6 +497,7 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center bottom;
 }
 .scene-pet {
   --body: 1;              /* 體態縮放，由 JS 依近 7 天熱量帶進來 */

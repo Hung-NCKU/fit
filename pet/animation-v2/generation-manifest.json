@@ -1,0 +1,55 @@
+{
+  "generator": "Built-in ImageGen",
+  "referenceFolder": "pet/素材/圖鑑2/02_寵物角色",
+  "spritePrompt": "Create a production animation sprite sheet of EXACTLY the animal in the reference; preserve identity, markings, proportions, colors, expressive eyes and thick warm dark-brown clean outline. Reference is identity only, not a pose to repeat. Cute crisp 2D flat chibi game art. Exact grid of 4 columns x5 rows (20 frames), portrait4:5 canvas. Truly transparent background with no labels/grid/shadows. Each animal fits entirely in middle70% of each equal cell width, with generous transparent gutters. Center horizontal position identical per cell and foot baseline at88% cellheight. Keep full ears, tail, claws/wings and outline uncut; never overlap neighboring cells. Five ROWS, each FOUR SUCCESSIVE animation frames of one consistent character: row1 sitting/resting idle blink open/half closed/closed/reopening; row2 side view facingRIGHT walking or waddling with four alternating leg phases and samebodycenter; row3 nibbling species-appropriate food from a small identical fixed dish with gentle head dip; row4 curled/resting sleeping with four subtle breathing phases, all eyesclosed; row5 species-appropriate playful smallmotion anticipation/action/settle/rest. All frames have same physical body scale, no horizontal translation, small smooth realistic movements; avoid identical repeated walk frames. Remove handheld props except food in eatingrow and toy specifically in playrow. Do not add costumes, text, decorations, scenery, checkerboard, halos or cast shadows. This sheet will be used for a soothing mobile pet app.",
+  "scenePrompt": "Use reference image solely to match its cozy clean illustrated visual style and stage composition. Generate a new BACKGROUND ONLY for a chibi mobile pet app. Wide panoramic16:9 canvas, crisp highresolution2D storybook illustration, medium warm-dark-brown outlines, soft pastel flat color shading. NO animals, humans, text, logos, UI, foreground food bowls or random toys. Open unobstructed lowercenter floor/ground occupying lower45% of image; horizon/ground boundary55%height. Put environmental objects ONLY in outer left/right quarters and upperhalf, never center/lowercenter. Pet sprites will stand at88%height centered and walk left/right. Gentle front-view shallow perspective, subdued contrast and lighting, no blur, no photo texture, no strong floor line intersecting central landingarea. Keep center clear and bottomground visible if viewportcrops edges. Scene details must remain small enough to suit pets, no looming giant furniture.",
+  "animals": [
+    {
+      "id": "dog",
+      "reference": "狗.png",
+      "source": "dog-source.png"
+    },
+    {
+      "id": "rabbit",
+      "reference": "兔.png",
+      "source": "rabbit-source.png"
+    },
+    {
+      "id": "hamster",
+      "reference": "倉鼠.png",
+      "source": "hamster-source.png"
+    },
+    {
+      "id": "guinea",
+      "reference": "天竺鼠.png",
+      "source": "guinea-source.png"
+    },
+    {
+      "id": "hedgehog",
+      "reference": "刺蝟.png",
+      "source": "hedgehog-source.png"
+    },
+    {
+      "id": "ferret",
+      "reference": "貂.png",
+      "source": "ferret-source.png"
+    },
+    {
+      "id": "parrot",
+      "reference": "鸚鵡.png",
+      "source": "parrot-source.png"
+    },
+    {
+      "id": "tortoise",
+      "reference": "烏龜.png",
+      "source": "tortoise-source.png"
+    }
+  ],
+  "scenes": [
+    "room",
+    "garden",
+    "beach",
+    "gym",
+    "space"
+  ]
+}
