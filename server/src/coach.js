@@ -330,6 +330,8 @@ export async function chat(userId, userText, history, image = null, model = null
     { role: 'user', parts: userParts },
   ];
 
+  // 整輪對話（含工具來回、補做）最多等這麼久，超過就回錯誤，不要讓畫面一直轉
+  const deadline = Date.now() + Number(process.env.COACH_TOTAL_TIMEOUT_MS ?? 75_000);
   const actions = [];
   let reply = '';
   let usedModel = model || null;   // 使用者在選單指定的模型；null＝自動（照候補鏈）
@@ -340,7 +342,7 @@ export async function chat(userId, userText, history, image = null, model = null
     for (let round = 0; round < maxRounds; round++) {
       // preferModel：同一輪對話固定用同一個模型，不要每次重新試探候補鏈
       const { candidate: cand, model } = await generateContent({
-        contents, systemInstruction, tools: toolDeclarations, preferModel: usedModel,
+        contents, systemInstruction, tools: toolDeclarations, preferModel: usedModel, deadline,
       });
       usedModel = model;
       const parts = cand.content?.parts || [];
@@ -372,7 +374,7 @@ export async function chat(userId, userText, history, image = null, model = null
   // 事後核對：模型嘴上說改了／刪了，但這一輪根本沒呼叫對應工具 → 要它補做或更正。
   // 實際發生過：「吻仔魚應該 3-5g 而已，再附上蕨餅」→ 只記了蕨餅，卻回覆「吻仔魚微調一下份量」。
   const gap = claimedButNotDone(userText, reply, actions);
-  if (gap) {
+  if (gap && deadline - Date.now() > 15_000) {
     console.warn(`[coach] ${userId}：回覆宣稱有修改／刪除但沒呼叫工具，追問模型補做`);
     contents.push({ role: 'model', parts: [{ text: reply }] });
     contents.push({ role: 'user', parts: [{ text: gap }] });

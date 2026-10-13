@@ -32,7 +32,7 @@ const feed = (date, kcal, protein) => records.addMeal(U, {
 describe('寵物狀態看的是哪幾天', () => {
   it('今天有記錄就不該說「幾天沒看到你記錄」', () => {
     // 前三天空白，只有今天吃
-    feed(records.today(), 3000, 200);
+    feed(records.today(), records.dailySummary(U).targets.kcal, 200);
 
     const s = pet.petState(U);
     expect(s.silent).toBe(0);
@@ -41,7 +41,7 @@ describe('寵物狀態看的是哪幾天', () => {
   });
 
   it('今天吃到目標就馬上算進平均，不必等到隔天', () => {
-    // 上一個測試已經餵了今天 3000 kcal。目標沒設定時 dailySummary 會給預設值，
+    // 上一個測試已經餵到今天的熱量目標。目標沒設定時 dailySummary 會給預設值，
     // 這裡只確認今天確實被納入——ateToday 與 days 都要反映出來。
     const s = pet.petState(U);
     expect(s.ateToday).toBe(true);

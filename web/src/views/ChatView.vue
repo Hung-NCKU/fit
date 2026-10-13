@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, nextTick, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue';
 import { api, compressImage, photoUrl, MEAL_TYPES, CATEGORIES } from '../api.js';
 import { openPhoto } from '../components/PhotoViewer.vue';
 import ModelPicker from '../components/ModelPicker.vue';
@@ -53,6 +53,9 @@ async function load() {
     messages.value = history;
     geminiReady.value = health.gemini;
     scrollDown();
+    // 離開頁面時還沒回完的話，回來後最多再等一分鐘讓回覆出現
+    const last = history[history.length - 1];
+    if (last && last.role === 'user') { pollLeft = 12; pollTimer = setTimeout(syncHistory, 5000); }
   } catch (e) {
     error.value = e.message;
   }
@@ -98,11 +101,31 @@ async function send(text = draft.value) {
     refreshModels();   // 更新今日額度狀態（剛才那個模型可能用完了）
   } catch (e) {
     error.value = e.message;
+    // 連線斷了或逾時，但伺服器那邊可能已經存好回覆（也可能已經記了飲食）：重新讀一次歷史
+    pollLeft = 12;
+    await syncHistory();
   } finally {
     sending.value = false;
     scrollDown();
   }
 }
+
+/** 重新讀對話歷史；最後一則還是自己說的話，代表伺服器還在想 → 稍後再看 */
+let pollTimer = null;
+let pollLeft = 0;
+async function syncHistory() {
+  try {
+    messages.value = await api.chatHistory();
+    scrollDown();
+  } catch { /* 下次再試 */ }
+  const last = messages.value[messages.value.length - 1];
+  if (last && last.role === 'user' && pollLeft > 0) {
+    pollLeft--;
+    clearTimeout(pollTimer);
+    pollTimer = setTimeout(syncHistory, 5000);
+  }
+}
+onUnmounted(() => clearTimeout(pollTimer));
 
 async function clearAll() {
   if (!confirm('確定要清空所有對話紀錄嗎？（訓練與飲食紀錄不會被刪除）')) return;

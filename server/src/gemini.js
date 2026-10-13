@@ -156,7 +156,7 @@ const RETRIABLE = new Set([500, 502, 503, 504]);
  * 依序嘗試候補鏈上的模型，回傳第一個成功的結果。
  * @returns {{ candidate: object, model: string }}
  */
-export async function generateContent({ contents, systemInstruction, tools, preferModel }) {
+export async function generateContent({ contents, systemInstruction, tools, preferModel, deadline }) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new GeminiError('尚未設定 GEMINI_API_KEY，請在 server/.env 填入免費 API key', 500);
 
@@ -172,9 +172,10 @@ export async function generateContent({ contents, systemInstruction, tools, pref
 
   for (const model of ordered) {
     if (isExhausted(model)) { skipped.push(model); continue; }
+    if (deadline && deadline - Date.now() < 3000) throw timeoutError();
 
     try {
-      const candidate = await callModel({ model, key, contents, systemInstruction, tools });
+      const candidate = await callModel({ model, key, contents, systemInstruction, tools, deadline });
       return { candidate, model };
     } catch (err) {
       lastError = err;
@@ -192,9 +193,20 @@ export async function generateContent({ contents, systemInstruction, tools, pref
   );
 }
 
+const timeoutError = () => new GeminiError(
+  'AI 回應逾時（Gemini 太慢或排隊中）。你的訊息有留著，稍後再送一次，或在模型選單換成 Flash-Lite。', 504);
+
+/** 單次請求最久等多久；整輪對話另有 deadline 總上限（見 coach.js） */
+const REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_REQUEST_TIMEOUT_MS ?? 30_000);
+
 /** 對單一模型發送請求，含重試 */
-async function callModel({ model, key, contents, systemInstruction, tools }) {
-  const MAX_ATTEMPTS = Number(process.env.GEMINI_MAX_RETRIES ?? 3);
+async function callModel({ model, key, contents, systemInstruction, tools, deadline }) {
+  const MAX_ATTEMPTS = Number(process.env.GEMINI_MAX_RETRIES ?? 2);
+  // 等待不能超過總上限剩下的時間
+  const wait = async (ms) => {
+    if (deadline && deadline - Date.now() < ms + 3000) throw timeoutError();
+    await sleep(ms);
+  };
 
   for (let attempt = 1; ; attempt++) {
     let res, text;
@@ -204,12 +216,15 @@ async function callModel({ model, key, contents, systemInstruction, tools }) {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
         body: JSON.stringify(buildBody({ contents, systemInstruction, tools, model })),
-        signal: AbortSignal.timeout(90_000),
+        signal: AbortSignal.timeout(deadline ? Math.max(1000, Math.min(REQUEST_TIMEOUT_MS, deadline - Date.now())) : REQUEST_TIMEOUT_MS),
       });
       text = await res.text();
     } catch (err) {
-      if (attempt >= MAX_ATTEMPTS) throw new GeminiError(`連線 Gemini 失敗：${err.message}`, 504);
-      await sleep(backoff(attempt));
+      if (attempt >= MAX_ATTEMPTS || (deadline && deadline - Date.now() < 3000)) {
+        if (err.name === 'TimeoutError' || err.name === 'AbortError') throw timeoutError();
+        throw new GeminiError(`連線 Gemini 失敗：${err.message}`, 504);
+      }
+      await wait(backoff(attempt));
       continue;
     }
 
@@ -235,7 +250,7 @@ async function callModel({ model, key, contents, systemInstruction, tools }) {
         throw Object.assign(new GeminiError(msg, 429), { moveToNextModel: true, quotaPerDay: true });
       }
       if (attempt < MAX_ATTEMPTS) {
-        await sleep(q.retryMs || backoff(attempt));
+        await wait(Math.min(q.retryMs || backoff(attempt), 8000));
         continue;
       }
       throw Object.assign(new GeminiError(msg, 429), { moveToNextModel: true });
@@ -254,7 +269,7 @@ async function callModel({ model, key, contents, systemInstruction, tools }) {
     }
 
     if (RETRIABLE.has(res.status) && attempt < MAX_ATTEMPTS) {
-      await sleep(backoff(attempt));
+      await wait(backoff(attempt));
       continue;
     }
 
