@@ -97,3 +97,32 @@ web/tools/build-petgame.sh   # --import、--export-release Web，最後產生 .g
 
 匯出設定在 `game/pet/export_presets.cfg`，其中 `variant/thread_support=false`
 是必要的：開執行緒的話瀏覽器會要求 COOP/COEP 兩個 header，整頁都得跟著改。
+
+## 新增使用者
+
+每位使用者一個獨立的 SQLite 檔（`server/data/fit-<id>.db`），第一次有人用那個身分
+登入時自動建立。所以新增一位只要兩個步驟：
+
+1. 在 `server/src/users.js` 的 `USERS` 加一筆：
+
+   ```js
+   {
+     id: 'guest',                 // 會變成 fit-guest.db
+     name: '訪客',                // 顯示在分頁上
+     envKey: 'PASSWORD_GUEST',    // 對應 server/.env 的欄位
+     seed: { sex, age, height_cm, weight_kg, goal_weight_kg, activity, goal, notes },
+   }
+   ```
+
+2. 在 `server/.env` 填 `PASSWORD_GUEST=...`，然後重新啟動。
+
+`seed` 只在建資料庫那一次用到，而且每個欄位都必填。不確定真實數字也沒關係——
+登入之後直接跟教練說「我 30 歲、170 公分、65 公斤、想增肌」，`update_goal`
+會重算每日熱量與三大營養素（也可以打 `PUT /api/profile`）。
+
+兩件事要注意：
+
+- **新增密碼會把所有人登出。** 連線用的簽章金鑰是從「全部密碼」推導出來的
+  （`sessionSecret()`），多一組密碼等於換一把金鑰，既有的 cookie 全部失效。
+- 前端不必改。`UserTabs` 是照 `session.users` 跑迴圈的，`otherUsers()` 也回傳陣列；
+  `USERS[0]` 只在「完全沒設密碼」時當預設身分用。
