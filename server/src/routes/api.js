@@ -1,7 +1,7 @@
 import { getProfile, updateProfile } from '../db.js';
 import { quotaStatus } from '../gemini.js';
 import { lastBackup } from '../autobackup.js';
-import { getUser, removeGuest, USERS } from '../users.js';
+import { addGuest, getUser, isTempGuest, promote, removeGuest, USERS } from '../users.js';
 import {
   addMeal, listMeals, listMealDates, updateMeal, deleteMeal,
   addWorkout, listWorkouts, updateWorkout, deleteWorkout,
@@ -37,6 +37,59 @@ export default async function apiRoutes(app) {
     isMe: u.id === req.userId,
     guest: Boolean(u.guest),
   })));
+
+  /**
+   * 建立正式帳號。
+   *
+   * 兩種情況共用同一張表單：
+   *   還在試用的訪客  → 把目前這個帳號升級，試用期間記的東西都留著
+   *   已經是正式使用者 → 另外開一個新帳號，回傳新密碼
+   *
+   * 身體數據在這裡就要填齊——每日熱量與三大營養素是從它們算出來的，
+   * 留著預設值等於給錯目標。
+   */
+  app.post('/account', async (req, reply) => {
+    const b = req.body || {};
+    const name = String(b.name ?? '').trim();
+    if (!name) throw Object.assign(new Error('請填名稱'), { status: 400 });
+
+    const num = (v, label, min, max) => {
+      const n = Number(v);
+      if (!Number.isFinite(n) || n < min || n > max) {
+        throw Object.assign(new Error(`${label}要在 ${min}~${max} 之間`), { status: 400 });
+      }
+      return n;
+    };
+
+    const profile = {
+      name,
+      sex: b.sex === 'male' ? 'male' : 'female',
+      age: num(b.age, '年齡', 10, 100),
+      height_cm: num(b.height_cm, '身高', 100, 230),
+      weight_kg: num(b.weight_kg, '體重', 25, 250),
+      goal_weight_kg: num(b.goal_weight_kg, '目標體重', 25, 250),
+      activity: num(b.activity, '活動量', 1.2, 1.725),
+      goal: ['muscle_gain', 'maintain', 'fat_loss'].includes(b.goal) ? b.goal : 'maintain',
+    };
+
+    // 試用中就升級自己，否則開一個新的
+    const upgrading = isTempGuest(req.userId);
+    const target = upgrading ? getUser(req.userId) : addGuest();
+    const promoted = promote(target.id, name);
+    if (!promoted) throw Object.assign(new Error('建立失敗'), { status: 500 });
+
+    // updateProfile 會順手把資料庫建起來（第一次存取時）並重算目標
+    updateProfile(target.id, profile, { recalc: true });
+    req.log.warn({ by: req.userId, account: target.id, upgrading }, '建立帳號');
+
+    return reply.code(201).send({
+      ok: true,
+      user: target.id,
+      name: promoted.name,
+      // 升級的人密碼沒變（試用開始時就給過了），新帳號才需要回傳
+      password: upgrading ? null : target.password,
+    });
+  });
 
   // 建立訪客的端點在 auth.js（POST /api/guest）——它要發 cookie 直接登入，
   // 而且是公開的。這裡只留「刪除」，刪除一定要先登入。

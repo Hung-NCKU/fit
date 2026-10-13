@@ -17,7 +17,7 @@ import { readThumb } from './thumbs.js';
 import { initAllDatabases } from './db.js';
 import { startScheduler } from './scheduler.js';
 import { startAutoBackup } from './autobackup.js';
-import { USERS, getUser, passwordOf } from './users.js';
+import { USERS, getUser, passwordOf, sweepGuests, touch } from './users.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const WEB_DIST = join(__dirname, '..', '..', 'web', 'dist');
@@ -48,6 +48,8 @@ await app.register(cookie, { secret: sessionSecret() });
 app.decorateRequest('userId', null);
 app.addHook('onRequest', async (req, reply) => {
   req.userId = currentUser(req);
+  // 還在試用的訪客只要有動靜就續命；閒置太久才會被掃掉（見 guests.js）
+  if (req.userId) touch(req.userId);
   if (!authRequired() || isPublicPath(req.url) || req.userId) return;
   return reply.code(401).send({ error: '請先登入' });
 });
@@ -57,6 +59,20 @@ app.addHook('onRequest', async (req, reply) => {
 // （/uploads/:id 不在此列：照片 id 是 uuid，內容不會變，故意要快取）
 app.addHook('onSend', async (req, reply) => {
   if (req.url.startsWith('/api/')) reply.header('cache-control', 'no-store');
+});
+
+/**
+ * 統一的錯誤格式：{ error: 訊息 }，前端只看這個欄位。
+ *
+ * **必須寫在 app.register(路由) 之前。** await register() 當下就把插件
+ * 建成一個封裝環境，並且沿用「那一刻」的錯誤處理器；寫在後面只會套用到
+ * 根環境。症狀是所有 throw 出來的訊息都被換成 Fastify 預設的
+ * { statusCode, error: 'Bad Request', message }，使用者看到的是「Bad Request」，
+ * 而不是「目標體重要在 25~250 之間」。
+ */
+app.setErrorHandler((err, req, reply) => {
+  req.log.error({ err }, 'request failed');
+  reply.code(err.status || err.statusCode || 500).send({ error: err.message || '伺服器錯誤' });
 });
 
 await app.register(authRoutes, { prefix: '/api' });
@@ -96,11 +112,6 @@ if (existsSync(WEB_DIST)) {
   });
 }
 
-app.setErrorHandler((err, req, reply) => {
-  req.log.error({ err }, 'request failed');
-  reply.code(err.status || err.statusCode || 500).send({ error: err.message || '伺服器錯誤' });
-});
-
 const port = Number(process.env.PORT || 3000);
 await app.listen({ port, host: '0.0.0.0' });
 
@@ -115,4 +126,17 @@ if (!authRequired()) {
 }
 startScheduler();
 startAutoBackup();
+
+/**
+ * 定期清掉「試用過但沒建帳號」的訪客，連同他們的資料庫。
+ *
+ * 關掉瀏覽器沒有可靠的事件可以聽（beacon 不保證送達），所以用閒置時間判斷。
+ * 開機先掃一次：服務重啟期間關掉視窗的人，不掃就會一直留著。
+ */
+const sweep = () => {
+  const gone = sweepGuests();
+  if (gone.length) app.log.info(`清掉沒建帳號的訪客：${gone.join('、')}`);
+};
+sweep();
+setInterval(sweep, 10 * 60 * 1000).unref();
 app.log.info(`✅ http://localhost:${port}  使用者：${USERS.map(u => u.name).join(' / ')}`);

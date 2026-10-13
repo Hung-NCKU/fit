@@ -6,6 +6,7 @@ import { session } from './auth.js';
 import LoginView from './views/LoginView.vue';
 import PhotoViewer from './components/PhotoViewer.vue';
 import NotifyToggle from './components/NotifyToggle.vue';
+import NewAccount from './components/NewAccount.vue';
 
 const route = useRoute();
 
@@ -60,6 +61,7 @@ onMounted(async () => {
     session.user = s.user;
     session.name = s.name;
     session.users = s.users || [];
+    session.trial = Boolean(s.trial);
   } catch {
     session.authRequired = true;
     session.authed = false;
@@ -84,9 +86,10 @@ onMounted(async () => {
 
       <header v-else class="topbar">
         <span class="logo">增肌教練</span>
-        <span class="muted small">{{ title }}</span>
+        <span class="muted small page">{{ title }}</span>
         <span v-if="session.name" class="who">{{ session.name }}</span>
         <span class="bell-spacer"></span>
+        <NewAccount v-if="session.authed" />
         <NotifyToggle />
         <button v-if="canShowInstall" class="icon install" @click="install">📲 安裝</button>
         <button v-if="session.authRequired" class="icon logout" @click="logout">登出</button>
@@ -155,6 +158,18 @@ onMounted(async () => {
   position: relative;      /* 提醒設定面板以這裡為基準 */
 }
 .logo { font-weight: 700; letter-spacing: .02em; }
+
+/* 標題列擠不下時的取捨。
+   手機上一排要放：logo、頁名、使用者、鈴鐺、新增帳號、安裝、登出，
+   不處理的話每個字都會折行（實際在 1080px 的裝置上就是這樣）。
+   頁名下方分頁列本來就有，窄螢幕先收掉它。 */
+.topbar > * { flex: 0 0 auto; }
+.topbar .logo { white-space: nowrap; }
+
+@media (max-width: 460px) {
+  .page { display: none; }
+  .topbar { gap: .45rem; }
+}
 
 .content {
   flex: 1 1 auto;

@@ -54,6 +54,8 @@ export const api = {
   // 以訪客身分試用：當場開一個帳號並直接登入（不用先登入就能打）。
   // 回應裡的密碼只有這一次拿得到，要顯示給使用者抄下來。
   guestLogin: () => request('/guest', { method: 'POST' }),
+  // 建立正式帳號：試用中就升級自己，否則開一個新的
+  createAccount: (profile) => request('/account', { method: 'POST', body: profile }),
   deleteGuest: (id) => request(`/guests/${id}`, { method: 'DELETE' }),
 
   listMeals: (p) => request('/meals' + qs(p)),

@@ -10,7 +10,9 @@
  * 存在 server/data/guests.json（見 guests.js），開機時併進 USERS。
  * 兩者的差別只有密碼放哪裡：固定帳號在 .env，訪客在那份 JSON 裡。
  */
-import { createGuest, deleteGuest, loadGuests } from './guests.js';
+import {
+  createGuest, deleteGuest, loadGuests, promoteGuest, sweepTempGuests, touchGuest,
+} from './guests.js';
 
 const BUILTIN = [
   {
@@ -71,7 +73,38 @@ export function removeGuest(id) {
   return true;
 }
 
+/**
+ * 把還在試用的訪客升級成正式使用者。
+ * 從這一刻起他不會再被掃掉，也會像其他人一樣出現在分頁列。
+ */
+export function promote(id, name) {
+  const u = USERS.find(x => x.id === id && x.guest);
+  if (!u) return null;
+  const g = promoteGuest(id, name);
+  if (!g) return null;
+  u.name = g.name;
+  delete u.temp;
+  delete u.last_seen;
+  return u;
+}
+
+/** 有動靜就幫這個訪客續命（只對還沒建帳號的有效） */
+export const touch = (id) => touchGuest(id);
+
+/** 清掉閒置太久、還沒建帳號的訪客，順便把他們從 USERS 移除 */
+export function sweepGuests() {
+  const gone = sweepTempGuests();
+  for (const id of gone) {
+    const i = USERS.findIndex(u => u.id === id);
+    if (i >= 0) USERS.splice(i, 1);
+  }
+  return gone;
+}
+
 export const guestUsers = () => USERS.filter(u => u.guest);
+
+/** 還在試用、還沒建帳號的 */
+export const isTempGuest = (id) => Boolean(getUser(id)?.temp);
 
 export const userIds = () => USERS.map(u => u.id);
 

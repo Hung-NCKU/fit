@@ -1304,6 +1304,8 @@ cp server/.env.example server/.env
 - §23.1：一個「正確的理由」套到不適用的地方，就變成 bug
 - §23.3：寫完測試要先把 bug 裝回去，確認它真的會失敗
 - §24.1：「改密碼就登出所有人」是功能，「新增帳號就登出所有人」是 bug
+- §25.1：量不到的事情就不要量——改量量得到的那個
+- §25.3：錯誤處理器寫在 register 後面，整個 App 的錯誤訊息都沒人看過
 
 **除錯方法論**
 - §12.6：一個 bug 有三個互相掩蓋的原因；以及「先確認測試方法本身是對的」
@@ -2257,6 +2259,96 @@ export const passwordOf = (user) =>
 `server/data/guests.json`（跟資料庫放一起，本來就不進版控）。
 存明碼跟 `.env` 那幾組一致——這個專案的威脅模型從頭到尾就是
 「一台自己的機器、只有認識的人連得到」，不在這裡假裝更嚴格。
+
+---
+
+## 25. 訪客不是帳號，是「還沒決定」
+
+§24 的訪客會一直留著。但「試用」這個詞本來就隱含了「可能不留下來」——
+按了試用卻沒繼續用的人，不該在使用者清單裡堆成一排。
+
+所以訪客改成**過渡狀態**：
+
+1. 登入頁按「以訪客身分試用」→ 開一個 `temp` 的訪客，進去先玩
+2. App 右上角按「建立帳號」→ 填名稱與身體數據 → 升級成正式使用者
+3. 沒建就關掉 → 這個訪客連同他的資料庫一起消失
+
+### 25.1 「關掉視窗」是量不到的
+
+瀏覽器關閉沒有可靠的事件。`beforeunload` 不保證跑完，`navigator.sendBeacon`
+在背景分頁被殺掉時也不保證送達。手機上更糟——切到別的 App 跟關掉幾乎無法區分。
+
+所以不要去量「關掉」，改量**還有沒有在用**：
+
+```js
+// 每個請求更新 last_seen（節流，一分鐘寫一次就好）
+export function touchGuest(id) { ... }
+
+// 閒置超過一小時、而且還沒建帳號的，掃掉
+export function sweepTempGuests() {
+  const cutoff = Date.now() - TEMP_TTL_MIN * 60_000;
+  const dead = state.guests.filter(g => g.temp && (g.last_seen || 0) < cutoff);
+  ...
+}
+```
+
+掃除在開機時跑一次、之後每十分鐘一次。開機那一次是必要的：服務重啟期間
+關掉視窗的人，不掃就會永遠留著。
+
+這一次**連資料庫檔案一起刪**——那是試用期間的暫存資料，本來就說好不留的。
+（手動刪除正式帳號時仍然保留檔案，那是另一回事：那是使用者的資料。）
+
+### 25.2 同一張表單，兩種意思
+
+右上角那顆按鈕對誰都在，但做的事不一樣：
+
+| 目前身分 | 按鈕 | 行為 |
+|---|---|---|
+| 試用中的訪客 | 建立帳號 | 升級自己，試用期間記的東西全部留著 |
+| 正式使用者 | ＋ 帳號 | 另外開一個新帳號，顯示新密碼 |
+
+後端用同一個端點處理，差別只在 `isTempGuest(req.userId)`：
+
+```js
+const upgrading = isTempGuest(req.userId);
+const target = upgrading ? getUser(req.userId) : addGuest();
+promote(target.id, name);
+updateProfile(target.id, profile, { recalc: true });
+```
+
+升級的人密碼不變（試用開始時就給過了），所以回傳的 `password` 是 `null`。
+
+身體數據在這裡就必須填齊，而且後端自己驗範圍——每日熱量與三大營養素是從
+它們算出來的，留著預設值等於一開始就給錯目標。
+
+### 25.3 寫了一年的錯誤訊息，使用者一次都沒看到
+
+表單故意填錯（目標體重 7878）之後，畫面上出現的是 **`Bad Request`**，
+不是我寫的「目標體重要在 25~250 之間」。
+
+`server.js` 明明有統一的錯誤處理器：
+
+```js
+app.setErrorHandler((err, req, reply) => {
+  reply.code(err.status || err.statusCode || 500).send({ error: err.message || '伺服器錯誤' });
+});
+```
+
+問題是它寫在所有 `app.register(路由)` **後面**。Fastify 的 `await register()`
+當下就把插件建成一個封裝環境，並沿用「那一刻」的錯誤處理器；之後才設定的
+只會套用到根環境。於是每一個 `throw` 出來的訊息都被換成 Fastify 的預設格式
+`{ statusCode, error: 'Bad Request', message }`，而前端讀的是 `data.error`。
+
+把 `setErrorHandler` 移到路由註冊之前就好。這不是新功能的 bug——
+**整個 App 的錯誤訊息從一開始就是壞的**：
+
+```
+修之前：{"statusCode":400,"error":"Bad Request","message":"換寵物要把目前這隻的名字帶回來確認"}
+修之後：{"error":"換寵物要把目前這隻的名字帶回來確認"}
+```
+
+「代幣不夠，還差 N 枚」「只能看對方的寵物，不能動牠」這些話，使用者從來沒看過，
+他們看到的一直是「Bad Request」。新功能把它照出來，順手一起修掉。
 
 ---
 

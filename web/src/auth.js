@@ -8,6 +8,8 @@ export const session = reactive({
   user: null,      // 目前登入者的 id
   name: null,      // 顯示用的名字
   users: [],       // 所有使用者 [{ id, name }]
+  trial: false,    // 還在試用（訪客），還沒建帳號
+  trial: false,    // 還在試用（訪客），還沒建帳號
 });
 
 /** 另一位使用者（目前只有兩人） */
