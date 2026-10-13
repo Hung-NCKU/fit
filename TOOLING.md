@@ -48,7 +48,8 @@ Vitest 5 只裝在根目錄作為測試工具；測試與 web 的 Vite 6 打包�
 # 需要 imagemagick 與 webp
 sudo apt-get install imagemagick webp
 
-web/tools/slice-pets.sh      # 十隻角色卡、五個場景、貓的八種動作
+web/tools/slice-pets.sh      # 十隻角色卡與去背本體
+web/tools/slice-actions.sh   # 十隻 × 五個動作（待機/行走/進食/睡覺/玩耍）
 web/tools/build-catalog.sh   # pet/素材 -> 213 件商品 + server/src/pet-catalog.json
 web/tools/build-anim.sh      # 十張 sprite sheet -> server/src/pet-anim.json
 web/tools/build-scenes.sh    # 用乾淨的素材組出五張沒有動物的場景背景

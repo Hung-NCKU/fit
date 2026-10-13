@@ -17,21 +17,22 @@
  * 專屬動作怎麼演。
  *
  * key 是 動物特性.txt 那二十幾個動作的 id，css 是場景要套的動畫類別，
- * pose 是貓的動作圖檔名（只有貓有八張動作圖，其他物種會自動退回本體圖）。
+ * pose 是動作圖的檔名。動作圖只有五種（idle/walk/eat/sleep/play），
+ * 所以每個專屬動作挑一張最接近的當底，差異交給 css 的動畫表現。
  * 沒列到的動作會落到 idle，不會壞掉，只是動得比較普通。
  */
 const RECIPES = {
   // 貓
-  groom: { css: 'groom', pose: 'groom' },
+  groom: { css: 'groom', pose: 'idle' },
   scratch: { css: 'play', pose: 'play' },
   sunbathe: { css: 'sleep', pose: 'sleep' },
   // 狗
   fetch: { css: 'walk', pose: 'walk' },
-  wag: { css: 'play', pose: 'happy' },
+  wag: { css: 'play', pose: 'play' },
   doze: { css: 'sleep', pose: 'sleep' },
   // 兔
   hop: { css: 'play', pose: 'play' },
-  wash: { css: 'groom', pose: 'groom' },
+  wash: { css: 'groom', pose: 'idle' },
   nibble: { css: 'eat', pose: 'eat' },
   // 倉鼠
   wheel: { css: 'play', pose: 'play' },
@@ -39,7 +40,7 @@ const RECIPES = {
   // 天竺鼠
   graze: { css: 'eat', pose: 'eat' },
   hide: { css: 'sleep', pose: 'sleep' },
-  popcorn: { css: 'play', pose: 'happy' },
+  popcorn: { css: 'play', pose: 'play' },
   // 刺蝟
   explore: { css: 'walk', pose: 'walk' },
   sniff: { css: 'idle', pose: 'idle' },
@@ -49,14 +50,14 @@ const RECIPES = {
   roll: { css: 'play', pose: 'play' },
   play: { css: 'play', pose: 'play' },
   // 鸚鵡
-  preen: { css: 'groom', pose: 'groom' },
+  preen: { css: 'groom', pose: 'idle' },
   climb: { css: 'play', pose: 'play' },
-  squawk: { css: 'play', pose: 'happy' },
+  squawk: { css: 'play', pose: 'play' },
   // 陸龜
   plod: { css: 'walk', pose: 'walk' },
   veggie: { css: 'eat', pose: 'eat' },
   // 龍貓
-  dustbath: { css: 'groom', pose: 'groom' },
+  dustbath: { css: 'groom', pose: 'idle' },
   leap: { css: 'play', pose: 'play' },
   gnaw: { css: 'eat', pose: 'eat' },
 };

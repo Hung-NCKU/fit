@@ -121,6 +121,20 @@ export function replacePet(userId, species, name, confirmName) {
   }
 
   const db = getDb(userId);
+
+  // 先把舊的那一隻整隻留下來再動手。「無法復原」是設計上的選擇，
+  // 不是技術上的必然——留一份存根的成本幾乎是零。
+  if (current) {
+    const row = db.prepare('SELECT * FROM pet WHERE id = 1').get();
+    db.prepare(`
+      INSERT INTO pet_history (species, name, coins, equipped, settled_to, items, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      row.species, row.name, row.coins, row.equipped, row.settled_to,
+      JSON.stringify(ownedItems(userId)), row.created_at,
+    );
+  }
+
   db.exec('DELETE FROM pet_items');
   db.exec('DELETE FROM pet');
   const fresh = adoptPet(userId, species, name);

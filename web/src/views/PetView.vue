@@ -86,11 +86,12 @@ const activityText = computed(() => current.value?.label || '發呆中');
 
 /**
  * 場景裡要顯示的那張圖。
- * 概念圖的「寵物動作」只畫了貓，所以只有貓有動作版本；
- * 其他九種沒有，就用該物種的靜態本體，動態交給 CSS。
+ *
+ * 十種動物都有五個動作，由 web/tools/slice-actions.sh 從
+ * pet/十種可愛動物動作精靈圖鑑.png 切出來。先前只有貓有動作圖，
+ * 其他九種不管在做什麼都是同一張靜態本體。
  */
-const ACT_SPRITES = new Set(['walk', 'eat', 'sleep', 'play', 'stretch', 'groom', 'idle', 'happy']);
-const hasActs = (id) => id === 'cat';
+const ACT_SPRITES = new Set(['idle', 'walk', 'eat', 'sleep', 'play']);
 
 /** 場景的高度。CSS 裡的 .scene { height } 要跟這個數字一致。 */
 const SCENE_H = 230;
@@ -113,14 +114,15 @@ const petHeight = computed(() => {
 });
 
 /** 貓才有八張動作圖；那幾張本身就畫了 Z、碗、毛線球，不要再疊 emoji 道具 */
-const usesActSprite = computed(() =>
-  hasActs(pet.value?.species) && ACT_SPRITES.has(current.value?.pose));
+/** 動作圖本身就畫了 Z、飯碗、毛線球，有動作圖就不要再疊 emoji 道具 */
+const usesActSprite = computed(() => ACT_SPRITES.has(current.value?.pose));
 
 const petSprite = computed(() => {
   if (!pet.value) return '';
   const pose = current.value?.pose;
-  return hasActs(pet.value.species) && pose && ACT_SPRITES.has(pose)
-    ? `/pets/act-${pose}.webp`
+  // 退回靜態本體：狀態機還沒跑第一輪，或是之後加了新物種但還沒切圖
+  return usesActSprite.value
+    ? `/pets/act-${pet.value.species}-${pose}.webp`
     : petBody(pet.value.species);
 });
 

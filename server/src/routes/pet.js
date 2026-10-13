@@ -54,6 +54,15 @@ export default async function petRoutes(app) {
   // 換寵物：舊的紀錄與代幣會被清掉，前端必須先確認過
   app.post('/pet/replace', async (req) => {
     writeGuard(req);
+    // 這是唯一不可復原的操作，而且開發期間誤觸過好幾次、事後都查不出來源
+    //（伺服器一重啟日誌就被蓋掉）。用 warn 留一筆，連來源一起記。
+    req.log.warn({
+      user: req.userId,
+      to: req.body?.species,
+      confirm: req.body?.confirm,
+      ua: req.headers['user-agent'],
+      ip: req.ip,
+    }, '換寵物');
     return replacePet(req.userId, req.body?.species, req.body?.name, req.body?.confirm);
   });
 

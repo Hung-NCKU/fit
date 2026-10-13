@@ -110,6 +110,21 @@ CREATE TABLE IF NOT EXISTS pet_items (
   acquired_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
+-- 換寵物會把上一隻連同代幣與買過的東西全部清掉。開發期間這件事發生過四次，
+-- 每次都只能靠手動改資料庫救回來，而且當天的備份不見得涵蓋得到。
+-- 換掉之前先把舊的那隻整隻存進這裡，就不會再有「無法復原」這回事。
+CREATE TABLE IF NOT EXISTS pet_history (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  species     TEXT NOT NULL,
+  name        TEXT NOT NULL DEFAULT '',
+  coins       INTEGER NOT NULL DEFAULT 0,
+  equipped    TEXT NOT NULL DEFAULT '{}',
+  settled_to  TEXT NOT NULL DEFAULT '',
+  items       TEXT NOT NULL DEFAULT '[]',   -- JSON 陣列：買過的東西
+  created_at  TEXT NOT NULL DEFAULT '',     -- 這隻當初是什麼時候領養的
+  replaced_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
 CREATE TABLE IF NOT EXISTS chat_messages (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   role       TEXT NOT NULL,
