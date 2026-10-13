@@ -103,9 +103,23 @@ export function adoptPet(userId, species, name) {
 
 /**
  * 換一隻養。上一隻的代幣與買過的東西全部清掉，重新開始。
- * 這是破壞性操作，前端一定要先跟使用者確認過。
+ *
+ * 這是整個 App 唯一不可復原的操作，而且實際上誤觸過三次（兩次是原生
+ * confirm() 的「確定」剛好落在手指附近，一次原因不明，日誌已經被覆蓋）。
+ * 所以確認不能只靠前端：呼叫端必須把「目前這隻的名字」原樣帶回來。
+ *
+ * 這樣一來，舊版前端（還在用 confirm()、不會送這個欄位）會直接被擋下來，
+ * 而不是把寵物換掉；任何誤觸也不可能湊出正確的名字。
  */
-export function replacePet(userId, species, name) {
+export function replacePet(userId, species, name, confirmName) {
+  const current = getPet(userId);
+  if (current && String(confirmName ?? '').trim() !== current.name) {
+    throw Object.assign(
+      new Error('換寵物要把目前這隻的名字帶回來確認'),
+      { status: 400 },
+    );
+  }
+
   const db = getDb(userId);
   db.exec('DELETE FROM pet_items');
   db.exec('DELETE FROM pet');

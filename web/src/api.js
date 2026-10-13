@@ -75,7 +75,9 @@ export const api = {
 
   pet: (user) => request('/pet' + qs({ user })),
   adoptPet: (species, name) => request('/pet', { method: 'POST', body: { species, name } }),
-  replacePet: (species, name) => request('/pet/replace', { method: 'POST', body: { species, name } }),
+  // confirm 要帶目前這隻的名字，伺服器會核對 —— 這是唯一不可復原的操作
+  replacePet: (species, name, confirm) =>
+    request('/pet/replace', { method: 'POST', body: { species, name, confirm } }),
   buyItem: (item) => request('/pet/buy', { method: 'POST', body: { item } }),
   equipItem: (item) => request('/pet/equip', { method: 'POST', body: { item } }),
   unequipSlot: (slot) => request('/pet/equip', { method: 'POST', body: { slot } }),

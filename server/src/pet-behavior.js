@@ -12,8 +12,6 @@
  * GDScript 裡不會再抄一份，不然兩邊遲早會對不起來）。
  */
 
-import ANIM from './pet-anim.json' with { type: 'json' };
-
 /* ---------------- 作息曲線 ---------------- */
 
 /**
@@ -186,8 +184,6 @@ export function behaviorOf(species) {
     rhythm: h.rhythm,
     acts: h.acts,
     curve: RHYTHMS[h.rhythm],
-    // 逐格動畫的規格（由 web/tools/build-anim.sh 從素材的 animations.json 產生）
-    anim: ANIM[species] || ANIM.cat,
   };
 }
 

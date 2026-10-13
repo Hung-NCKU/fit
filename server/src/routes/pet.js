@@ -54,7 +54,7 @@ export default async function petRoutes(app) {
   // 換寵物：舊的紀錄與代幣會被清掉，前端必須先確認過
   app.post('/pet/replace', async (req) => {
     writeGuard(req);
-    return replacePet(req.userId, req.body?.species, req.body?.name);
+    return replacePet(req.userId, req.body?.species, req.body?.name, req.body?.confirm);
   });
 
   app.post('/pet/buy', async (req) => {

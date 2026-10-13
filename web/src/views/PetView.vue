@@ -4,7 +4,7 @@ import { api } from '../api.js';
 import { session } from '../auth.js';
 import UserTabs from '../components/UserTabs.vue';
 import PetCarousel from '../components/PetCarousel.vue';
-import PetStage from '../components/PetStage.vue';
+import { pickNext } from '../pet-fsm.js';
 
 const viewing = ref(session.user);
 const data = ref(null);
@@ -44,68 +44,84 @@ const state = computed(() => data.value?.state || null);
 const mine = computed(() => data.value?.mine !== false);
 const owned = computed(() => new Set(data.value?.owned || []));
 const equipped = computed(() => pet.value?.equipped || {});
-// 生活習性＋逐格動畫規格，來源是 pet/動物特性.txt 與 pet/切片與動畫/
+// 生活習性：作息曲線與專屬動作，來源是 pet/動物特性.txt
 const behavior = computed(() => data.value?.behavior || null);
 
 /* ---------------- 作息 ---------------- */
 
 /**
- * 貓一天睡 14 小時左右，清晨與黃昏最活躍，其餘時間吃飯、理毛、發呆。
- * 這裡照這個節奏排，每 30 秒重算一次，所以放著不動也會看到牠換狀態。
+ * 行為狀態機。規則都在 ../pet-fsm.js，這裡只負責「時間到了換一個」。
+ *
+ * 先前這段是一張寫死的時段表，而且只描述了貓的一天；另外九種不管幾點
+ * 都是同一張靜態圖。現在改吃後端送來的作息曲線（pet/動物特性.txt），
+ * 倉鼠半夜會跑滾輪、陸龜白天才慢慢走。
  */
-const ROUTINE = [
-  { from: 0,  to: 5,  act: 'sleep', text: '睡得很熟' },
-  { from: 5,  to: 7,  act: 'beg',   text: '天亮了，在討早餐' },
-  { from: 7,  to: 9,  act: 'eat',   text: '正在吃早餐' },
-  { from: 9,  to: 11, act: 'groom', text: '飯後理毛' },
-  { from: 11, to: 15, act: 'sleep', text: '午睡中' },
-  { from: 15, to: 17, act: 'idle',  text: '醒了，在發呆' },
-  { from: 17, to: 19, act: 'play',  text: '黃昏最有精神，正在玩' },
-  { from: 19, to: 21, act: 'eat',   text: '正在吃晚餐' },
-  { from: 21, to: 23, act: 'groom', text: '睡前理毛' },
-  { from: 23, to: 24, act: 'sleep', text: '準備睡了' },
-];
+const current = ref(null);
+let timer = null;
 
-const now = ref(new Date());
-let clock = null;
-onMounted(() => { clock = setInterval(() => { now.value = new Date(); }, 30_000); });
-onUnmounted(() => clearInterval(clock));
+function step() {
+  const b = behavior.value;
+  if (!b) return;
+  const d = new Date();
+  current.value = pickNext({
+    curve: b.curve,
+    hour: d.getHours() + d.getMinutes() / 60,
+    mood: state.value?.mood,
+    ateToday: !!state.value?.ateToday,
+    acts: b.acts,
+    last: current.value?.kind,
+  });
+  clearTimeout(timer);
+  // 每個狀態撐一段時間才換，不然看起來像在抽搐
+  timer = setTimeout(step, (current.value.secs || 25) * 1000);
+}
 
-const routine = computed(() => {
-  const h = now.value.getHours();
-  return ROUTINE.find(r => h >= r.from && h < r.to) || ROUTINE[0];
-});
+// 換使用者或剛載好資料時重新開始
+watch(behavior, (b) => { if (b) { current.value = null; step(); } });
+onMounted(step);
+onUnmounted(() => clearTimeout(timer));
+
+const activity = computed(() => current.value?.css || 'idle');
+const activityText = computed(() => current.value?.label || '發呆中');
 
 /**
- * 心情蓋過作息：餓壞了就不睡一直討食，太飽或太瘦就沒力氣玩。
- * 不這樣做的話，每天同一個時間永遠長一樣，飲食紀錄的變化就看不出來。
+ * 場景裡要顯示的那張圖。
+ * 概念圖的「寵物動作」只畫了貓，所以只有貓有動作版本；
+ * 其他九種沒有，就用該物種的靜態本體，動態交給 CSS。
  */
-const activity = computed(() => {
-  const m = state.value?.mood;
-  if (m === 'hungry') return 'beg';
-  if ((m === 'round' || m === 'thin') && routine.value.act === 'play') return 'idle';
-  // 心情好又剛好沒事做的時候，給牠「開心」那張
-  if (m === 'happy' && routine.value.act === 'idle') return 'happy';
-  return routine.value.act;
+const ACT_SPRITES = new Set(['walk', 'eat', 'sleep', 'play', 'stretch', 'groom', 'idle', 'happy']);
+const hasActs = (id) => id === 'cat';
+
+/** 場景的高度。CSS 裡的 .scene { height } 要跟這個數字一致。 */
+const SCENE_H = 230;
+
+/**
+ * 牠該多高。
+ *
+ * size 來自 pet/動物特性.txt，意思是「站著時佔場景高度的幾成」——
+ * 倉鼠 0.13、狗 0.34。先前是寫死的 148px，等於整隻佔了場景的六成四，
+ * 不管養的是陸龜還是小鸚鵡都一樣大，房間完全沒有尺度感。
+ *
+ * 用 px 而不是百分比：場景是 grid item 且 align-items 不是 stretch，
+ * 百分比高度在這個情況下不會解析，圖會用自然大小撐破場景。
+ */
+const petHeight = computed(() => {
+  const size = behavior.value?.size ?? 0.3;
+  // 趴著的時候看起來會比站著矮一點，給一點補償，不然睡覺時特別小
+  const lying = current.value?.css === 'sleep';
+  return `${Math.round(SCENE_H * size * (lying ? 1.15 : 1))}px`;
 });
 
-/** 作息名稱 → 素材檔名。beg 用「走路」那張（走過來討食）。 */
-const ACT_FILE = { beg: 'walk', idle: 'idle', sleep: 'sleep', eat: 'eat', play: 'play', groom: 'groom', happy: 'happy' };
+/** 貓才有八張動作圖；那幾張本身就畫了 Z、碗、毛線球，不要再疊 emoji 道具 */
+const usesActSprite = computed(() =>
+  hasActs(pet.value?.species) && ACT_SPRITES.has(current.value?.pose));
 
 const petSprite = computed(() => {
   if (!pet.value) return '';
-  const f = ACT_FILE[activity.value];
-  return hasActs(pet.value.species) && f && ACT_SPRITES.has(f)
-    ? `/pets/act-${f}.webp`
+  const pose = current.value?.pose;
+  return hasActs(pet.value.species) && pose && ACT_SPRITES.has(pose)
+    ? `/pets/act-${pose}.webp`
     : petBody(pet.value.species);
-});
-
-const activityText = computed(() => {
-  const m = state.value?.mood;
-  if (m === 'hungry') return '一直在討食';
-  if (m === 'round' && routine.value.act === 'play') return '太飽了，不想動';
-  if (m === 'thin' && routine.value.act === 'play') return '沒力氣玩，趴著';
-  return routine.value.text;
 });
 
 /** 插畫檔名：<id>.webp 是整張卡，<id>-pet.webp 只有動物本體 */
@@ -116,14 +132,6 @@ const petCard = (id) => `/pets/${id}.webp`;
 const choices = computed(() =>
   (data.value?.species || []).map(s => ({ ...s, img: petCard(s.id) })));
 const petBody = (id) => `/pets/${id}-pet.webp`;
-
-/**
- * 場景裡要顯示的那張圖。
- * 概念圖的「寵物動作」只畫了貓，所以只有貓有動作版本；
- * 其他九種沒有，就用該物種的靜態本體，動態交給 CSS。
- */
-const ACT_SPRITES = new Set(['walk', 'eat', 'sleep', 'play', 'stretch', 'groom', 'idle', 'happy']);
-const hasActs = (id) => id === 'cat';
 
 const sceneImg = computed(() => {
   const id = shown.value.bg || 'bg_room';
@@ -173,16 +181,6 @@ const acc = computed(() => itemById(shown.value.acc));
 /** 穿戴類疊在寵物身上，擺飾放在場景角落 */
 const worn = computed(() => [hat.value, cloth.value, shoe.value, acc.value].filter(Boolean));
 
-/** 同一份穿戴資料，換成遊戲要的 { 部位: 圖片路徑 } */
-const wearPaths = computed(() => ({
-  hat: hat.value?.img || '',
-  cloth: cloth.value?.img || '',
-  shoe: shoe.value?.img || '',
-  acc: acc.value?.img || '',
-}));
-
-/** 吃飯時放在旁邊的碗。圖鑑裡本來就有一個，不必另外畫。 */
-const bowlImg = computed(() => itemById('lib-2-room-02')?.img || '');
 
 /** 體態只影響顯示大小，不改 emoji —— 同一隻動物胖瘦用縮放表現最直覺 */
 const bodyScale = computed(() => ({ thin: .82, normal: 1, round: 1.18 }[state.value?.body] ?? 1));
@@ -239,7 +237,7 @@ const agreed = ref(false);
 function confirmChange() {
   if (!picked.value || !agreed.value) return;
   act(async () => {
-    await api.replacePet(picked.value, petName.value);
+    await api.replacePet(picked.value, petName.value, pet.value?.name);
     changing.value = false;
     agreed.value = false;
     tab.value = 'home';
@@ -289,27 +287,24 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
           </span>
         </div>
 
-        <!-- 舞台：Godot 跑起來就換成 canvas，沒跑起來就留在這個靜態場景 -->
-        <PetStage
-          :pet="pet" :state="state" :behavior="behavior"
-          :scene="sceneImg" :wear="wearPaths" :decor="decor?.img || ''"
-          :bowl="bowlImg" :fallback-doing="activityText"
-        >
+        <!-- 場景：背景、寵物、裝備疊出來，動作由 pet-fsm.js 的狀態機決定 -->
         <div class="scene" :style="{ '--tint': pet.tint || '#f6efdf' }">
           <img class="scene-bg" :src="sceneImg" :alt="bg?.name || '小房間'" />
           <img v-if="decor" class="scene-decor" :src="decor.img" :alt="decor.name" />
-          <span class="scene-pet" :class="activity" :style="{ '--body': bodyScale }">
+          <span class="scene-pet" :class="activity" :style="{ '--body': bodyScale, '--pet-h': petHeight }">
             <img v-for="w in worn" :key="w.id" class="worn" :class="w.slot" :src="w.img" :alt="w.name" />
             <img class="scene-img" :src="petSprite" :alt="pet.speciesName" />
-            <!-- 作息的小道具：睡覺的 Z、吃飯的碗、玩耍的球 -->
-            <span v-if="activity === 'sleep'" class="prop zzz">💤</span>
-            <span v-else-if="activity === 'eat'" class="prop bowl">🍚</span>
-            <span v-else-if="activity === 'play'" class="prop ball">🧶</span>
-            <span v-else-if="activity === 'beg'" class="prop beg">❗</span>
+            <!-- 作息的小道具。貓的動作圖本身就畫了 Z 與毛線球，疊上去會變兩份 -->
+            <template v-if="!usesActSprite">
+              <span v-if="activity === 'sleep'" class="prop zzz">💤</span>
+              <span v-else-if="activity === 'eat'" class="prop bowl">🍚</span>
+              <span v-else-if="activity === 'play'" class="prop ball">🧶</span>
+              <span v-else-if="activity === 'beg'" class="prop beg">❗</span>
+            </template>
           </span>
         </div>
-        </PetStage>
 
+        <p class="small muted doing">現在：{{ activityText }}</p>
         <p class="says">{{ state.says }}</p>
 
         <div class="row wrap stats small">
@@ -481,7 +476,8 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
   display: block;
   /* 固定高度而不是百分比：這是 grid item 且 align-items 不是 stretch，
      百分比高度在這個情況下不會解析，圖會用自然大小撐破場景。 */
-  height: 148px;   /* 比場景小一截，才看得出牠待在房間裡而不是塞滿 */
+  /* 由 petHeight 依物種的真實體型比例算出來 */
+  height: var(--pet-h, 100px);
   transform-origin: center bottom;
   /* 呼吸：所有狀態共用，讓牠看起來是活的而不是一張貼紙 */
   animation: breathe 3.6s ease-in-out infinite;
@@ -505,6 +501,16 @@ const unequip = (slot) => act(() => api.unequipSlot(slot), 'un' + slot);
 .scene-pet.eat   { animation: nibble .9s ease-in-out infinite; }
 .scene-pet.groom { animation: groom 2.4s ease-in-out infinite; }
 .scene-pet.beg   { animation: tilt 2.2s ease-in-out infinite; }
+/* 走動與發呆是狀態機才有的兩個狀態：走動左右晃，發呆只是慢慢呼吸 */
+.scene-pet.walk  { animation: wander 7s ease-in-out infinite; }
+.scene-pet.idle  { animation: breathe 9s ease-in-out infinite; }
+
+@keyframes wander {
+  0%, 100% { transform: translateX(-16%) scaleX(-1) scale(var(--body)); }
+  48%      { transform: translateX(16%)  scaleX(-1) scale(var(--body)); }
+  50%      { transform: translateX(16%)  scale(var(--body)); }
+  98%      { transform: translateX(-16%) scale(var(--body)); }
+}
 
 @keyframes hop {
   0%, 100% { transform: translateY(0) scale(var(--body)); }
