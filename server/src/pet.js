@@ -217,22 +217,42 @@ const WINDOW = 7;
  * 刻意不存進資料庫：它完全是飲食紀錄的衍生值，存起來只會不同步。
  */
 export function petState(userId) {
+  const ratios = (date) => {
+    const s = dailySummary(userId, date);
+    if (!s.nutrition.items) return null;
+    return {
+      date,
+      items: s.nutrition.items,
+      kcalRatio: s.targets.kcal ? s.nutrition.kcal / s.targets.kcal : 0,
+      proteinRatio: s.targets.protein_g ? s.nutrition.protein_g / s.targets.protein_g : 0,
+    };
+  };
+
   const days = [];
   for (let i = 1; i <= WINDOW; i++) {
-    const date = daysAgo(i);
-    const s = dailySummary(userId, date);
-    if (s.nutrition.items) {
-      days.push({
-        date,
-        kcalRatio: s.targets.kcal ? s.nutrition.kcal / s.targets.kcal : 0,
-        proteinRatio: s.targets.protein_g ? s.nutrition.protein_g / s.targets.protein_g : 0,
-      });
-    }
+    const d = ratios(daysAgo(i));
+    if (d) days.push(d);
   }
 
-  // 連續幾天沒記錄了
+  /**
+   * 今天要不要算進平均。
+   *
+   * 今天還沒過完，所以早上吃完早餐就把它算進去，會讓平均反而往下掉——
+   * 剛吃完東西寵物卻變瘦，這說不過去。但是整天不算也不對：
+   * 吃滿一天的量了，寵物卻還是一副餓壞的樣子（Martina 遇到的就是這個）。
+   *
+   * 折衷：今天只在「已經吃到目標」或「天都快黑了」的時候才算。
+   * 這個偏袒是單向的——今天只會讓結果變好，不會無端變差。
+   */
+  const todayRow = ratios(today());
+  if (todayRow && (todayRow.kcalRatio >= 1 || new Date().getHours() >= 20)) {
+    days.push(todayRow);
+  }
+
+  // 連續幾天沒記錄了。**要從今天開始數**：今天明明記了十八筆，
+  // 卻因為迴圈從昨天起算而顯示「3 天沒看到你記錄了」，寵物就一直討食。
   let silent = 0;
-  for (let i = 1; i <= WINDOW; i++) {
+  for (let i = 0; i <= WINDOW; i++) {
     if (dailySummary(userId, daysAgo(i)).nutrition.items) break;
     silent++;
   }

@@ -33,7 +33,9 @@ npm run check        # 測試通過後再打包前端
 - `tests/web-api.test.js`：既有 API 客戶端的 GET/DELETE 空 body、POST JSON、query 編碼、401 登出、登入錯誤、網路失敗和照片網址。
 - `tests/server-auth.test.js`：驗證開關、密碼身分對應、簽章金鑰變更、公開路徑、HTTPS cookie、cookie 驗證和登入速率限制。
 
-測試使用 mock fetch 與假的環境變數，不讀取 `.env`、不啟動服務、不呼叫 Gemini／推播，也不碰正式健康資料或 SQLite。
+測試使用 mock fetch 與假的環境變數，不讀取 `.env`、不啟動服務、不呼叫 Gemini／推播，也不碰正式健康資料。
+
+例外是 `tests/pet-state.test.js`：它要驗的就是「哪幾天算進寵物的狀態」，繞過資料庫就驗不到真正出錯的地方，所以用 `FIT_DATA_DIR` 開一個拋棄式 SQLite，不會動到正式紀錄。
 這是單元回歸測試起點，不代表完整 UI、資料庫或端到端測試。
 
 GitHub Actions 在 push 與 pull request 使用 Node.js 24，依序安裝、測試與 Vite 打包。
