@@ -119,7 +119,7 @@ const style = computed(() => ({
   </button>
 </template>
 <style scoped>
-.actor { position:absolute; padding:0; border:0; background:none; aspect-ratio:1; transform:translate(-50%,12%); overflow:visible; color:#433c32; touch-action:none; cursor:grab; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
+.actor { position:absolute; padding:0; border:0; background:transparent; background-image:none; box-shadow:none; appearance:none; -webkit-appearance:none; -webkit-tap-highlight-color:transparent; transition:none; outline:none; aspect-ratio:1; transform:translate(-50%,12%); overflow:visible; color:#433c32; touch-action:none; cursor:grab; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
 .actor.lifted { cursor:grabbing; }
 .lifted .body { animation:pickup .9s ease-in-out infinite; transform:translateY(-12px) scale(1.06); filter:drop-shadow(0 12px 5px #0002); }
 @keyframes pickup { 0%,100% {transform:translateY(-12px) scale(1.06) rotate(-1.5deg);} 50% {transform:translateY(-14px) scale(1.06) rotate(1.5deg);} }
@@ -128,7 +128,7 @@ const style = computed(() => ({
 .body,.name { pointer-events:none; }
 .actor:disabled { opacity:1; cursor:default; }
 /* 全域 button:hover 的深色底不適用於透明角色按鈕。 */
-.actor:hover:not(:disabled), .actor:active:not(:disabled), .actor:focus { background:transparent; border-color:transparent; box-shadow:none; }
+.actor:hover:not(:disabled), .actor:active:not(:disabled), .actor:focus { background:transparent; background-image:none; border-color:transparent; box-shadow:none; }
 .actor:focus-visible { outline:2px solid #c19058; outline-offset:3px; }
 .body { display:block; width:100%; height:100%; position:relative; transform:scaleX(var(--body-x)); animation:breathe 4.8s ease-in-out infinite; animation-delay:var(--delay); transform-origin:50% 88%; }
 .garment { position:absolute; height:auto; object-fit:contain; transform:translateX(-50%); pointer-events:none; overflow:hidden; }
