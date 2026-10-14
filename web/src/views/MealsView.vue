@@ -3,6 +3,7 @@ import { confirmAction } from '../confirm.js';
 import { ref, computed, onMounted, watch } from 'vue';
 import { api, photoUrl, todayStr, MEAL_TYPES } from '../api.js';
 import { session } from '../auth.js';
+import { useRoute } from 'vue-router';
 import UserTabs from '../components/UserTabs.vue';
 import { openPhoto } from '../components/PhotoViewer.vue';
 
@@ -11,6 +12,7 @@ const error = ref('');
 const viewing = ref(session.user);                       // 正在看誰的紀錄
 const isMine = computed(() => viewing.value === session.user);
 const showForm = ref(false);
+const route = useRoute();
 const saving = ref(false);
 
 const blank = () => ({
@@ -149,6 +151,7 @@ const grouped = computed(() => {
 });
 
 onMounted(load);
+watch(() => route.query.new, v => { if (v === '1') { cancel(); showForm.value = true; } }, { immediate: true });
 </script>
 
 <template>

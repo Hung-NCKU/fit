@@ -14,7 +14,7 @@ beforeAll(async () => {
 });
 beforeEach(() => {
   vi.setSystemTime(new Date('2026-11-01T12:00:00'));
-  db.getDb('eli').exec('DELETE FROM meals; DELETE FROM pet_meal_rewards; DELETE FROM pet_daily_bonus; UPDATE pet SET coins = 0');
+  db.getDb('eli').exec('DELETE FROM meals; DELETE FROM pet_meal_rewards; DELETE FROM pet_daily_bonus; DELETE FROM pet_reward_ledger; UPDATE pet SET coins = 0');
 });
 afterAll(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
 const add = (kcal = 100, date = records.today()) => records.addMeal('eli', { date, name: 'test', kcal });
@@ -61,4 +61,24 @@ it('蛋白質 +8 隔天結算，重複結算不再發放', () => {
   expect(pet.coinsForDay('eli', '2026-10-31')).toBe(8);
   expect(pet.settleCoins('eli').earned).toBe(8);
   expect(pet.settleCoins('eli').earned).toBe(0);
+});
+it('明細分開顯示立即入帳、剩餘額度與蛋白質待結算，刪除不恢復額度', () => {
+  const targets=records.dailySummary('eli').targets;
+  const m=records.addMeal('eli',{name:'達標餐',kcal:targets.kcal,protein_g:targets.protein_g});
+  reward(m);
+  expect(pet.rewardOverview('eli')).toMatchObject({instantEarned:10,instantRemaining:4,proteinPending:8,meals:1,kcal:true});
+  expect(pet.rewardOverview('eli').entries).toHaveLength(2);
+  records.deleteMeal('eli',m.id);
+  expect(pet.rewardOverview('eli')).toMatchObject({instantEarned:10,instantRemaining:4,proteinPending:0});
+});
+it('舊憑證只顯示明細，不補發；結算明細與餘額同時提交', () => {
+  const sql=db.getDb('eli');
+  sql.prepare('INSERT INTO pet_meal_rewards(meal_id,date) VALUES (?,?)').run(999,records.today());
+  expect(pet.rewardOverview('eli').entries[0]).toMatchObject({amount:2,created_at:null});
+  expect(pet.getPet('eli').coins).toBe(0);
+  records.addMeal('eli',{date:'2026-10-31',name:'蛋白質',kcal:100,protein_g:records.dailySummary('eli').targets.protein_g});
+  sql.exec("UPDATE pet SET settled_to='2026-10-30'");
+  pet.settleCoins('eli');pet.settleCoins('eli');
+  expect(sql.prepare("SELECT * FROM pet_reward_ledger WHERE reward_key='settle:2026-10-31'").all()).toHaveLength(1);
+  expect(pet.getPet('eli').coins).toBe(8);
 });

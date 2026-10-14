@@ -225,6 +225,7 @@ export function replacePet(userId, species, name, confirmName) {
   db.exec('DELETE FROM pet_selection');
   db.exec('DELETE FROM pet_room_decor');
   db.exec('DELETE FROM pet_room_positions');
+  db.exec('DELETE FROM pet_reward_ledger');
   db.exec('DELETE FROM pet_items');
   db.exec('DELETE FROM pet');
   const fresh = adoptPet(userId, species, name);
@@ -279,14 +280,20 @@ export function rewardMealSaved(userId, date, { isNew = false, mealId = null } =
       const meal = db.prepare('SELECT date, kcal FROM meals WHERE id = ?').get(mealId);
       if (meal?.date === date && meal.kcal > 0) {
         const r = db.prepare('INSERT OR IGNORE INTO pet_meal_rewards (meal_id, date) VALUES (?, ?)').run(mealId, date);
-        if (r.changes) earned += COIN_PER_MEAL;
+        if (r.changes) {
+          earned += COIN_PER_MEAL;
+          db.prepare('INSERT INTO pet_reward_ledger(reward_key,date,reason,amount) VALUES (?,?,?,?)').run(`meal:${mealId}`, date, '新增有效飲食', COIN_PER_MEAL);
+        }
       }
     }
     const summary = dailySummary(userId, date);
     const tk = summary.targets.kcal || 0;
     if (tk && summary.nutrition.items && Math.abs(summary.nutrition.kcal - tk) <= tk * 0.1) {
       const r = db.prepare('INSERT OR IGNORE INTO pet_daily_bonus (date) VALUES (?)').run(date);
-      if (r.changes) earned += COIN_KCAL;
+      if (r.changes) {
+        earned += COIN_KCAL;
+        db.prepare('INSERT INTO pet_reward_ledger(reward_key,date,reason,amount) VALUES (?,?,?,?)').run(`kcal:${date}`, date, '熱量首次達標', COIN_KCAL);
+      }
     }
     if (earned) db.prepare('UPDATE pet SET coins = coins + ? WHERE id = 1').run(earned);
     db.exec('COMMIT');
@@ -310,6 +317,8 @@ export function settleCoins(userId) {
   const db = getDb(userId);
   const yesterday = daysAgo(1);
   if (pet.settled_to >= yesterday) return { earned: 0, days: 0 };
+  db.exec('BEGIN IMMEDIATE');
+  try {
 
   // 最多往回補 30 天，避免久沒開 App 時一次跑幾百天
   const from = pet.settled_to && pet.settled_to > daysAgo(30) ? pet.settled_to : daysAgo(30);
@@ -322,11 +331,38 @@ export function settleCoins(userId) {
     d.setDate(d.getDate() + 1);
     const iso = d.toLocaleDateString('sv-SE');
     const c = coinsForDay(userId, iso);
-    if (c) { earned += c; days++; }
+    if (c) {
+      earned += c; days++;
+      db.prepare('INSERT INTO pet_reward_ledger(reward_key,date,reason,amount) VALUES (?,?,?,?)')
+        .run(`settle:${iso}`, iso, iso < INSTANT_FROM ? '舊規則每日結算' : '蛋白質達標結算', c);
+    }
   }
 
   db.prepare('UPDATE pet SET coins = coins + ?, settled_to = ? WHERE id = 1').run(earned, yesterday);
+  db.exec('COMMIT');
   return { earned, days };
+  } catch (err) { db.exec('ROLLBACK'); throw err; }
+}
+
+export function rewardOverview(userId) {
+  if (!getPet(userId)) return null;
+  const db = getDb(userId), date = today();
+  const meals = db.prepare('SELECT COUNT(*) AS n FROM pet_meal_rewards WHERE date=?').get(date).n;
+  const kcal = !!db.prepare('SELECT date FROM pet_daily_bonus WHERE date=?').get(date);
+  const s = dailySummary(userId, date);
+  const proteinPending = !!(s.nutrition.items && s.targets.protein_g && s.nutrition.protein_g >= s.targets.protein_g * .9);
+  const entries = db.prepare(`
+    SELECT reward_key, date, reason, amount, created_at FROM pet_reward_ledger
+    UNION ALL
+    SELECT 'meal:' || meal_id, date, '新增有效飲食（舊憑證）', 2, NULL FROM pet_meal_rewards
+    WHERE NOT EXISTS (SELECT 1 FROM pet_reward_ledger WHERE reward_key='meal:' || meal_id)
+    UNION ALL
+    SELECT 'kcal:' || date, date, '熱量首次達標', 8, created_at FROM pet_daily_bonus b
+    WHERE NOT EXISTS (SELECT 1 FROM pet_reward_ledger WHERE reward_key='kcal:' || b.date)
+    ORDER BY date DESC, created_at DESC LIMIT 30
+  `).all();
+  return { date, instantEarned: meals * 2 + (kcal ? 8 : 0), instantRemaining: Math.max(0, 3 - meals) * 2 + (kcal ? 0 : 8),
+    proteinPending: proteinPending ? 8 : 0, meals, kcal, entries };
 }
 
 /* ---------------- 心情與體態 ---------------- */
@@ -384,6 +420,9 @@ export function petState(userId) {
   if (silent >= 3) {
     mood = 'hungry'; body = 'thin';
     says = `${silent} 天沒看到你記錄了，牠在等你`;
+  } else if (silent >= 1) {
+    mood = 'ok'; body = 'normal';
+    says = '休息也沒關係，牠會在小屋陪你；想記錄時再一起出發';
   } else if (!days.length) {
     mood = 'ok'; body = 'normal';
     says = lastDate ? '還沒有足夠的紀錄，先吃幾餐讓牠認識你' : '歡迎！先記錄第一餐，讓牠認識你';
@@ -470,8 +509,8 @@ export function unequipSlot(userId, slot, petKey = null) {
 export function roomDecor(userId) {
   const pet = mainPet(userId);
   if (!pet) return [];
-  return getDb(userId).prepare('SELECT item_id, x, y, scale FROM pet_room_decor WHERE scene = ?').all(pet.equipped.bg || 'bg_room')
-    .map(row => ({ ...itemOf(row.item_id), x: row.x, y: row.y, scale: row.scale })).filter(item => item.id);
+  return getDb(userId).prepare('SELECT item_id, x, y, scale, locked, layer FROM pet_room_decor WHERE scene = ?').all(pet.equipped.bg || 'bg_room')
+    .map(row => ({ ...itemOf(row.item_id), x: row.x, y: row.y, scale: row.scale, locked: row.locked, layer: row.layer })).filter(item => item.id);
 }
 
 export function petRoomPosition(userId,key) {
@@ -487,7 +526,26 @@ export function movePet(userId,key,position) {
   return {x,y};
 }
 
-export function arrangeDecor(userId, itemId, position) {
+const roomSnapshot = items => JSON.stringify(items.map(i=>({id:i.id,x:i.x,y:i.y,scale:i.scale,locked:!!i.locked,layer:i.layer || 0})).sort((a,b)=>a.id.localeCompare(b.id)));
+function checkRoomVersion(userId, expected) {
+  if (expected && roomSnapshot(expected) !== roomSnapshot(roomDecor(userId))) throw Object.assign(new Error('小屋已在另一個畫面更新，請重新載入後再編輯'),{status:409});
+}
+export function restoreRoom(userId, items, expected) {
+  if (!Array.isArray(items) || items.length > 141 || !Array.isArray(expected)) throw Object.assign(new Error('布置資料無效'),{status:400});
+  const db=getDb(userId), scene=mainPet(userId)?.equipped.bg || 'bg_room';
+  if (!mainPet(userId)) throw Object.assign(new Error('請先領養寵物'),{status:400});
+  if (new Set(items.map(i=>i.id)).size !== items.length) throw Object.assign(new Error('裝飾不可重複'),{status:400});
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    checkRoomVersion(userId,expected);
+    db.prepare('DELETE FROM pet_room_decor WHERE scene=?').run(scene);
+    for (const item of items) arrangeDecor(userId,item.id,{x:item.x,y:item.y,scale:item.scale,locked:!!item.locked,layer:item.layer || 0});
+    db.exec('COMMIT');
+    return roomDecor(userId);
+  } catch(err) {db.exec('ROLLBACK');throw err;}
+}
+export function arrangeDecor(userId, itemId, position, expected) {
+  checkRoomVersion(userId,expected);
   const item = itemOf(itemId);
   const pet = mainPet(userId);
   if (!pet || item?.slot !== 'decor' || !ownedItems(userId).includes(itemId)) throw Object.assign(new Error('只能布置已購買的裝飾'), { status: 400 });
@@ -497,8 +555,16 @@ export function arrangeDecor(userId, itemId, position) {
     db.prepare('DELETE FROM pet_room_decor WHERE scene = ? AND item_id = ?').run(scene, itemId);
   } else {
     const { x, y, scale } = position || {};
+    const prior = db.prepare('SELECT locked,layer FROM pet_room_decor WHERE scene=? AND item_id=?').get(scene,itemId);
+    const locked = position.locked ?? !!prior?.locked;
+    const layer = position.layer ?? prior?.layer ?? 0;
+    if (typeof locked !== 'boolean' || !Number.isInteger(layer) || layer < -5 || layer > 5) throw Object.assign(new Error('裝飾鎖定或層級無效'), { status: 400 });
     if (![x,y,scale].every(Number.isFinite) || x < 5 || x > 95 || y < 30 || y > 95 || scale < .6 || scale > 1.5) throw Object.assign(new Error('裝飾位置或大小超出範圍'), { status: 400 });
-    db.prepare('INSERT INTO pet_room_decor(scene,item_id,x,y,scale) VALUES (?,?,?,?,?) ON CONFLICT(scene,item_id) DO UPDATE SET x=excluded.x,y=excluded.y,scale=excluded.scale').run(scene,itemId,x,y,scale);
+    if (prior?.locked && position.locked !== false) {
+      const old = db.prepare('SELECT x,y,scale FROM pet_room_decor WHERE scene=? AND item_id=?').get(scene,itemId);
+      if (x !== old.x || y !== old.y || scale !== old.scale || layer !== prior.layer) throw Object.assign(new Error('請先解鎖裝飾再移動'), { status: 409 });
+    }
+    db.prepare('INSERT INTO pet_room_decor(scene,item_id,x,y,scale,locked,layer) VALUES (?,?,?,?,?,?,?) ON CONFLICT(scene,item_id) DO UPDATE SET x=excluded.x,y=excluded.y,scale=excluded.scale,locked=excluded.locked,layer=excluded.layer').run(scene,itemId,x,y,scale,locked ? 1 : 0,layer);
   }
   return roomDecor(userId);
 }

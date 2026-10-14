@@ -4,6 +4,8 @@ import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue';
 import { api, compressImage, photoUrl, MEAL_TYPES, CATEGORIES } from '../api.js';
 import { openPhoto } from '../components/PhotoViewer.vue';
 import ModelPicker from '../components/ModelPicker.vue';
+import { session } from '../auth.js';
+import { recordFeedback } from '../pet-feedback.js';
 
 const messages = ref([]);
 const draft = ref('');
@@ -14,6 +16,77 @@ const listEl = ref(null);
 const fileEl = ref(null);
 const pending = ref(null);      // { dataUrl, name } 待送出的照片
 const preparing = ref(false);
+const phase = ref('');
+const receipt = ref(null);
+const elapsed = ref(0);
+let lastPayload = null;
+let statusTimer, elapsedTimer, startedAt;
+let feedbackReceipt = '';
+let disposed = false;
+let statusSequence = 0, submitSequence = 0;
+const receiptKey = () => `fit.chat.request.${session.user}`;
+function remember(id) { try { sessionStorage.setItem(receiptKey(), id); } catch {} }
+function forget() { try { sessionStorage.removeItem(receiptKey()); } catch {} }
+function startWaiting(id) {
+  receipt.value = { request_id: id, state: 'running' };
+  sending.value = true; startedAt = Date.now(); elapsed.value = 0;
+  clearInterval(elapsedTimer);
+  elapsedTimer = setInterval(() => { elapsed.value = Math.floor((Date.now() - startedAt) / 1000); }, 1000);
+  clearTimeout(statusTimer); statusTimer = setTimeout(checkStatus, 800);
+}
+async function checkStatus() {
+  clearTimeout(statusTimer);
+  if (disposed) return;
+  const id = receipt.value?.request_id;
+  if (!id) return;
+  const sequence = ++statusSequence;
+  try {
+    const status = await api.chatStatus(id);
+    if (disposed || sequence !== statusSequence || receipt.value?.request_id !== id) return;
+    receipt.value = status; phase.value = status.phase;
+    if (status.state !== 'running') {
+      sending.value = false; clearInterval(elapsedTimer); forget();
+      error.value = status.state === 'done' ? '' : status.error;
+      if (feedbackReceipt !== id) {
+        const logged = status.actions?.find(a => /^log_(meal|workout|weight)$/.test(a.tool) && a.result?.ok);
+        if (logged) recordFeedback(logged.tool.replace('log_', ''));
+        feedbackReceipt = id;
+      }
+      const history = await api.chatHistory();
+      if (!disposed && sequence === statusSequence && receipt.value?.request_id === id) { messages.value = history; scrollDown(); }
+      return;
+    }
+  } catch (e) {
+    if (disposed || sequence !== statusSequence || receipt.value?.request_id !== id) return;
+    if ((e.status === 404 && Date.now() - startedAt > 5000) || Date.now() - startedAt > 120_000) {
+      sending.value = false; clearInterval(elapsedTimer);
+      phase.value = '暫時無法確認處理結果';
+      error.value = '暫時無法確認回覆狀態，請先查看紀錄或重新整理；不要重複新增同一筆。';
+      return;
+    }
+  }
+  if (disposed) return;
+  statusTimer = setTimeout(checkStatus, 1500);
+}
+async function cancelSend() {
+  try { await api.cancelChat(receipt.value.request_id); await checkStatus(); }
+  catch (e) { error.value = e.message; }
+}
+async function retrySend() {
+  if (!lastPayload || !receipt.value?.canRetry || sending.value) return;
+  await submitPayload(lastPayload, true);
+}
+async function submitPayload(payload, retry = false) {
+  const sequence = ++submitSequence;
+  lastPayload = payload; error.value = ''; phase.value = '準備訊息';
+  remember(payload.id); startWaiting(payload.id);
+  try {
+    await api.sendChat(payload.msg, payload.image, payload.model, payload.id, retry);
+  } catch (e) { if (!disposed && sequence === submitSequence && receipt.value?.request_id === payload.id) error.value = e.message; }
+  // 查詢同一張收據；斷線後不以新訊息重送，避免重複寫入。
+  if (disposed || sequence !== submitSequence || receipt.value?.request_id !== payload.id) return;
+  await checkStatus(); refreshModels();
+}
 
 /* ---- 模型選擇：記在這台裝置上，下次打開還是同一個 ---- */
 const MODEL_KEY = 'fit.model';
@@ -54,9 +127,11 @@ async function load() {
     messages.value = history;
     geminiReady.value = health.gemini;
     scrollDown();
+    let savedId; try { savedId = sessionStorage.getItem(receiptKey()); } catch {}
+    if (savedId) { startWaiting(savedId); await checkStatus(); }
     // 離開頁面時還沒回完的話，回來後最多再等一分鐘讓回覆出現
     const last = history[history.length - 1];
-    if (last && last.role === 'user') { pollLeft = 12; pollTimer = setTimeout(syncHistory, 5000); }
+    if (!savedId && last && last.role === 'user') { pollLeft = 12; pollTimer = setTimeout(syncHistory, 5000); }
   } catch (e) {
     error.value = e.message;
   }
@@ -93,22 +168,7 @@ async function send(text = draft.value) {
   });
   scrollDown();
 
-  try {
-    const res = await api.sendChat(msg, image, model.value);
-    messages.value.push({
-      id: res.id, role: 'assistant', content: res.reply, actions: res.actions || [],
-      model: res.model, requestedModel: res.requestedModel, fellBack: res.fellBack,
-    });
-    refreshModels();   // 更新今日額度狀態（剛才那個模型可能用完了）
-  } catch (e) {
-    error.value = e.message;
-    // 連線斷了或逾時，但伺服器那邊可能已經存好回覆（也可能已經記了飲食）：重新讀一次歷史
-    pollLeft = 12;
-    await syncHistory();
-  } finally {
-    sending.value = false;
-    scrollDown();
-  }
+  await submitPayload({ msg, image, model: model.value, id: crypto.randomUUID() });
 }
 
 /** 重新讀對話歷史；最後一則還是自己說的話，代表伺服器還在想 → 稍後再看 */
@@ -126,7 +186,7 @@ async function syncHistory() {
     pollTimer = setTimeout(syncHistory, 5000);
   }
 }
-onUnmounted(() => clearTimeout(pollTimer));
+onUnmounted(() => { disposed = true; clearTimeout(pollTimer); clearTimeout(statusTimer); clearInterval(elapsedTimer); });
 
 async function clearAll() {
   if (!await confirmAction('確定要清空所有對話紀錄嗎？（訓練與飲食紀錄不會被刪除）')) return;
@@ -195,7 +255,7 @@ onMounted(load);
 <template>
   <div class="chat">
     <div v-if="!geminiReady" class="error" style="margin-bottom:.8rem">
-      尚未設定 Gemini API key。請編輯 <code>server/.env</code> 填入 <code>GEMINI_API_KEY</code> 後重啟後端。
+      教練暫時無法使用，請稍後再試；你仍可直接記錄飲食與訓練。
     </div>
 
     <div ref="listEl" class="messages">
@@ -227,10 +287,23 @@ onMounted(load);
 
       <div v-if="sending" class="msg assistant">
         <div class="bubble typing"><span></span><span></span><span></span></div>
+        <p class="small muted" role="status" aria-live="polite">{{ phase }} · {{ elapsed }} 秒</p>
+        <p v-if="elapsed >= 15" class="small muted">模型可能正在排隊；紀錄完成後會保留，不需要重複送出。</p>
+        <button class="small" @click="cancelSend">取消回覆</button>
       </div>
     </div>
 
     <div v-if="error" class="error" style="margin:.6rem 0">{{ error }}</div>
+    <div v-if="!sending && receipt && receipt.state !== 'done'" class="row wrap">
+      <button v-if="receipt.canRetry && lastPayload" @click="retrySend">重試這則訊息</button>
+      <RouterLink to="/meals">查看飲食紀錄</RouterLink>
+      <span v-if="receipt.actions?.some(a => a.tool !== 'get_records')" class="small muted">已有處理紀錄，請先查看，避免再次新增。</span>
+    </div>
+    <div class="row wrap small" style="margin:.5rem 0">
+      <RouterLink to="/meals?new=1">直接記飲食</RouterLink>
+      <RouterLink to="/workouts?new=1">直接記訓練</RouterLink>
+      <span class="muted">不用等待 AI</span>
+    </div>
 
     <div v-if="empty" class="chips">
       <button v-for="s in SUGGESTIONS" :key="s" class="chip" @click="send(s)">{{ s }}</button>
@@ -262,7 +335,7 @@ onMounted(load);
     </div>
     <div class="spread small muted" style="margin-top:.4rem">
       <span>由 Gemini 提供建議，僅供參考，不構成醫療建議。</span>
-      <button v-if="!empty" class="icon" @click="clearAll">清空對話</button>
+      <button v-if="!empty" class="icon" :disabled="sending" @click="clearAll">清空對話</button>
     </div>
   </div>
 </template>

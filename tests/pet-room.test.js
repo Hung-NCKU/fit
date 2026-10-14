@@ -72,3 +72,28 @@ it('寵物拖移位置依環境保存，非法位置與不存在的寵物不接�
   pet.equipItem('eli','bg_room');
   expect(pet.petRoomPosition('eli','main')).toMatchObject({x:25,y:80});
 });
+it('鎖定擋拖移；解鎖、層級與整屋撤銷保存且不扣款',()=>{
+  pet.buyItem('eli',item.id);
+  const before=pet.roomDecor('eli'), coins=pet.getPet('eli').coins;
+  pet.arrangeDecor('eli',item.id,{x:70,y:85,scale:1,locked:true,layer:2});
+  expect(()=>pet.arrangeDecor('eli',item.id,{x:30,y:85,scale:1})).toThrow('解鎖');
+  const locked=pet.roomDecor('eli');
+  pet.arrangeDecor('eli',item.id,{x:30,y:75,scale:1,locked:false,layer:2});
+  pet.restoreRoom('eli',locked,pet.roomDecor('eli'));
+  expect(pet.roomDecor('eli')[0]).toMatchObject({x:70,y:85,locked:1,layer:2});
+  pet.restoreRoom('eli',before,pet.roomDecor('eli'));
+  expect(pet.roomDecor('eli')[0]).toMatchObject({x:70,y:85,locked:0,layer:0});
+  expect(pet.getPet('eli').coins).toBe(coins);
+});
+it('整屋還原拒絕未購買物件、非法層級與過期版本，失敗原子回滾',()=>{
+  pet.buyItem('eli',item.id);
+  const before=pet.roomDecor('eli');
+  expect(()=>pet.restoreRoom('eli',[{...before[0],layer:999}],before)).toThrow();
+  expect(pet.roomDecor('eli')).toEqual(before);
+  const another=pet.shopFor('cat').find(i=>i.slot==='decor' && i.id!==item.id);
+  expect(()=>pet.restoreRoom('eli',[{...before[0],id:another.id}],before)).toThrow();
+  expect(pet.roomDecor('eli')).toEqual(before);
+  pet.arrangeDecor('eli',item.id,{x:30,y:85,scale:1});
+  expect(()=>pet.restoreRoom('eli',before,before)).toThrow('另一個畫面');
+  expect(pet.roomDecor('eli')[0].x).toBe(30);
+});

@@ -50,7 +50,7 @@ it('寵物 API 回傳完整套裝給每隻角色與商城，舊商品转换後�
   db.prepare('INSERT INTO pet_items(item_id) VALUES (?)').run('wear-cat-8');
   db.exec("UPDATE pet SET equipped='{\"bg\":\"bg_room\",\"cloth\":\"wear-cat-8\"}'");
   const routes=new Map();
-  const app=Object.fromEntries(['get','post','patch'].map(method=>[method,(path,fn)=>routes.set(`${method} ${path}`,fn)]));
+  const app=Object.fromEntries(['get','post','patch','put'].map(method=>[method,(path,fn)=>routes.set(`${method} ${path}`,fn)]));
   await (await import('../server/src/routes/pet.js')).default(app);
   const response=await routes.get('get /pet')({userId:'eli',query:{}});
   expect(response.roster[0].worn.map(i=>i.id)).toEqual(['outfit-cat-1']);

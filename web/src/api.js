@@ -1,4 +1,5 @@
 import { onUnauthorized } from './auth.js';
+import { recordFeedback } from './pet-feedback.js';
 
 const BASE = '/api';
 
@@ -32,7 +33,10 @@ async function request(path, options = {}) {
     onUnauthorized();
     throw new Error('連線已過期，請重新登入');
   }
-  if (!res.ok) throw new Error(data.error || `請求失敗（${res.status}）`);
+  if (!res.ok) throw Object.assign(new Error(data.error || `請求失敗（${res.status}）`), { status: res.status });
+  if (['POST','PATCH'].includes(options.method) && /^\/(meals|workouts|weights)(\/\d+)?$/.test(path)) {
+    recordFeedback(path.startsWith('/meals') ? 'meal' : path.startsWith('/workouts') ? 'workout' : 'weight');
+  }
   return data;
 }
 
@@ -82,11 +86,14 @@ export const api = {
   range: (days, user) => request('/summary/range' + qs({ days, user })),
 
   chatHistory: () => request('/chat/history'),
-  sendChat: (message, image, model) => request('/chat', { method: 'POST', body: { message, image, model } }),
+  sendChat: (message, image, model, requestId, retry = false) => request('/chat', { method: 'POST', body: { message, image, model, requestId, retry } }),
+  chatStatus: id => request(`/chat/requests/${encodeURIComponent(id)}`),
+  cancelChat: id => request(`/chat/requests/${encodeURIComponent(id)}/cancel`, { method: 'POST' }),
   models: () => request('/models'),
 
   pet: (user) => request('/pet' + qs({ user })),
-  arrangeDecor: (item, position) => request('/pet/room', { method:'PATCH', body:{ item, position } }),
+  arrangeDecor: (item, position, expected) => request('/pet/room', { method:'PATCH', body:{ item, position, expected } }),
+  restoreRoom: (items, expected) => request('/pet/room', { method:'PUT', body:{ items, expected } }),
   movePet: (petKey, position) => request('/pet/position', { method:'PATCH', body:{ petKey, position } }),
   adoptPet: (species, name) => request('/pet', { method: 'POST', body: { species, name } }),
   // confirm 要帶目前這隻的名字，伺服器會核對 —— 這是唯一不可復原的操作

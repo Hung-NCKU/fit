@@ -1,3 +1,5 @@
+import { setTimeout as delay } from 'node:timers/promises';
+
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 export class GeminiError extends Error {
@@ -114,7 +116,7 @@ export function quotaStatus() {
 
 /* ---------------- 工具 ---------------- */
 
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const sleep = (ms, signal) => delay(ms, undefined, { signal });
 const backoff = (attempt) => Math.min(8000, 500 * 2 ** attempt) + Math.random() * 400;
 
 /** 從錯誤內容解析配額資訊：是每日還是每分鐘、要等多久 */
@@ -157,7 +159,7 @@ const RETRIABLE = new Set([500, 502, 503, 504]);
  * 依序嘗試候補鏈上的模型，回傳第一個成功的結果。
  * @returns {{ candidate: object, model: string }}
  */
-export async function generateContent({ contents, systemInstruction, tools, preferModel, deadline }) {
+export async function generateContent({ contents, systemInstruction, tools, preferModel, deadline, signal, onProgress = () => {} }) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new GeminiError('尚未設定 GEMINI_API_KEY，請在 server/.env 填入免費 API key', 500);
 
@@ -172,6 +174,7 @@ export async function generateContent({ contents, systemInstruction, tools, pref
   let lastError = null;
 
   for (const model of ordered) {
+    signal?.throwIfAborted();
     if (isExhausted(model)) { skipped.push(model); continue; }
     if ((coolingUntil.get(model) || 0) > Date.now()) {
       lastError = new GeminiError('AI 模型暫時忙碌，請稍後再試。', 503);
@@ -180,7 +183,8 @@ export async function generateContent({ contents, systemInstruction, tools, pref
     if (deadline && deadline - Date.now() < 3000) throw timeoutError();
 
     try {
-      const candidate = await callModel({ model, key, contents, systemInstruction, tools, deadline });
+      onProgress(`等待 ${model} 回應`);
+      const candidate = await callModel({ model, key, contents, systemInstruction, tools, deadline, signal, onProgress });
       return { candidate, model };
     } catch (err) {
       lastError = err;
@@ -210,15 +214,18 @@ const timeoutError = () => new GeminiError(
 const REQUEST_TIMEOUT_MS = Number(process.env.GEMINI_REQUEST_TIMEOUT_MS ?? 15_000);
 
 /** 對單一模型發送請求，含重試 */
-async function callModel({ model, key, contents, systemInstruction, tools, deadline }) {
+async function callModel({ model, key, contents, systemInstruction, tools, deadline, signal, onProgress }) {
   const MAX_ATTEMPTS = Number(process.env.GEMINI_MAX_RETRIES ?? 2);
   // 等待不能超過總上限剩下的時間
   const wait = async (ms) => {
     if (deadline && deadline - Date.now() < ms + 3000) throw timeoutError();
-    await sleep(ms);
+    try { await sleep(ms, signal); }
+    catch (err) { signal?.throwIfAborted(); throw err; }
+    signal?.throwIfAborted();
   };
 
   for (let attempt = 1; ; attempt++) {
+    signal?.throwIfAborted();
     let res, text;
     try {
       countRequest(model);   // 重試也算一次請求，所以在送出前就計數
@@ -226,10 +233,11 @@ async function callModel({ model, key, contents, systemInstruction, tools, deadl
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
         body: JSON.stringify(buildBody({ contents, systemInstruction, tools, model })),
-        signal: AbortSignal.timeout(deadline ? Math.max(1000, Math.min(REQUEST_TIMEOUT_MS, deadline - Date.now())) : REQUEST_TIMEOUT_MS),
+        signal: AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(deadline ? Math.max(1000, Math.min(REQUEST_TIMEOUT_MS, deadline - Date.now())) : REQUEST_TIMEOUT_MS)]),
       });
       text = await res.text();
     } catch (err) {
+      signal?.throwIfAborted();
       if (err.name === 'TimeoutError' || err.name === 'AbortError') {
         throw Object.assign(timeoutError(), { moveToNextModel: true });
       }
@@ -263,6 +271,7 @@ async function callModel({ model, key, contents, systemInstruction, tools, deadl
         throw Object.assign(new GeminiError(msg, 429), { moveToNextModel: true, quotaPerDay: true });
       }
       if (attempt < MAX_ATTEMPTS) {
+        onProgress('模型請求繁忙，等待重試');
         await wait(Math.min(q.retryMs || backoff(attempt), 8000));
         continue;
       }

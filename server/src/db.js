@@ -173,6 +173,23 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   actions    TEXT NOT NULL DEFAULT '[]',
   created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
+CREATE TABLE IF NOT EXISTS chat_requests (
+  request_id TEXT PRIMARY KEY,
+  fingerprint TEXT NOT NULL,
+  state TEXT NOT NULL DEFAULT 'running',
+  phase TEXT NOT NULL DEFAULT '準備訊息',
+  actions TEXT NOT NULL DEFAULT '[]',
+  result TEXT,
+  error TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+CREATE TABLE IF NOT EXISTS pet_reward_ledger (
+  reward_key TEXT PRIMARY KEY,
+  date TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
 `);
 
   // 舊資料庫補欄位（CREATE TABLE IF NOT EXISTS 不會幫已存在的表加欄位）
@@ -192,6 +209,8 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   // 餐點縮圖（JPEG）。清單裡的小圖本來直接載原始照片，平均 300KB；
   // 縮成約 15KB 後第一次要求時算一次，之後存這裡重複使用。
   addColumn('photos', 'thumb', 'BLOB');
+  addColumn('pet_room_decor', 'locked', 'INTEGER NOT NULL DEFAULT 0');
+  addColumn('pet_room_decor', 'layer', 'INTEGER NOT NULL DEFAULT 0');
 }
 
 /* ---------------- 營養目標 ---------------- */

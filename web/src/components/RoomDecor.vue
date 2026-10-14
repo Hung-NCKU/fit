@@ -9,6 +9,7 @@ let drag;
 function start(event,item) {
   if (!props.editable) return;
   emit('select',item.id);
+  if (item.locked) return;
   const rect = event.currentTarget.parentElement.getBoundingClientRect();
   drag = { id:item.id, pointer:event.pointerId, startX:event.clientX, startY:event.clientY, x:item.x, y:item.y, rect };
   event.currentTarget.setPointerCapture(event.pointerId);
@@ -24,15 +25,15 @@ function finish(event,cancelled=false) {
   const item = objects.value.find(i => i.id === drag.id);
   const moved = Math.abs(item.x-drag.x)+Math.abs(item.y-drag.y) > .1;
   if (cancelled) { item.x=drag.x; item.y=drag.y; }
-  else if (moved) emit('move', {id:item.id, position:{x:item.x,y:item.y,scale:item.scale}});
+  else if (moved) emit('move', {id:item.id, position:{x:item.x,y:item.y,scale:item.scale,locked:!!item.locked,layer:item.layer || 0}});
   drag = null;
 }
 function keyboard(event,item) {
-  if (!props.editable) return;
+  if (!props.editable || item.locked) return;
   const delta = {ArrowLeft:[-2,0],ArrowRight:[2,0],ArrowUp:[0,-2],ArrowDown:[0,2]}[event.key];
   if (!delta) return;
   event.preventDefault();
-  emit('move',{id:item.id,position:{x:Math.min(95,Math.max(5,item.x+delta[0])),y:Math.min(95,Math.max(30,item.y+delta[1])),scale:item.scale}});
+  emit('move',{id:item.id,position:{x:Math.min(95,Math.max(5,item.x+delta[0])),y:Math.min(95,Math.max(30,item.y+delta[1])),scale:item.scale,locked:!!item.locked,layer:item.layer || 0}});
 }
 const width = item => {
   const name=item.name;
@@ -47,7 +48,7 @@ const width = item => {
 </script>
 <template>
   <button v-for="item in objects" :key="item.id" class="room-object" :class="{ editing:editable, picked:editable && selected === item.id }"
-    :style="{left:`${item.x}%`,top:`${item.y}%`,width:`${width(item)}%`,zIndex:editable ? 2000 : Math.round(item.y*10)}" :disabled="!editable"
+    :style="{left:`${item.x}%`,top:`${item.y}%`,width:`${width(item)}%`,zIndex:(editable ? 2000 : 0) + Math.round(item.y*10) + (item.layer || 0)*100}" :disabled="!editable"
     :aria-label="`裝飾 ${item.name}，拖曳或使用方向鍵移動`" @pointerdown.stop.prevent="start($event,item)" @pointermove="move"
     @pointerup="finish($event)" @pointercancel="finish($event,true)" @keydown="keyboard($event,item)" @click.stop="editable && emit('select',item.id)">
     <DecorArt :item="item" />

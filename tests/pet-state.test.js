@@ -61,4 +61,11 @@ describe('寵物狀態看的是哪幾天', () => {
     expect(s.silent).toBe(70);
     expect(s.says).toContain('70 天');
   });
+  it('一兩天休息仍保持正常體態與陪伴文案',()=>{
+    const dbUser='martina';
+    records.addMeal(dbUser,{date:records.daysAgo(2),name:'休息前紀錄',kcal:100});
+    const state=pet.petState(dbUser);
+    expect(state.silent).toBe(2);expect(state.body).toBe('normal');
+    expect(state.says).toContain('休息也沒關係');
+  });
 });

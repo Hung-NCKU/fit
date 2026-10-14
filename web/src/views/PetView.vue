@@ -8,6 +8,8 @@ import PetActor from '../components/PetActor.vue';
 import RoomDecor from '../components/RoomDecor.vue';
 import DecorArt from '../components/DecorArt.vue';
 import OutfitFrames from '../components/OutfitFrames.vue';
+import { consumeFeedback } from '../pet-feedback.js';
+import { confirmAction } from '../confirm.js';
 
 const viewing = ref(session.user);
 const data = ref(null);
@@ -20,6 +22,13 @@ const tab = ref('home');            // home | shop
 const arranging = ref(false);
 const decorSelected = ref('');
 const shopSection = ref('全部');
+const shopSearch = ref('');
+const shopOwned = ref('all');
+const roomUndo = ref([]);
+const celebration = ref(null);
+function receiveFeedback() { if (mine.value) celebration.value = consumeFeedback(); }
+onMounted(() => { receiveFeedback(); window.addEventListener('fit-record-saved', receiveFeedback); });
+onUnmounted(() => window.removeEventListener('fit-record-saved', receiveFeedback));
 watch(tab, () => { arranging.value = false; });
 const picked = ref('');
 const petName = ref('');
@@ -51,6 +60,7 @@ const state = computed(() => data.value?.state || null);
 const mine = computed(() => data.value?.mine !== false);
 const owned = computed(() => new Set(data.value?.owned || []));
 const equipped = computed(() => pet.value?.equipped || {});
+watch(() => `${viewing.value}:${equipped.value.bg}`, () => { roomUndo.value=[]; decorSelected.value=''; });
 // 生活習性：作息曲線與專屬動作，來源是 pet/動物特性.txt
 
 
@@ -134,11 +144,12 @@ const SLOTS = [
 
 /** 商城照後端給的分區排，一區一張卡 */
 const shopGroups = computed(() => {
-  const list = data.value?.shop || [];
+  const list = (data.value?.shop || []).filter(i=>i.name.includes(shopSearch.value.trim()) && (shopOwned.value==='all' || owned.value.has(i.id) === (shopOwned.value==='owned')));
   const names = [...new Set(list.map(i => i.group))];
   return names.filter(g => shopSection.value === '全部' || g === shopSection.value).map(g => ({ group: g, items: list.filter(i => i.group === g) }));
 });
 const shopSections = computed(() => ['全部', '寵物', ...new Set((data.value?.shop || []).map(i=>i.group))]);
+const petsForSale = computed(() => shopOwned.value === 'owned' ? [] : (data.value?.petsForSale || []).filter(i=>i.name.includes(shopSearch.value.trim())));
 const decorations = computed(() => {
   const list = data.value?.decorations || [];
   return trying.value?.slot === 'decor' && !list.some(i=>i.id===trying.value.id)
@@ -147,13 +158,36 @@ const decorations = computed(() => {
 const selectedDecor = computed(() => (data.value?.decorations || []).find(i=>i.id===decorSelected.value));
 const storedDecor = computed(() => (data.value?.shop || []).filter(i=>i.slot==='decor' && owned.value.has(i.id) && !(data.value?.decorations || []).some(p=>p.id===i.id)));
 const isUsed = item => item.slot === 'decor' ? (data.value?.decorations || []).some(i=>i.id===item.id) : equipped.value[item.slot]===item.id;
+const snapshot = () => (data.value?.decorations || []).map(i=>({id:i.id,x:i.x,y:i.y,scale:i.scale,locked:!!i.locked,layer:i.layer || 0}));
 const moveDecor = ({id,position}) => act(async()=>{
-  try { await api.arrangeDecor(id,position); }
-  catch(e) { await load(); throw e; }
+  const before=snapshot();
+  try {
+    const after=await api.arrangeDecor(id,position,before);
+    roomUndo.value=[...roomUndo.value.slice(-19),{before,after}];
+  } catch(e) { roomUndo.value=[]; await load(); throw e; }
 },'arrange');
+const editDecor = patch => {
+  const item=selectedDecor.value;
+  if(item) moveDecor({id:item.id,position:{x:item.x,y:item.y,scale:item.scale,locked:!!item.locked,layer:item.layer || 0,...patch}});
+};
+const undoRoom = () => act(async()=>{
+  const last=roomUndo.value.at(-1);
+  if(!last) return;
+  try { await api.restoreRoom(last.before,last.after); roomUndo.value.pop(); }
+  catch(e) {roomUndo.value=[];throw e;}
+},'undo');
+async function resetRoom() {
+  if(!await confirmAction('將這個環境的裝飾移回預設位置並解鎖？已購買的商品會保留，也可以撤銷這次重設。')) return;
+  act(async()=>{
+    const before=snapshot();
+    const items=before.map((i,n)=>({...i,x:15+n%6*14,y:72+Math.floor(n/6)%3*8,scale:1,layer:0,locked:false}));
+    const after=await api.restoreRoom(items,before);
+    roomUndo.value=[...roomUndo.value.slice(-19),{before,after}];
+  },'reset');
+}
 const resizeDecor = event => {
   const item=selectedDecor.value;
-  if (item) moveDecor({id:item.id,position:{x:item.x,y:item.y,scale:Number(event.target.value)}});
+  if (item) editDecor({scale:Number(event.target.value)});
 };
 const movePet = ({petKey,position})=>act(async()=>{
   try {await api.movePet(petKey,position);}
@@ -302,6 +336,7 @@ function confirmRename() {
           <img class="scene-bg" :src="sceneImg" :alt="bg?.name || '小房間'" />
           <RoomDecor :items="decorations" :editable="mine && arranging && !busy" :selected="decorSelected" @select="decorSelected=$event" @move="moveDecor" />
           <PetActor v-for="(member, index) in roster" :key="member.petKey"
+            :decorations="decorations" :celebration="celebration"
             :pet="member" :index="index" :count="roster.length" :state="state" :scene-height="sceneHeight"
             :scene-width="sceneWidth" :paused="arranging || tab === 'shop'"
             :room-key="equipped.bg" @move="movePet"
@@ -358,14 +393,25 @@ function confirmRename() {
       <div v-if="tab === 'home'" class="card stack">
         <template v-if="mine">
           <div class="spread"><h3 style="margin:0">布置小屋</h3><button :disabled="busy" @click="toggleArranging">{{ arranging ? '完成布置' : '編輯布置' }}</button></div>
+          <div v-if="arranging" class="row wrap">
+            <button :disabled="busy || !roomUndo.length" @click="undoRoom">撤銷上一步</button>
+            <button :disabled="busy || !data.decorations.length" @click="resetRoom">重設這個房間的位置</button>
+            <span class="small muted">本次編輯可撤銷最近 20 步</span>
+          </div>
           <p class="small muted">購買裝飾後會放入環境。開啟編輯後，直接拖曳裝飾；放開自動保存。不同環境各自保留布置。</p>
           <div v-if="arranging && selectedDecor" class="stack">
             <b>{{ selectedDecor.name }}</b>
-            <label>裝飾大小<input type="range" min="0.6" max="1.5" step="0.1" :value="selectedDecor.scale" :disabled="busy" @change="resizeDecor" /></label>
+            <button :disabled="busy" @click="editDecor({locked:!selectedDecor.locked})">{{ selectedDecor.locked ? '🔒 已鎖定，點此解鎖' : '鎖定這件裝飾' }}</button>
+            <label>裝飾大小<input type="range" min="0.6" max="1.5" step="0.1" :value="selectedDecor.scale" :disabled="busy || !!selectedDecor.locked" @change="resizeDecor" /></label>
+            <div class="row wrap">
+              <button :disabled="busy || !!selectedDecor.locked || selectedDecor.layer >= 5" @click="editDecor({layer:(selectedDecor.layer || 0)+1})">移到前一層</button>
+              <button :disabled="busy || !!selectedDecor.locked || selectedDecor.layer <= -5" @click="editDecor({layer:(selectedDecor.layer || 0)-1})">移到後一層</button>
+              <span class="small muted">層級 {{ selectedDecor.layer || 0 }}</span>
+            </div>
             <button :disabled="busy" @click="moveDecor({id:selectedDecor.id,position:null})">收起裝飾（保留已購買商品）</button>
           </div>
           <div v-if="arranging" class="row wrap">
-            <button v-for="item in data.decorations" :key="item.id" :class="{on:decorSelected===item.id}" @click="decorSelected=item.id">{{ item.name }}</button>
+            <button v-for="item in data.decorations" :key="item.id" :class="{on:decorSelected===item.id}" @click="decorSelected=item.id">{{ item.locked ? '🔒 ' : '' }}{{ item.name }}</button>
             <button v-for="item in storedDecor" :key="item.id" :disabled="busy" @click="act(()=>api.equipItem(item.id,pet.petKey),'place')">放入 {{ item.name }}</button>
           </div>
         </template>
@@ -391,15 +437,36 @@ function confirmRename() {
           蛋白質達目標九成 +8，隔天開啟自己的寵物頁時自動結算，每天一次。
         </p>
       </div>
+      <div v-if="mine && data.rewards && tab === 'home'" class="card stack rewards">
+        <h3 style="margin:0">今天的代幣</h3>
+        <div class="row wrap"><b>已入帳 +{{ data.rewards.instantEarned }}</b><span>今天還可立即獲得 {{ data.rewards.instantRemaining }} 枚</span></div>
+        <div class="small">新增飲食 {{ data.rewards.meals }}/3 筆 · {{ data.rewards.kcal ? '熱量獎勵已入帳 +8' : '首次熱量達標可得 +8' }}</div>
+        <div class="small">{{ data.rewards.proteinPending ? '蛋白質今日已達標：+8 待隔天結算' : '蛋白質達目標九成可得 +8，隔天結算' }}</div>
+        <RouterLink to="/meals?new=1">記下一餐</RouterLink>
+        <details>
+          <summary>查看最近入帳明細</summary>
+          <p class="small muted">這裡顯示獎勵收入；舊版本未保存的結算時間無法補回。今日達標後仍可繼續記錄實際飲食。</p>
+          <div v-for="entry in data.rewards.entries" :key="entry.reward_key" class="reward-entry small">
+            <span>{{ entry.date }} · {{ entry.reason }}<small class="muted">{{ entry.created_at ? `入帳：${entry.created_at}` : '舊紀錄未保存入帳時間' }}</small></span><b>+{{ entry.amount }}</b>
+          </div>
+          <p v-if="!data.rewards.entries.length" class="small muted">還沒有獎勵入帳紀錄。</p>
+        </details>
+      </div>
 
       <!-- 商城 -->
-      <template v-else>
-        <label>商城分類<select v-model="shopSection"><option v-for="section in shopSections" :key="section">{{ section }}</option></select></label>
-        <div v-if="shopSection === '全部' || shopSection === '寵物'" class="card stack">
+      <template v-if="tab === 'shop'">
+        <div class="card stack shop-filters">
+          <label>搜尋商品<input v-model="shopSearch" type="search" placeholder="搜尋套裝、裝飾或寵物名稱" /></label>
+          <div class="row wrap">
+            <label>商城分類<select v-model="shopSection"><option v-for="section in shopSections" :key="section">{{ section }}</option></select></label>
+            <label>擁有狀態<select v-model="shopOwned"><option value="all">全部商品</option><option value="owned">已購買</option><option value="unowned">尚未購買</option></select></label>
+          </div>
+        </div>
+        <div v-if="(shopSection === '全部' || shopSection === '寵物') && petsForSale.length" class="card stack">
           <h3 style="margin:0">再養一隻</h3>
           <p class="small muted">十種寵物每隻 {{ data.petsForSale[0]?.price.toLocaleString() }} 代幣。購買時取名，加入同一個家；同一物種也能養多隻。</p>
           <div class="grid shop">
-            <button v-for="animal in data.petsForSale" :key="animal.species" class="item" :disabled="busy || pet.coins < animal.price" @click="openPurchase(animal)">
+            <button v-for="animal in petsForSale" :key="animal.species" class="item" :disabled="busy || pet.coins < animal.price" @click="openPurchase(animal)">
               <img class="item-face" :src="animal.img" :alt="animal.name" loading="lazy" />
               <span>{{ animal.name }}</span><span class="small">🪙 {{ animal.price.toLocaleString() }}</span>
             </button>
@@ -426,6 +493,7 @@ function confirmRename() {
             </button>
           </div>
         </div>
+        <p v-if="!shopGroups.length && !((shopSection === '全部' || shopSection === '寵物') && petsForSale.length)" class="card small muted">沒有符合條件的商品，試試其他名稱或篩選條件。</p>
       </template>
 
       <!-- 試穿中：釘在畫面底部，捲到哪裡都按得到 -->
@@ -453,6 +521,9 @@ function confirmRename() {
 </template>
 
 <style scoped>
+.shop-filters label { flex:1; min-width:120px; }
+.reward-entry { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid var(--border); }
+.reward-entry small { display:block; margin-top:.2rem; }
 .pet-modal { position:fixed; inset:0; z-index:30; background:#0009; display:grid; place-items:center; padding:1rem; }
 .pet-modal .card { width:min(420px,100%); max-height:90vh; overflow:auto; }
 .purchase-face { width:120px; height:120px; object-fit:contain; align-self:center; }

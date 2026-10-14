@@ -2,7 +2,7 @@ import {
   SPECIES, shopFor, getPet, adoptPet, ownedItems,
   settleCoins, petState, buyItem, equipItem, unequipSlot, speciesOf, replacePet,
   listPets, purchasePet, selectPet, renamePet, PET_PRICE, itemOf,
-  roomDecor, arrangeDecor,
+  roomDecor, arrangeDecor, restoreRoom, rewardOverview,
   petRoomPosition, movePet,
 } from '../pet.js';
 import { behaviorOf } from '../pet-behavior.js';
@@ -54,6 +54,7 @@ export default async function petRoutes(app) {
       decorations: roomDecor(u),
       shop: shopFor(pet.species),
       settled,
+      rewards: mine ? rewardOverview(u) : null,
     };
   });
 
@@ -103,7 +104,11 @@ export default async function petRoutes(app) {
   });
   app.patch('/pet/room', async (req) => {
     writeGuard(req);
-    return arrangeDecor(req.userId, req.body?.item, req.body?.position);
+    return arrangeDecor(req.userId, req.body?.item, req.body?.position, req.body?.expected);
+  });
+  app.put('/pet/room', async(req)=>{
+    writeGuard(req);
+    return restoreRoom(req.userId,req.body?.items,req.body?.expected);
   });
   app.patch('/pet/position',async(req)=>{
     writeGuard(req);

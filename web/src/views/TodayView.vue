@@ -5,6 +5,7 @@ import { session } from '../auth.js';
 import TrendChart from '../components/TrendChart.vue';
 import Ring from '../components/Ring.vue';
 import UserTabs from '../components/UserTabs.vue';
+import { useRoute } from 'vue-router';
 
 const C = {
   kcal: 'var(--accent)',
@@ -24,6 +25,15 @@ const range = ref(null);
 const profile = ref(null);
 const error = ref('');
 const loading = ref(true);
+const route = useRoute();
+const scrollBody = () => document.getElementById('body-record')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+const nextStep = computed(() => {
+  if (date.value !== todayStr()) return '正在查看過去紀錄；快捷新增會記錄今天';
+  if (!summary.value) return '先記下一餐或今天的訓練';
+  if (!meals.value.length) return '今天還沒有飲食紀錄，可以先記第一餐';
+  if (!workouts.value.length) return '想訓練就記下今天的動作；休息日也沒關係';
+  return '今天的飲食與訓練已留下紀錄，去看看寵物吧';
+});
 
 // 與其他頁面相同：只採用最後一次發出的請求的結果
 let reqId = 0;
@@ -209,6 +219,9 @@ watch(viewing, () => {
 watch(date, fillBody);
 
 onMounted(load);
+onMounted(() => {
+  if (route.query.focus === 'weight') document.getElementById('body-record')?.scrollIntoView({ block: 'start' });
+});
 </script>
 
 <template>
@@ -216,6 +229,17 @@ onMounted(load);
     <UserTabs v-model="viewing" />
 
     <div v-if="error" class="error">{{ error }}</div>
+    <div v-if="isMe" class="card stack today-actions">
+      <b>{{ date === todayStr() ? '今天的小進度' : `${date} 的紀錄` }}</b>
+      <div class="row wrap small"><span>飲食 {{ meals.length }} 筆</span><span>訓練 {{ workouts.length }} 筆</span><span>體態 {{ bodyToday ? '已記錄' : '未記錄' }}</span></div>
+      <p class="small muted" style="margin:0">{{ nextStep }}</p>
+      <div class="row wrap">
+        <RouterLink class="quick-link" to="/meals?new=1">＋ 記飲食</RouterLink>
+        <RouterLink class="quick-link" to="/workouts?new=1">＋ 記訓練</RouterLink>
+        <button @click="scrollBody">＋ 記體重</button>
+        <RouterLink class="quick-link" to="/">看看寵物</RouterLink>
+      </div>
+    </div>
 
     <div class="card">
       <div class="spread" style="margin-bottom:.8rem">
@@ -279,7 +303,7 @@ onMounted(load);
         <span v-if="bodyToday" class="badge">這天已記錄</span>
       </div>
 
-      <form v-if="isMe" class="body-form" @submit.prevent="saveBody">
+      <form v-if="isMe" id="body-record" class="body-form" @submit.prevent="saveBody">
         <label v-for="f in BODY_FIELDS" :key="f.key">
           <span class="small muted">{{ f.label }}</span>
           <input v-model="body[f.key]" type="number" :step="f.step" inputmode="decimal"
@@ -372,6 +396,8 @@ onMounted(load);
 </template>
 
 <style scoped>
+.quick-link { display:inline-flex; align-items:center; padding:.45rem .7rem; border:1px solid var(--border); border-radius:8px; text-decoration:none; color:var(--text); }
+#body-record { scroll-margin-top:90px; }
 /* ---- 週曆列 ---- */
 .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: .25rem; margin-bottom: 1rem; }
 .day {

@@ -5,7 +5,7 @@ import PetPickup from './PetPickup.vue';
 import OutfitFrames from './OutfitFrames.vue';
 import { pickNext } from '../pet-fsm.js';
 import { roamingBounds, roamingTarget, roamingDuration, roamingFacing } from '../pet-roaming.js';
-const props = defineProps({ pet: Object, state: Object, sceneHeight: Number, sceneWidth:Number, roomKey:String, paused:Boolean, index: Number, count: Number, selected: Boolean, interactive: Boolean, wearing: Array, preview: Boolean });
+const props = defineProps({ pet: Object, state: Object, sceneHeight: Number, sceneWidth:Number, roomKey:String, paused:Boolean, index: Number, count: Number, selected: Boolean, interactive: Boolean, wearing: Array, preview: Boolean, decorations:Array, celebration:Object });
 const emit=defineEmits(['select','move']);
 const current = ref(null);
 const initialPosition=()=>props.pet.position || {x:props.count===1?50:14+props.index*72/(props.count-1),y:88};
@@ -17,6 +17,18 @@ let pointerDrag, suppressClick=false;
 const moving=ref(false);
 const facing=ref(1);
 let frame, journey, nextTrip=0;
+const speech=ref('');
+const joyful=ref(false);
+let speechTimer;
+function say(text, celebrate=false) {
+  speech.value=text; joyful.value=celebrate;
+  clearTimeout(speechTimer); speechTimer=setTimeout(()=>{speech.value='';joyful.value=false;},4500);
+}
+watch(()=>props.celebration, value=>{
+  if (!value || !props.selected) return;
+  journey=null; moving.value=false; nextTrip=performance.now()+5000;
+  say(({meal:'記下這一餐了！謝謝你帶我一起成長 🐾',workout:'訓練記好了！今天也辛苦了 ✨',weight:'留下今天的體態紀錄了，我陪你慢慢來！'})[value.kind] || '今天也一起留下紀錄了！',true);
+}, { immediate: true });
 const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
 function roam(now) {
   const resting=['sleep','eat'].includes(current.value?.pose);
@@ -26,12 +38,14 @@ function roam(now) {
     const fraction=Math.min(1,(now-journey.start)/journey.duration);
     const eased=fraction*fraction*(3-2*fraction);
     position.value={x:journey.from.x+(journey.to.x-journey.from.x)*eased,y:journey.from.y+(journey.to.y-journey.from.y)*eased};
-    if(fraction===1) {journey=null;moving.value=false;nextTrip=now+3000+Math.random()*6000;}
+    if(fraction===1) {if(journey.decor) say(`來看看${journey.decor.name} 🐾`);journey=null;moving.value=false;nextTrip=now+3000+Math.random()*6000;}
   } else if(now>=nextTrip) {
     const bounds=roamingBounds(props.sceneWidth||400,props.sceneHeight,actorSize.value);
     const from={x:Math.min(bounds.right,Math.max(bounds.left,position.value.x)),y:position.value.y};
-    const to=roamingTarget(from,bounds);
-    journey={from,to,start:now,duration:roamingDuration(from,to,props.sceneWidth||400,props.sceneHeight,props.pet.species,actorSize.value)*1000};
+    const objects=props.decorations || [];
+    const decor=objects.length && Math.random()<.25 ? objects[Math.floor(Math.random()*objects.length)] : null;
+    const to=decor ? {x:Math.min(bounds.right,Math.max(bounds.left,decor.x)),y:Math.min(90,Math.max(64,decor.y))} : roamingTarget(from,bounds);
+    journey={from,to,decor,start:now,duration:roamingDuration(from,to,props.sceneWidth||400,props.sceneHeight,props.pet.species,actorSize.value)*1000};
     facing.value=roamingFacing(from,to); moving.value=true;
   }
   frame=requestAnimationFrame(roam);
@@ -47,7 +61,7 @@ function step() {
 watch(() => props.pet.petKey, () => { clearTimeout(timer); step(); }, { immediate: true });
 // Begin after setup so actorSize and behavior are available.
 frame=requestAnimationFrame(roam);
-onUnmounted(() => {clearTimeout(timer);clearTimeout(landingTimer);cancelAnimationFrame(frame);});
+onUnmounted(() => {clearTimeout(timer);clearTimeout(landingTimer);clearTimeout(speechTimer);cancelAnimationFrame(frame);});
 const clothes = computed(() => props.wearing || props.pet.worn || []);
 const outfit=computed(()=>clothes.value.find(item=>item.slot==='outfit'));
 // The complete outfit is baked into each character pose; no garment overlays.
@@ -76,7 +90,7 @@ function drop(event,cancelled=false) {
   lifted.value=false;pointerDrag=null;suppressClick=moved;nextTrip=performance.now()+8000;
   landing.value=true;clearTimeout(landingTimer);landingTimer=setTimeout(()=>{landing.value=false;},260);
 }
-function clickPet() {if(suppressClick) {suppressClick=false;return;}emit('select',props.pet.petKey);}
+function clickPet() {if(suppressClick) {suppressClick=false;return;}say('我在這裡陪你！今天想做什麼呢？');emit('select',props.pet.petKey);}
 const actorSize = computed(() => props.preview ? props.sceneHeight * .65 : props.sceneHeight * (props.pet.behavior?.size || .3) * 1.25 * Math.min(1, Math.max(.55, Math.sqrt(4 / props.count))));
 const style = computed(() => ({
   left: `clamp(${actorSize.value / 2 + 8}px, ${position.value.x}%, calc(100% - ${actorSize.value / 2 + 8}px))`,
@@ -90,7 +104,7 @@ const style = computed(() => ({
 }));
 </script>
 <template>
-  <button class="actor" :class="{ selected, roaming: moving, lifted, landing }" :style="style" :disabled="!interactive" :aria-label="`選擇寵物 ${pet.name}`"
+  <button class="actor" :class="{ selected, roaming: moving, lifted, landing, joyful }" :style="style" :disabled="!interactive" :aria-label="`選擇寵物 ${pet.name}`"
     @pointerdown.stop="lift" @pointermove="dragPet" @pointerup="drop($event)" @pointercancel="drop($event,true)" @click="clickPet">
     <span class="body" :class="{ resting: current?.pose === 'sleep' }">
       <OutfitFrames v-if="outfit" :outfit="outfit.id" :pose="lifted ? 'pickup' : moving ? 'walk' : 'idle'" :label="`${pet.speciesName}・${outfit.name}`" :resting="!lifted && current?.pose === 'sleep'" />
@@ -98,6 +112,7 @@ const style = computed(() => ({
       <PetFrames v-else :species="pet.species" :pose="pose" :label="pet.speciesName" :resting="clothes.length > 0 && current?.pose === 'sleep'" />
     </span>
     <span class="name">{{ pet.name }}</span>
+    <span v-if="speech && !preview" class="pet-speech" role="status">{{ speech }}</span>
   </button>
 </template>
 <style scoped>
@@ -115,8 +130,11 @@ const style = computed(() => ({
 .body { display:block; width:100%; height:100%; position:relative; transform:scaleX(var(--body-x)); animation:breathe 4.8s ease-in-out infinite; animation-delay:var(--delay); transform-origin:50% 88%; }
 .name { position:absolute; top:90%; left:50%; transform:translateX(-50%); white-space:nowrap; border-radius:12px; padding:2px 7px; font-size:11px; background:#fff9; }
 .selected .name { background:#fff; box-shadow:0 0 0 2px #c19058; }
+.pet-speech { position:absolute; bottom:98%; left:50%; transform:translateX(-50%); width:clamp(100px,35vw,170px); padding:7px 9px; border-radius:12px; background:#fffc; color:#433c32; font-size:12px; line-height:1.5; pointer-events:none; }
+.joyful .body { animation:celebrate .65s ease-in-out 3; }
+@keyframes celebrate { 0%,100% {transform:scaleX(var(--body-x));} 50% {transform:translateY(-7px) scaleX(var(--body-x));} }
 .roaming .body { animation:waddle .6s ease-in-out infinite; }
 @keyframes breathe { 0%,100% {transform:scaleX(var(--body-x));} 50% { transform:scaleX(var(--body-x)) scaleY(1.012); } }
 @keyframes waddle { 0%,100% {transform:scaleX(var(--body-x));} 50% { transform:translateY(-2px) scaleX(var(--body-x)) rotate(1deg); } }
-@media(prefers-reduced-motion:reduce) { .actor,.body { animation:none; } }
+@media(prefers-reduced-motion:reduce) { .actor,.body,.joyful .body,.roaming .body,.lifted .body,.landing .body { animation:none; } }
 </style>

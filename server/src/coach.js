@@ -324,12 +324,15 @@ export function isGeneralAdvice(text) {
     && /((運動|訓練)後.*(吃什麼|補充什麼)|怎麼(增肌|減脂)|如何(增肌|減脂)|增肌.*(怎麼吃|如何吃))/.test(q);
 }
 
-export async function chat(userId, userText, history, image = null, model = null) {
+export async function chat(userId, userText, history, image = null, model = null, { signal, onProgress = () => {}, onActions = () => {} } = {}) {
+  signal?.throwIfAborted();
+  onProgress(image ? '辨識餐點照片' : '分析你的訊息');
   if (!image && isGeneralAdvice(userText)) {
     const result = await generateContent({
       contents: [{ role: 'user', parts: [{ text: userText }] }],
       systemInstruction: '你是飲食與訓練教練。用繁體中文提供簡短、實用的一般建議，不宣稱已新增或修改任何紀錄。',
       preferModel: model,
+      signal, onProgress,
       deadline: Date.now() + Number(process.env.COACH_TOTAL_TIMEOUT_MS ?? 75_000),
     });
     return { reply: partsToText(result.candidate.content?.parts), actions: [], model: result.model };
@@ -358,7 +361,7 @@ export async function chat(userId, userText, history, image = null, model = null
     for (let round = 0; round < maxRounds; round++) {
       // preferModel：同一輪對話固定用同一個模型，不要每次重新試探候補鏈
       const { candidate: cand, model } = await generateContent({
-        contents, systemInstruction, tools: toolDeclarations, preferModel: usedModel, deadline,
+        contents, systemInstruction, tools: toolDeclarations, preferModel: usedModel, deadline, signal, onProgress,
       });
       usedModel = model;
       const parts = cand.content?.parts || [];
@@ -371,6 +374,8 @@ export async function chat(userId, userText, history, image = null, model = null
       contents.push({ role: 'model', parts });
       const responseParts = [];
       for (const call of calls) {
+        signal?.throwIfAborted();
+        onProgress(call.name === 'get_records' ? '查詢你的紀錄' : '儲存紀錄與更新目標');
         let result;
         try {
           result = runTool(userId, call.name, call.args || {}, image?.file || '');
@@ -378,9 +383,11 @@ export async function chat(userId, userText, history, image = null, model = null
           result = { error: String(err.message || err) };
         }
         actions.push({ tool: call.name, args: call.args || {}, result });
+        onActions(actions);
         responseParts.push({ functionResponse: { name: call.name, response: { result } } });
       }
       contents.push({ role: 'user', parts: responseParts });
+      onProgress('紀錄已處理，整理教練回答');
     }
     return text;
   }
