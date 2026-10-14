@@ -56,12 +56,14 @@ const equipped = computed(() => pet.value?.equipped || {});
 /** 場景依手機／桌機宽度變化，寵物與落地位置跟著實際高度縮放。 */
 const sceneEl = ref(null);
 const sceneHeight = ref(230);
+const sceneWidth = ref(400);
 let sceneObserver;
 watch(sceneEl, el => {
   sceneObserver?.disconnect();
   if (!el) return;
   sceneHeight.value = el.clientHeight || 230;
-  sceneObserver = new ResizeObserver(() => { sceneHeight.value = el.clientHeight; });
+  sceneWidth.value = el.clientWidth || 400;
+  sceneObserver = new ResizeObserver(() => { sceneHeight.value = el.clientHeight; sceneWidth.value=el.clientWidth; });
   sceneObserver.observe(el);
 });
 onUnmounted(() => sceneObserver?.disconnect());
@@ -158,6 +160,10 @@ const resizeDecor = event => {
   const item=selectedDecor.value;
   if (item) moveDecor({id:item.id,position:{x:item.x,y:item.y,scale:Number(event.target.value)}});
 };
+const movePet = ({petKey,position})=>act(async()=>{
+  try {await api.movePet(petKey,position);}
+  catch(e) {await load();throw e;}
+},'move-pet');
 function toggleArranging() {
   arranging.value = !arranging.value;
   trying.value = null;
@@ -302,6 +308,8 @@ function confirmRename() {
           <RoomDecor :items="decorations" :editable="mine && arranging && !busy" :selected="decorSelected" @select="decorSelected=$event" @move="moveDecor" />
           <PetActor v-for="(member, index) in roster" :key="member.petKey"
             :pet="member" :index="index" :count="roster.length" :state="state" :scene-height="sceneHeight"
+            :scene-width="sceneWidth" :paused="arranging || tab === 'shop'"
+            :room-key="equipped.bg" @move="movePet"
             :selected="member.petKey === pet.petKey" :interactive="mine && !busy && !arranging"
             :preview="tab === 'shop' && member.petKey === pet.petKey"
             :wearing="member.petKey === pet.petKey ? worn : undefined" @select="choosePet" />
@@ -311,7 +319,7 @@ function confirmRename() {
           <button v-for="member in roster" :key="member.petKey" :class="{ on: member.petKey === pet.petKey }"
             :disabled="!mine || busy" @click="choosePet(member.petKey)">{{ member.name }} · {{ member.speciesName }}</button>
         </div>
-        <p class="small muted">共 {{ roster.length }} 隻寵物，共用代幣與環境；目前替「{{ pet.name }}」挑選穿搭。</p>
+        <p class="small muted">共 {{ roster.length }} 隻寵物，共用代幣與環境；目前替「{{ pet.name }}」挑選穿搭。{{ mine ? '點住寵物可拎起拖移，放開後保存位置。' : '' }}</p>
         <p class="says">{{ state.says }}</p>
 
         <div class="row wrap stats small">

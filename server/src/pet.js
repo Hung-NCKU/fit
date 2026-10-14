@@ -230,6 +230,7 @@ export function replacePet(userId, species, name, confirmName) {
 
   db.exec('DELETE FROM pet_selection');
   db.exec('DELETE FROM pet_room_decor');
+  db.exec('DELETE FROM pet_room_positions');
   db.exec('DELETE FROM pet_items');
   db.exec('DELETE FROM pet');
   const fresh = adoptPet(userId, species, name);
@@ -474,6 +475,19 @@ export function roomDecor(userId) {
   if (!pet) return [];
   return getDb(userId).prepare('SELECT item_id, x, y, scale FROM pet_room_decor WHERE scene = ?').all(pet.equipped.bg || 'bg_room')
     .map(row => ({ ...itemOf(row.item_id), x: row.x, y: row.y, scale: row.scale })).filter(item => item.id);
+}
+
+export function petRoomPosition(userId,key) {
+  const scene=mainPet(userId)?.equipped.bg || 'bg_room';
+  return getDb(userId).prepare('SELECT x,y FROM pet_room_positions WHERE scene=? AND pet_key=?').get(scene,key) || null;
+}
+export function movePet(userId,key,position) {
+  petByKey(userId,key);
+  const {x,y}=position || {};
+  if(![x,y].every(Number.isFinite) || x<5 || x>95 || y<64 || y>90) throw Object.assign(new Error('請把寵物放在環境的地板範圍'),{status:400});
+  const scene=mainPet(userId).equipped.bg || 'bg_room';
+  getDb(userId).prepare('INSERT INTO pet_room_positions(scene,pet_key,x,y) VALUES (?,?,?,?) ON CONFLICT(scene,pet_key) DO UPDATE SET x=excluded.x,y=excluded.y').run(scene,key,x,y);
+  return {x,y};
 }
 
 export function arrangeDecor(userId, itemId, position) {

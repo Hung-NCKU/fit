@@ -3,6 +3,7 @@ import {
   settleCoins, petState, buyItem, equipItem, unequipSlot, speciesOf, replacePet,
   listPets, purchasePet, selectPet, renamePet, PET_PRICE, itemOf,
   roomDecor, arrangeDecor,
+  petRoomPosition, movePet,
 } from '../pet.js';
 import { behaviorOf } from '../pet-behavior.js';
 import { getUser } from '../users.js';
@@ -45,6 +46,7 @@ export default async function petRoutes(app) {
       roster: listPets(u).map(p => ({
         petKey: p.petKey, species: p.species, name: p.name, equipped: p.equipped,
         speciesName: speciesOf(p.species).name, behavior: behaviorOf(p.species),
+        position:petRoomPosition(u,p.petKey),
         worn: ['hat', 'cloth', 'acc'].map(slot => itemOf(p.equipped[slot])).filter(item => item && item.species === p.species),
       })),
       petsForSale: SPECIES.map(s => ({ species: s.id, name: s.name, nick: s.nick, price: PET_PRICE, img: `/pets/${s.id}-pet.webp` })),
@@ -102,5 +104,9 @@ export default async function petRoutes(app) {
   app.patch('/pet/room', async (req) => {
     writeGuard(req);
     return arrangeDecor(req.userId, req.body?.item, req.body?.position);
+  });
+  app.patch('/pet/position',async(req)=>{
+    writeGuard(req);
+    return movePet(req.userId,req.body?.petKey,req.body?.position);
   });
 }

@@ -7,7 +7,7 @@ const layout = computed(() => layouts[props.species]);
 const frames = computed(() => layout.value.poses[props.pose] || layout.value.poses.idle);
 const duration = computed(() => {
   const seconds = ({ idle: 6.8, walk: .8, eat: 2.2, sleep: 6, play: 2.6 })[props.pose] || 6.8;
-  const slowerWalk = ({ tortoise: 3, hedgehog: 1.5, guinea: 1.2, parrot: 1.2 })[props.species] || 1;
+  const slowerWalk = ({ tortoise: 3, dog: 1.5, hedgehog: 1.5, guinea: 1.2, parrot: 1.2 })[props.species] || 1;
   return `${seconds * (props.pose === 'walk' ? slowerWalk : 1)}s`;
 });
 const clipId = i => `pet-frame-${instanceId}-${props.species}-${props.pose}-${i}`;

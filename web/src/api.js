@@ -87,6 +87,7 @@ export const api = {
 
   pet: (user) => request('/pet' + qs({ user })),
   arrangeDecor: (item, position) => request('/pet/room', { method:'PATCH', body:{ item, position } }),
+  movePet: (petKey, position) => request('/pet/position', { method:'PATCH', body:{ petKey, position } }),
   adoptPet: (species, name) => request('/pet', { method: 'POST', body: { species, name } }),
   // confirm 要帶目前這隻的名字，伺服器會核對 —— 這是唯一不可復原的操作
   replacePet: (species, name, confirm) =>

@@ -10,7 +10,7 @@ beforeAll(async()=>{
   pet.adoptPet('eli','cat','test');
   item=pet.shopFor('cat').find(i=>i.slot==='decor');
 });
-beforeEach(()=>db.exec("DELETE FROM pet_room_decor; DELETE FROM pet_items WHERE item_id!='bg_room'; UPDATE pet SET coins=1000,equipped='{\"bg\":\"bg_room\"}'"));
+beforeEach(()=>db.exec("DELETE FROM pet_room_decor; DELETE FROM pet_room_positions; DELETE FROM pet_items WHERE item_id!='bg_room'; UPDATE pet SET coins=1000,equipped='{\"bg\":\"bg_room\"}'"));
 afterAll(()=>vi.unstubAllEnvs());
 it('購買扣款並放置；拖移、縮放、收起、再次放入不扣款',()=>{
   pet.buyItem('eli',item.id);
@@ -60,4 +60,15 @@ it('141 件新版裝飾都有完整的獨立透明圖範圍與已部署圖檔',(
     expect(y+height).toBeLessThanOrEqual(layout.height);
     expect(existsSync(new URL(`../web/public/pets/decor-v2/${layout.sheet}.webp`,import.meta.url))).toBe(true);
   }
+});
+it('寵物拖移位置依環境保存，非法位置與不存在的寵物不接受',()=>{
+  pet.movePet('eli','main',{x:25,y:80});
+  expect(pet.petRoomPosition('eli','main')).toMatchObject({x:25,y:80});
+  expect(()=>pet.movePet('eli','main',{x:25,y:20})).toThrow();
+  expect(()=>pet.movePet('eli','companion-999',{x:25,y:80})).toThrow();
+  pet.buyItem('eli','bg_garden');
+  expect(pet.petRoomPosition('eli','main')).toBeNull();
+  pet.movePet('eli','main',{x:70,y:75});
+  pet.equipItem('eli','bg_room');
+  expect(pet.petRoomPosition('eli','main')).toMatchObject({x:25,y:80});
 });

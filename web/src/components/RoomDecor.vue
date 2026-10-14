@@ -47,7 +47,7 @@ const width = item => {
 </script>
 <template>
   <button v-for="item in objects" :key="item.id" class="room-object" :class="{ editing:editable, picked:editable && selected === item.id }"
-    :style="{left:`${item.x}%`,top:`${item.y}%`,width:`${width(item)}%`}" :disabled="!editable"
+    :style="{left:`${item.x}%`,top:`${item.y}%`,width:`${width(item)}%`,zIndex:editable ? 2000 : Math.round(item.y*10)}" :disabled="!editable"
     :aria-label="`裝飾 ${item.name}，拖曳或使用方向鍵移動`" @pointerdown.stop.prevent="start($event,item)" @pointermove="move"
     @pointerup="finish($event)" @pointercancel="finish($event,true)" @keydown="keyboard($event,item)" @click.stop="editable && emit('select',item.id)">
     <DecorArt :item="item" />
