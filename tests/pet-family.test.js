@@ -15,20 +15,20 @@ beforeEach(() => {
 afterAll(() => vi.unstubAllEnvs());
 it('購買保留原寵物並扣共用錢包，可重複同物種且重送不重扣', () => {
   const dog = pet.purchasePet('eli','dog','小藍','purchase-test-001');
-  expect(dog.coins).toBe(20000);
+  expect(dog.coins).toBe(29500);
   expect(pet.listPets('eli').map(p => p.name)).toEqual(['原來的小貓','小藍']);
-  expect(pet.purchasePet('eli','dog','小藍','purchase-test-001').coins).toBe(20000);
+  expect(pet.purchasePet('eli','dog','小藍','purchase-test-001').coins).toBe(29500);
   pet.purchasePet('eli','dog','小黃','purchase-test-002');
   expect(pet.listPets('eli')).toHaveLength(3);
-  expect(pet.selectPet('eli','main').coins).toBe(10000);
+  expect(pet.selectPet('eli','main').coins).toBe(29000);
   expect(() => pet.purchasePet('eli','cat','偷換','purchase-test-001')).toThrow();
 });
 it('不足代幣或無效參數不新增、不扣款', () => {
-  db.exec('UPDATE pet SET coins = 9999');
+  db.exec('UPDATE pet SET coins = 499');
   for (const [species,name,token] of [['dog','小藍','purchase-test-001'],['unknown','小藍','purchase-test-002'],['dog',' ','purchase-test-003'],['dog','小藍','bad']]) {
     expect(() => pet.purchasePet('eli',species,name,token)).toThrow();
     expect(pet.listPets('eli')).toHaveLength(1);
-    expect(pet.getPet('eli').coins).toBe(9999);
+    expect(pet.getPet('eli').coins).toBe(499);
   }
 });
 it('個別改名、穿搭與移除獨立保存，物種與寵物不存在時拒絕', () => {

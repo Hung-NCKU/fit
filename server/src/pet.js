@@ -87,7 +87,7 @@ export const itemOf = (id) => EVERYTHING.find(i => i.id === id) || null;
 
 const parse = (s, fallback) => { try { return JSON.parse(s); } catch { return fallback; } };
 
-export const PET_PRICE = 10_000;
+export const PET_PRICE = 500;
 
 function mainPet(userId) {
   const row = getDb(userId).prepare('SELECT * FROM pet WHERE id = 1').get();

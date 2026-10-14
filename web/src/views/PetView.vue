@@ -255,7 +255,7 @@ function confirmRename() {
         <h3 id="pet-dialog-title">{{ purchase ? `購買${purchase.name}` : '幫寵物改名' }}</h3>
         <template v-if="purchase">
           <img class="purchase-face" :src="purchase.img" :alt="purchase.name" />
-          <p>花費 10,000 代幣，購買後剩 {{ pet.coins - 10000 }} 枚。</p>
+          <p>花費 {{ purchase.price.toLocaleString() }} 代幣，購買後剩 {{ pet.coins - purchase.price }} 枚。</p>
           <label>新寵物的名字<input v-model="purchaseName" required maxlength="20" autofocus /></label>
         </template>
         <label v-else>寵物名字<input v-model="renameName" required maxlength="20" autofocus /></label>
@@ -401,11 +401,11 @@ function confirmRename() {
         <label>商城分類<select v-model="shopSection"><option v-for="section in shopSections" :key="section">{{ section }}</option></select></label>
         <div v-if="shopSection === '全部' || shopSection === '寵物'" class="card stack">
           <h3 style="margin:0">再養一隻</h3>
-          <p class="small muted">十種寵物每隻 10,000 代幣。購買時取名，加入同一個家；同一物種也能養多隻。</p>
+          <p class="small muted">十種寵物每隻 {{ data.petsForSale[0]?.price.toLocaleString() }} 代幣。購買時取名，加入同一個家；同一物種也能養多隻。</p>
           <div class="grid shop">
             <button v-for="animal in data.petsForSale" :key="animal.species" class="item" :disabled="busy || pet.coins < animal.price" @click="openPurchase(animal)">
               <img class="item-face" :src="animal.img" :alt="animal.name" loading="lazy" />
-              <span>{{ animal.name }}</span><span class="small">🪙 10,000</span>
+              <span>{{ animal.name }}</span><span class="small">🪙 {{ animal.price.toLocaleString() }}</span>
             </button>
           </div>
         </div>
