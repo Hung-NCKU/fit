@@ -12,7 +12,7 @@ const duration=computed(()=>pose.value==='walk'?`${({dog:1.2,tortoise:2.4,hedgeh
   <span class="outfit-frames" :class="[pose,{resting,still}]" :style="{'--duration':duration}" role="img" :aria-label="label">
     <svg v-for="(viewport,i) in frames" :key="`${outfit}-${pose}-${i}`" class="frame" :class="`frame-${i}`" :viewBox="viewport" :style="{animationDelay:`calc(var(--duration) * ${i?(i-4)/4:0})`}" aria-hidden="true">
       <defs><clipPath :id="`${id}-${i}`"><rect v-bind="layout.bounds[pose][i]" /></clipPath></defs>
-      <image :href="`/pets/outfits-v1/${outfit}.webp`" :width="layout.width" :height="layout.height" :clip-path="`url(#${id}-${i})`" />
+      <image :href="`/pets/outfits-v1/${outfit}.webp?v=${layout.sourceHash.slice(0,12)}`" :width="layout.width" :height="layout.height" :clip-path="`url(#${id}-${i})`" />
     </svg>
   </span>
 </template>
