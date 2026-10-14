@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch, onUnmounted } from 'vue';
 import PetFrames from './PetFrames.vue';
+import PetPickup from './PetPickup.vue';
 import { pickNext } from '../pet-fsm.js';
 import { roamingBounds, roamingTarget, roamingDuration, roamingFacing } from '../pet-roaming.js';
 const props = defineProps({ pet: Object, state: Object, sceneHeight: Number, sceneWidth:Number, roomKey:String, paused:Boolean, index: Number, count: Number, selected: Boolean, interactive: Boolean, wearing: Array, preview: Boolean });
@@ -49,7 +50,6 @@ onUnmounted(() => {clearTimeout(timer);clearTimeout(landingTimer);cancelAnimatio
 const clothes = computed(() => props.wearing || props.pet.worn || []);
 // 衣櫃是正面素材；穿著時保持正面，整個角色連同穿搭一起呼吸、走動。
 const pose = computed(() => clothes.value.length || props.preview ? 'idle' : moving.value ? 'walk' : current.value?.pose === 'walk' ? 'idle' : current.value?.pose || 'idle');
-const shownPose=computed(()=>lifted.value ? 'idle' : pose.value);
 watch(()=>props.roomKey,()=>{journey=null;position.value={...initialPosition()};});
 watch(()=>props.pet.position,p=>{if(p && !lifted.value && !journey) position.value={...p};});
 function lift(event) {
@@ -86,6 +86,10 @@ function garmentStyle(item) {
   let [x,y,w,h] = (anchors[props.pet.species] || anchors.cat)[{hat:0,cloth:1,acc:2}[item.slot] ?? 2];
   if (/背包/.test(item.name)) [x,y,w] = [67,52,26];
   if (/頭圈|髮飾/.test(item.name)) [x,y,w] = (anchors[props.pet.species] || anchors.cat)[0];
+  if (lifted.value) {
+    [x,y,w,h] = ({hat:[45,28,w*.8],cloth:[45,57,w*.8,26],acc:[45,53,w*.8]})[item.slot] || [45,53,w*.8];
+    if (/背包/.test(item.name)) [x,y,w,h]=[59,54,21,undefined];
+  }
   return { left: `${x}%`, top: `${y}%`, width: `${w}%`, height: h ? `${h}%` : 'auto' };
 }
 const actorSize = computed(() => props.preview ? props.sceneHeight * .65 : props.sceneHeight * (props.pet.behavior?.size || .3) * 1.25 * Math.min(1, Math.max(.55, Math.sqrt(4 / props.count))));
@@ -104,7 +108,8 @@ const style = computed(() => ({
   <button class="actor" :class="{ selected, roaming: moving, lifted, landing }" :style="style" :disabled="!interactive" :aria-label="`選擇寵物 ${pet.name}`"
     @pointerdown.stop="lift" @pointermove="dragPet" @pointerup="drop($event)" @pointercancel="drop($event,true)" @click="clickPet">
     <span class="body" :class="{ resting: current?.pose === 'sleep' }">
-      <PetFrames :species="pet.species" :pose="shownPose" :label="pet.speciesName" :resting="!lifted && clothes.length > 0 && current?.pose === 'sleep'" />
+      <PetPickup v-if="lifted" :species="pet.species" :label="pet.speciesName" />
+      <PetFrames v-else :species="pet.species" :pose="pose" :label="pet.speciesName" :resting="clothes.length > 0 && current?.pose === 'sleep'" />
       <template v-for="item in clothes" :key="item.id">
         <svg v-if="item.img.endsWith('/dog-7.webp')" class="garment cloth" :style="garmentStyle(item)" viewBox="0 0 103 119" preserveAspectRatio="none" role="img" :aria-label="item.name"><image :href="item.img" width="200" height="119" /></svg>
         <img v-else class="garment" :class="item.slot" :src="item.img" :alt="item.name" :style="garmentStyle(item)" />
@@ -117,7 +122,7 @@ const style = computed(() => ({
 .actor { position:absolute; padding:0; border:0; background:none; aspect-ratio:1; transform:translate(-50%,12%); overflow:visible; color:#433c32; touch-action:none; cursor:grab; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
 .actor.lifted { cursor:grabbing; }
 .lifted .body { animation:pickup .9s ease-in-out infinite; transform:translateY(-12px) scale(1.06); filter:drop-shadow(0 12px 5px #0002); }
-@keyframes pickup { 0%,100% {transform:translateY(-12px) scale(1.06) rotate(-3deg);} 50% {transform:translateY(-14px) scale(1.06) rotate(3deg);} }
+@keyframes pickup { 0%,100% {transform:translateY(-12px) scale(1.06) rotate(-1.5deg);} 50% {transform:translateY(-14px) scale(1.06) rotate(1.5deg);} }
 .landing .body { animation:land .25s ease-out; }
 @keyframes land { from {transform:translateY(-12px) scale(1.04);} to {transform:translateY(0) scaleX(var(--body));} }
 .body,.name { pointer-events:none; }
