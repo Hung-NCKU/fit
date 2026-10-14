@@ -7,6 +7,7 @@ import PetCarousel from '../components/PetCarousel.vue';
 import PetActor from '../components/PetActor.vue';
 import RoomDecor from '../components/RoomDecor.vue';
 import DecorArt from '../components/DecorArt.vue';
+import OutfitFrames from '../components/OutfitFrames.vue';
 
 const viewing = ref(session.user);
 const data = ref(null);
@@ -116,25 +117,19 @@ function confirmTry() {
 }
 
 const bg = computed(() => itemById(shown.value.bg));
-const hat = computed(() => itemById(shown.value.hat));
-const cloth = computed(() => itemById(shown.value.cloth));
-
-const acc = computed(() => itemById(shown.value.acc));
+const outfit = computed(() => itemById(shown.value.outfit));
 
 /** 穿戴類跟著個別寵物；房間擺飾獨立保存位置。 */
-const worn = computed(() => [hat.value, cloth.value, acc.value].filter(Boolean));
+const worn = computed(() => [outfit.value].filter(Boolean));
 
 
 /** 體態只影響顯示大小，不改 emoji —— 同一隻動物胖瘦用縮放表現最直覺 */
 
 
-// 穿搭素材只有帽子、衣服、配件三個部位，沒有鞋襪；
-// 裝飾使用獨立清單，不佔用穿搭部位。
+// 完整套裝一次換上；房間裝飾獨立保存，不佔穿搭部位。
 const SLOTS = [
   { id: 'bg',    label: '環境' },
-  { id: 'hat',   label: '帽子' },
-  { id: 'cloth', label: '衣服' },
-  { id: 'acc',   label: '配件' },
+  { id: 'outfit', label: '套裝' },
 ];
 
 /** 商城照後端給的分區排，一區一張卡 */
@@ -379,7 +374,8 @@ function confirmRename() {
           <span>
             <span class="muted small">{{ s.label }}　</span>
             <template v-if="itemById(equipped[s.id])">
-              <img class="slot-img" :src="itemById(equipped[s.id]).img" :alt="''" />
+              <OutfitFrames v-if="s.id==='outfit'" class="slot-img" :outfit="equipped[s.id]" :label="itemById(equipped[s.id]).name" still />
+              <img v-else class="slot-img" :src="itemById(equipped[s.id]).img" :alt="''" />
               {{ itemById(equipped[s.id]).name }}
             </template>
             <span v-else class="muted small">（沒有）</span>
@@ -411,6 +407,7 @@ function confirmRename() {
         </div>
         <div v-for="g in shopGroups" :key="g.group" class="card stack">
           <h3 style="margin:0">{{ g.group }}</h3>
+          <p v-if="g.group==='套裝'" class="small muted">整隻角色已穿好帽子、衣服與配件；原本買過的單品已免費解鎖對應套裝。</p>
           <div class="grid shop">
             <button
               v-for="i in g.items" :key="i.id"
@@ -419,6 +416,7 @@ function confirmRename() {
               :disabled="busy" @click="tryOn(i)"
             >
               <DecorArt v-if="i.slot === 'decor'" class="item-face" :item="i" />
+              <OutfitFrames v-else-if="i.slot==='outfit'" class="item-face" :outfit="i.id" :label="i.name" still />
               <img v-else class="item-face" :src="i.img" :alt="i.name" loading="lazy" />
               <span class="small">{{ i.name }}</span>
 
@@ -433,6 +431,7 @@ function confirmRename() {
       <!-- 試穿中：釘在畫面底部，捲到哪裡都按得到 -->
       <div v-if="trying" class="trybar">
         <DecorArt v-if="trying.slot === 'decor'" class="item-face small-face" :item="trying" />
+        <OutfitFrames v-else-if="trying.slot==='outfit'" class="item-face small-face" :outfit="trying.id" :label="trying.name" still />
         <img v-else class="item-face small-face" :src="trying.img" :alt="trying.name" />
         <span class="stack tight">
           <b class="small">{{ trying.name }}</b>
@@ -563,6 +562,9 @@ function confirmRename() {
 }
 .item.on { border-color: var(--accent); }
 .item-face { width: 100%; max-width: 54px; display: block; }
+.item-face.outfit-frames {width:54px;height:54px;max-width:100%;}
+.small-face.outfit-frames {width:36px;height:36px;}
+.slot-img.outfit-frames {width:22px;height:22px;display:inline-block;}
 .slot-img { width: 22px; vertical-align: -5px; }
 .item .desc { line-height: 1.35; }
 .item button { width: 100%; }

@@ -33,17 +33,17 @@ it('不足代幣或無效參數不新增、不扣款', () => {
 });
 it('個別改名、穿搭與移除獨立保存，物種與寵物不存在時拒絕', () => {
   const cat = pet.purchasePet('eli','cat','第二隻','purchase-test-001');
-  const hat = pet.shopFor('cat').find(i => i.slot === 'hat');
-  pet.buyItem('eli',hat.id,'main');
-  expect(pet.petByKey('eli',cat.petKey).equipped.hat).toBeUndefined();
-  pet.equipItem('eli',hat.id,cat.petKey);
-  pet.unequipSlot('eli','hat','main');
-  expect(pet.petByKey('eli',cat.petKey).equipped.hat).toBe(hat.id);
+  const outfit = pet.shopFor('cat').find(i => i.slot === 'outfit');
+  pet.buyItem('eli',outfit.id,'main');
+  expect(pet.petByKey('eli',cat.petKey).equipped.outfit).toBeUndefined();
+  pet.equipItem('eli',outfit.id,cat.petKey);
+  pet.unequipSlot('eli','outfit','main');
+  expect(pet.petByKey('eli',cat.petKey).equipped.outfit).toBe(outfit.id);
   pet.renamePet('eli',cat.petKey,'新名字');
   expect(pet.petByKey('eli','main').name).toBe('原來的小貓');
   expect(pet.petByKey('eli',cat.petKey).name).toBe('新名字');
   const before = pet.getPet('eli').coins;
-  expect(() => pet.buyItem('eli',pet.shopFor('dog').find(i=>i.slot==='hat').id,cat.petKey)).toThrow();
+  expect(() => pet.buyItem('eli',pet.shopFor('dog').find(i=>i.slot==='outfit').id,cat.petKey)).toThrow();
   expect(pet.getPet('eli').coins).toBe(before);
   expect(() => pet.selectPet('eli','companion-999')).toThrow();
   expect(() => pet.replacePet('eli','dog','replacement','原來的小貓')).toThrow();

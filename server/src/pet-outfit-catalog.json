@@ -1,0 +1,340 @@
+[
+  {
+    "id": "outfit-cat-1",
+    "species": "cat",
+    "name": "橘白日常",
+    "design": "orange beret, orange-and-cream hoodie tailored around the torso and sleeves, small orange striped bow at neckline",
+    "legacy": [
+      "wear-cat-1",
+      "wear-cat-7",
+      "wear-cat-8",
+      "wear-cat-10"
+    ]
+  },
+  {
+    "id": "outfit-cat-2",
+    "species": "cat",
+    "name": "草帽小廚師",
+    "design": "straw hat with orange bow, cream scalloped apron with cat-face pocket and orange trim, small navy-and-cream sailor collar tucked under the apron straps",
+    "legacy": [
+      "wear-cat-2",
+      "wear-cat-5",
+      "wear-cat-6"
+    ]
+  },
+  {
+    "id": "outfit-cat-3",
+    "species": "cat",
+    "name": "暖暖冬裝",
+    "design": "cream knit beanie with orange pom-pom, buttery beige buttoned coat with tailored sleeves, orange-and-cream striped scarf wrapped snugly below the chin",
+    "legacy": [
+      "wear-cat-3",
+      "wear-cat-4",
+      "wear-cat-9"
+    ]
+  },
+  {
+    "id": "outfit-dog-1",
+    "species": "dog",
+    "name": "藍天散步",
+    "design": "blue-and-cream baseball cap, tailored sky-blue hoodie with foreleg sleeves and paw cuffs, blue polka-dot bandana tucked neatly at the neckline",
+    "legacy": [
+      "wear-dog-1",
+      "wear-dog-4",
+      "wear-dog-7"
+    ]
+  },
+  {
+    "id": "outfit-dog-2",
+    "species": "dog",
+    "name": "骨頭探險",
+    "design": "tan bucket hat with white bone emblem, blue denim overalls with bone chest pocket, small blue bow tie at neck, small bone-emblem blue backpack strapped around shoulders",
+    "legacy": [
+      "wear-dog-2",
+      "wear-dog-6",
+      "wear-dog-8",
+      "wear-dog-9"
+    ]
+  },
+  {
+    "id": "outfit-dog-3",
+    "species": "dog",
+    "name": "星星居家",
+    "design": "blue star-pattern nightcap, soft cream-and-blue knit pet sweater around torso and forelegs, blue-and-white striped scarf attached snugly below chin",
+    "legacy": [
+      "wear-dog-3",
+      "wear-dog-5"
+    ]
+  },
+  {
+    "id": "outfit-rabbit-1",
+    "species": "rabbit",
+    "name": "花園小洋裝",
+    "design": "small white-and-pink flower crown between long floppy ears, mint-green daisy dress with cream scalloped apron panel and pink bow, tiny brown rabbit-emblem shoulder satchel",
+    "legacy": [
+      "wear-rabbit-2",
+      "wear-rabbit-5",
+      "wear-rabbit-8"
+    ]
+  },
+  {
+    "id": "outfit-rabbit-2",
+    "species": "rabbit",
+    "name": "粉帽針織",
+    "design": "pink beret angled between the floppy ears, cream cable-knit cardigan with pink pocket trim and little rabbit emblem, small pink lace bow at neckline",
+    "legacy": [
+      "wear-rabbit-3",
+      "wear-rabbit-6",
+      "wear-rabbit-9"
+    ]
+  },
+  {
+    "id": "outfit-rabbit-3",
+    "species": "rabbit",
+    "name": "雨天散步",
+    "design": "pink bow headband between ears, sunny-yellow pet raincoat with hood lowered behind neck and sleeves around forelegs, pink-and-white striped scarf below chin",
+    "legacy": [
+      "wear-rabbit-1",
+      "wear-rabbit-4",
+      "wear-rabbit-7"
+    ]
+  },
+  {
+    "id": "outfit-hamster-1",
+    "species": "hamster",
+    "name": "紅帽吊帶",
+    "design": "red knit pom-pom beanie, dark-blue pet overalls with chest pocket tailored to rounded torso, small red bow tie below chin",
+    "legacy": [
+      "wear-hamster-1",
+      "wear-hamster-4",
+      "wear-hamster-6"
+    ]
+  },
+  {
+    "id": "outfit-hamster-2",
+    "species": "hamster",
+    "name": "小熊廚師",
+    "design": "cream bucket hat with little bear emblem, cream hoodie under a tiny cream-and-brown bear apron that wraps around torso, small brown bear-emblem backpack",
+    "legacy": [
+      "wear-hamster-2",
+      "wear-hamster-7",
+      "wear-hamster-9",
+      "wear-hamster-10"
+    ]
+  },
+  {
+    "id": "outfit-hamster-3",
+    "species": "hamster",
+    "name": "雲朵暖裝",
+    "design": "soft blue nightcap with white cloud motif, yellow buttoned pet coat around plump torso with paw openings, red-and-cream striped scarf",
+    "legacy": [
+      "wear-hamster-3",
+      "wear-hamster-5",
+      "wear-hamster-8"
+    ]
+  },
+  {
+    "id": "outfit-guinea-1",
+    "species": "guinea",
+    "name": "田園小廚師",
+    "design": "straw hat with tiny white flower, cream apron with carrot pocket and pale green scalloped hem that wraps around its oval torso, tiny pale-green polka-dot neck bow",
+    "legacy": [
+      "wear-guinea-1",
+      "wear-guinea-6",
+      "wear-guinea-8"
+    ]
+  },
+  {
+    "id": "outfit-guinea-2",
+    "species": "guinea",
+    "name": "森林小紳士",
+    "design": "warm-brown beret, brown pet vest wrapped around the entire oval body with clear armholes, green-and-cream checked neck kerchief, tiny brown shoulder satchel",
+    "legacy": [
+      "wear-guinea-3",
+      "wear-guinea-4",
+      "wear-guinea-7",
+      "wear-guinea-10"
+    ]
+  },
+  {
+    "id": "outfit-guinea-3",
+    "species": "guinea",
+    "name": "暖冬雨衣",
+    "design": "cream pom-pom beanie, yellow raincoat following its rounded guinea-pig torso with short foreleg sleeves and hood lowered behind neck, green-and-cream striped scarf",
+    "legacy": [
+      "wear-guinea-2",
+      "wear-guinea-5",
+      "wear-guinea-9"
+    ]
+  },
+  {
+    "id": "outfit-hedgehog-1",
+    "species": "hedgehog",
+    "name": "楓葉暖裝",
+    "design": "cream-and-brown knit beanie with tiny maple-leaf badge, brown maple-leaf waistcoat tailored around the soft belly while leaving back spines visible, brown plaid scarf",
+    "legacy": [
+      "wear-hedgehog-1",
+      "wear-hedgehog-4",
+      "wear-hedgehog-7"
+    ]
+  },
+  {
+    "id": "outfit-hedgehog-2",
+    "species": "hedgehog",
+    "name": "森林斗篷",
+    "design": "warm-brown maple-leaf beret, yellow pet cape draped over shoulders and around spiny back while paws remain free, small green leaf collar, tiny maple-leaf shoulder bag",
+    "legacy": [
+      "wear-hedgehog-3",
+      "wear-hedgehog-5",
+      "wear-hedgehog-8",
+      "wear-hedgehog-9"
+    ]
+  },
+  {
+    "id": "outfit-hedgehog-3",
+    "species": "hedgehog",
+    "name": "松果針織",
+    "design": "pinecone-textured warm-brown cap, soft cream pet knit vest around the belly with openings for paws and visible spines, small brown plaid bow tie",
+    "legacy": [
+      "wear-hedgehog-2",
+      "wear-hedgehog-6",
+      "wear-hedgehog-10"
+    ]
+  },
+  {
+    "id": "outfit-ferret-1",
+    "species": "ferret",
+    "name": "紅帽皮背心",
+    "design": "red knit pom-pom beanie, brown leather pet waistcoat tailored to long narrow torso with proper shoulder armholes, red plaid scarf",
+    "legacy": [
+      "wear-ferret-1",
+      "wear-ferret-4",
+      "wear-ferret-7"
+    ]
+  },
+  {
+    "id": "outfit-ferret-2",
+    "species": "ferret",
+    "name": "奶油針織",
+    "design": "cream beret, cream cable-knit sweater following long narrow torso and forelegs, tiny brown plaid bow tie, small brown shoulder satchel with visible strap",
+    "legacy": [
+      "wear-ferret-2",
+      "wear-ferret-6",
+      "wear-ferret-8",
+      "wear-ferret-9"
+    ]
+  },
+  {
+    "id": "outfit-ferret-3",
+    "species": "ferret",
+    "name": "格紋雨衣",
+    "design": "brown plaid hunting cap, yellow raincoat tailored to long narrow ferret body with foreleg sleeves and hood folded behind neck, small green leaf kerchief",
+    "legacy": [
+      "wear-ferret-3",
+      "wear-ferret-5",
+      "wear-ferret-10"
+    ]
+  },
+  {
+    "id": "outfit-parrot-1",
+    "species": "parrot",
+    "name": "草帽花邊",
+    "design": "tiny straw hat with pink bow seated around head feathers, pale yellow pet cape around shoulders and green breast with wings naturally emerging, small green lace neck collar, tiny green side backpack",
+    "legacy": [
+      "wear-parrot-1",
+      "wear-parrot-4",
+      "wear-parrot-9",
+      "wear-parrot-10"
+    ]
+  },
+  {
+    "id": "outfit-parrot-2",
+    "species": "parrot",
+    "name": "水手小隊",
+    "design": "tiny white-and-blue sailor cap, cream-and-blue sailor pet vest or shoulder cape following the bird breast while wings and tail remain free, small pink bow tie below beak, tiny white flower tucked beside cap",
+    "legacy": [
+      "wear-parrot-2",
+      "wear-parrot-5",
+      "wear-parrot-8"
+    ]
+  },
+  {
+    "id": "outfit-parrot-3",
+    "species": "parrot",
+    "name": "藍帽暖裝",
+    "design": "blue knit beanie over head feathers, cream-and-blue soft shoulder cape fitted around green breast with wing openings, a red-and-white striped scarf snugly below beak",
+    "legacy": [
+      "wear-parrot-3",
+      "wear-parrot-6",
+      "wear-parrot-7"
+    ]
+  },
+  {
+    "id": "outfit-tortoise-1",
+    "species": "tortoise",
+    "name": "航海殼套",
+    "design": "tiny white-and-blue sailor cap seated on its head, green checked soft shell cover wrapping the FULL domed shell and following its silhouette, small blue kerchief around neck; all four turtle feet stay free",
+    "legacy": [
+      "wear-tortoise-1",
+      "wear-tortoise-4",
+      "wear-tortoise-10"
+    ]
+  },
+  {
+    "id": "outfit-tortoise-2",
+    "species": "tortoise",
+    "name": "草帽旅行",
+    "design": "tiny straw hat seated on head, tan quilted travel shell cover wrapping the entire shell with leg openings, small green checked bow tie at neck, tiny brown satchel strapped to the side of the covered shell",
+    "legacy": [
+      "wear-tortoise-2",
+      "wear-tortoise-6",
+      "wear-tortoise-9"
+    ]
+  },
+  {
+    "id": "outfit-tortoise-3",
+    "species": "tortoise",
+    "name": "暖暖雨裝",
+    "design": "small green knit beanie on head, yellow waterproof shell rain-cape covering the FULL domed shell with hood lowered and four turtle feet free, green-and-cream striped scarf with tiny green bow at neck",
+    "legacy": [
+      "wear-tortoise-3",
+      "wear-tortoise-5",
+      "wear-tortoise-7",
+      "wear-tortoise-8"
+    ]
+  },
+  {
+    "id": "outfit-chinchilla-1",
+    "species": "chinchilla",
+    "name": "小花蕾絲",
+    "design": "small white flower crown between its round ears, cream lace dress tailored around fluffy torso with scalloped skirt and paw openings, tiny cherry-accent lace collar",
+    "legacy": [
+      "wear-chinchilla-1",
+      "wear-chinchilla-5",
+      "wear-chinchilla-7",
+      "wear-chinchilla-8"
+    ]
+  },
+  {
+    "id": "outfit-chinchilla-2",
+    "species": "chinchilla",
+    "name": "綠色學院",
+    "design": "cream beret between its round ears, sage-green buttoned pet waistcoat around rounded fluffy torso, green checked bow tie, tiny brown flower-emblem shoulder satchel",
+    "legacy": [
+      "wear-chinchilla-2",
+      "wear-chinchilla-4",
+      "wear-chinchilla-9",
+      "wear-chinchilla-10"
+    ]
+  },
+  {
+    "id": "outfit-chinchilla-3",
+    "species": "chinchilla",
+    "name": "毛線暖暖",
+    "design": "soft sage-green pom-pom beanie between its round ears, cream cable-knit pet cardigan tailored around fluffy torso and forelegs, pale-yellow striped scarf",
+    "legacy": [
+      "wear-chinchilla-3",
+      "wear-chinchilla-6"
+    ]
+  }
+]

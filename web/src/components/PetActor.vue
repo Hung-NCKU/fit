@@ -2,8 +2,7 @@
 import { computed, ref, watch, onUnmounted } from 'vue';
 import PetFrames from './PetFrames.vue';
 import PetPickup from './PetPickup.vue';
-import GarmentArt from './GarmentArt.vue';
-import { garmentStyle as fittedGarmentStyle, wearForeground } from '../pet-wear-fit.js';
+import OutfitFrames from './OutfitFrames.vue';
 import { pickNext } from '../pet-fsm.js';
 import { roamingBounds, roamingTarget, roamingDuration, roamingFacing } from '../pet-roaming.js';
 const props = defineProps({ pet: Object, state: Object, sceneHeight: Number, sceneWidth:Number, roomKey:String, paused:Boolean, index: Number, count: Number, selected: Boolean, interactive: Boolean, wearing: Array, preview: Boolean });
@@ -50,9 +49,8 @@ watch(() => props.pet.petKey, () => { clearTimeout(timer); step(); }, { immediat
 frame=requestAnimationFrame(roam);
 onUnmounted(() => {clearTimeout(timer);clearTimeout(landingTimer);cancelAnimationFrame(frame);});
 const clothes = computed(() => props.wearing || props.pet.worn || []);
-const foreground=computed(()=>wearForeground(props.pet.species,lifted.value));
-const hasCloth=computed(()=>clothes.value.some(item=>item.slot==='cloth'));
-// 衣櫃是正面素材；穿著時保持正面，整個角色連同穿搭一起呼吸、走動。
+const outfit=computed(()=>clothes.value.find(item=>item.slot==='outfit'));
+// The complete outfit is baked into each character pose; no garment overlays.
 const pose = computed(() => clothes.value.length || props.preview ? 'idle' : moving.value ? 'walk' : current.value?.pose === 'walk' ? 'idle' : current.value?.pose || 'idle');
 watch(()=>props.roomKey,()=>{journey=null;position.value={...initialPosition()};});
 watch(()=>props.pet.position,p=>{if(p && !lifted.value && !journey) position.value={...p};});
@@ -79,9 +77,6 @@ function drop(event,cancelled=false) {
   landing.value=true;clearTimeout(landingTimer);landingTimer=setTimeout(()=>{landing.value=false;},260);
 }
 function clickPet() {if(suppressClick) {suppressClick=false;return;}emit('select',props.pet.petKey);}
-function garmentStyle(item) {
-  return fittedGarmentStyle(props.pet.species,item,lifted.value);
-}
 const actorSize = computed(() => props.preview ? props.sceneHeight * .65 : props.sceneHeight * (props.pet.behavior?.size || .3) * 1.25 * Math.min(1, Math.max(.55, Math.sqrt(4 / props.count))));
 const style = computed(() => ({
   left: `clamp(${actorSize.value / 2 + 8}px, ${position.value.x}%, calc(100% - ${actorSize.value / 2 + 8}px))`,
@@ -98,17 +93,9 @@ const style = computed(() => ({
   <button class="actor" :class="{ selected, roaming: moving, lifted, landing }" :style="style" :disabled="!interactive" :aria-label="`選擇寵物 ${pet.name}`"
     @pointerdown.stop="lift" @pointermove="dragPet" @pointerup="drop($event)" @pointercancel="drop($event,true)" @click="clickPet">
     <span class="body" :class="{ resting: current?.pose === 'sleep' }">
-      <PetPickup v-if="lifted" :species="pet.species" :label="pet.speciesName" />
+      <OutfitFrames v-if="outfit" :outfit="outfit.id" :pose="lifted ? 'pickup' : moving ? 'walk' : 'idle'" :label="`${pet.speciesName}・${outfit.name}`" :resting="!lifted && current?.pose === 'sleep'" />
+      <PetPickup v-else-if="lifted" :species="pet.species" :label="pet.speciesName" />
       <PetFrames v-else :species="pet.species" :pose="pose" :label="pet.speciesName" :resting="clothes.length > 0 && current?.pose === 'sleep'" />
-      <template v-for="item in clothes" :key="item.id">
-        <GarmentArt class="garment" :class="item.slot" :item="item" :species="pet.species" :lifted="lifted" :style="garmentStyle(item)" />
-      </template>
-      <template v-if="hasCloth">
-        <span v-for="(clip,key) in foreground" :key="key" class="fur-foreground" :style="{clipPath:clip}">
-          <PetPickup v-if="lifted" :species="pet.species" :label="pet.speciesName" aria-hidden="true" />
-          <PetFrames v-else :species="pet.species" :pose="pose" :resting="clothes.length > 0 && current?.pose === 'sleep'" aria-hidden="true" />
-        </span>
-      </template>
     </span>
     <span class="name">{{ pet.name }}</span>
   </button>
@@ -126,9 +113,6 @@ const style = computed(() => ({
 .actor:hover:not(:disabled), .actor:active:not(:disabled), .actor:focus { background:transparent; background-image:none; border-color:transparent; box-shadow:none; }
 .actor:focus-visible { outline:2px solid #c19058; outline-offset:3px; }
 .body { display:block; width:100%; height:100%; position:relative; transform:scaleX(var(--body-x)); animation:breathe 4.8s ease-in-out infinite; animation-delay:var(--delay); transform-origin:50% 88%; }
-.garment { position:absolute; height:auto; object-fit:contain; transform:translateX(-50%); pointer-events:none; overflow:hidden; }
-.fur-foreground {position:absolute;inset:0;z-index:3;pointer-events:none;}
-.cloth { z-index:2; object-fit:fill; } .acc { z-index:3; } .hat { z-index:4; }
 .name { position:absolute; top:90%; left:50%; transform:translateX(-50%); white-space:nowrap; border-radius:12px; padding:2px 7px; font-size:11px; background:#fff9; }
 .selected .name { background:#fff; box-shadow:0 0 0 2px #c19058; }
 .roaming .body { animation:waddle .6s ease-in-out infinite; }

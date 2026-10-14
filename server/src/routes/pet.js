@@ -47,7 +47,7 @@ export default async function petRoutes(app) {
         petKey: p.petKey, species: p.species, name: p.name, equipped: p.equipped,
         speciesName: speciesOf(p.species).name, behavior: behaviorOf(p.species),
         position:petRoomPosition(u,p.petKey),
-        worn: ['hat', 'cloth', 'acc'].map(slot => itemOf(p.equipped[slot])).filter(item => item && item.species === p.species),
+        worn: ['outfit'].map(slot => itemOf(p.equipped[slot])).filter(item => item && item.species === p.species),
       })),
       petsForSale: SPECIES.map(s => ({ species: s.id, name: s.name, nick: s.nick, price: PET_PRICE, img: `/pets/${s.id}-pet.webp` })),
       owned: ownedItems(u),

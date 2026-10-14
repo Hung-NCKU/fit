@@ -1,23 +1,15 @@
 <script setup>
 import { ref,computed } from 'vue';
-import { WARDROBE } from '../../server/src/pet-wardrobe.js';
-import PetFrames from './components/PetFrames.vue';
-import PetPickup from './components/PetPickup.vue';
-import GarmentArt from './components/GarmentArt.vue';
-import { garmentStyle,wearForeground } from './pet-wear-fit.js';
-const species=ref('all'),held=ref(false);
+import { ALL_OUTFITS } from '../../server/src/pet-outfits.js';
+import OutfitFrames from './components/OutfitFrames.vue';
+const species=ref('all'),pose=ref('idle'),collection=ref('1');
 const names={cat:'橘白貓',dog:'小狗',rabbit:'兔子',hamster:'倉鼠',guinea:'天竺鼠',hedgehog:'刺蝟',ferret:'雪貂',parrot:'鸚鵡',tortoise:'陸龜',chinchilla:'龍貓'};
-const cards=computed(()=>species.value==='all'?Object.entries(WARDROBE).map(([s,items])=>({species:s,name:names[s],items:['hat','cloth','acc'].map(slot=>items.find(i=>i.slot===slot)).filter(Boolean)})):WARDROBE[species.value].map(item=>({species:item.species,name:item.name,items:[item]})));
+const cards=computed(()=>ALL_OUTFITS.filter(set=>species.value==='all'?set.id.endsWith(`-${collection.value}`):set.species===species.value));
 </script>
 <template>
-  <main><h1>十種寵物・合身穿搭</h1><p>按物種查看每件商品，切換拎起姿勢，檢查帽子、衣服與配件的位置。</p>
-    <div class="controls"><label>物種 <select v-model="species"><option value="all">十種寵物整套穿搭</option><option v-for="(name,s) in names" :key="s" :value="s">{{name}}</option></select></label><label><input v-model="held" type="checkbox"> 拎起姿勢</label></div>
-    <section><article v-for="card in cards" :key="card.name"><div class="stage"><div class="body">
-      <PetPickup v-if="held" :species="card.species" :label="names[card.species]" />
-      <PetFrames v-else :species="card.species" pose="idle" :label="names[card.species]" />
-      <GarmentArt v-for="item in card.items" :key="item.id" class="garment" :item="item" :species="card.species" :lifted="held" :style="garmentStyle(card.species,item,held)" />
-      <template v-if="card.items.some(i=>i.slot==='cloth')"><span v-for="(clip,key) in wearForeground(card.species,held)" :key="key" class="foreground" :style="{clipPath:clip}" aria-hidden="true"><PetPickup v-if="held" :species="card.species" /><PetFrames v-else :species="card.species" pose="idle" /></span></template>
-    </div></div><p>{{card.name}}</p></article></section>
+  <main><h1>十種寵物・完整套裝</h1><p>每套直接重畫整隻穿好衣服的角色，共 30 套；站立、走路與拎起各有四幀動畫。</p>
+    <div class="controls"><label>物種 <select v-model="species"><option value="all">十種寵物</option><option v-for="(name,s) in names" :key="s" :value="s">{{name}}</option></select></label><label v-if="species==='all'">系列 <select v-model="collection"><option value="1">第一套</option><option value="2">第二套</option><option value="3">第三套</option></select></label><label>動作 <select v-model="pose"><option value="idle">站立</option><option value="walk">走路</option><option value="pickup">拎起</option></select></label></div>
+    <section><article v-for="card in cards" :key="card.id"><div class="stage"><div class="body"><OutfitFrames :outfit="card.id" :pose="pose" :label="`${names[card.species]}・${card.name}`" /></div></div><p>{{names[card.species]}}・{{card.name}}</p></article></section>
   </main>
 </template>
 <style>

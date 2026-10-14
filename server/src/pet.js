@@ -9,7 +9,8 @@
  */
 import { getDb } from './db.js';
 import { dailySummary, today, daysAgo } from './records.js';
-import { ALL_WEAR, wardrobeOf } from './pet-wardrobe.js';
+import { ALL_WEAR } from './pet-wardrobe.js';
+import { ALL_OUTFITS, outfitsFor, legacyOutfitFor, outfitEquipment, outfitOwnership } from './pet-outfits.js';
 import { readFileSync } from 'node:fs';
 const DECORATIONS = JSON.parse(readFileSync(new URL('./pet-catalog.json', import.meta.url), 'utf8')).filter(item => item.slot === 'decor');
 
@@ -41,17 +42,10 @@ export const speciesOf = (id) => SPECIES.find(s => s.id === id) || SPECIES[0];
 /**
  * 商城。
  *
- * 賣兩種東西：五個環境，以及「目前這隻的衣服」。
- *
- * 衣服是跟著物種走的——pet/穿搭/ 裡每隻動物有一張自己的衣櫃，配色也不一樣，
- * 所以同一頂草帽在天竺鼠身上是草綠色、在貓身上是橘色。清單因此由
- * shopFor(species) 組出來，不是一份固定的 SHOP。
- *
- * 先前賣的是圖鑑切出來的兩百多件通用道具（pet-catalog.json）。那份素材還在，
- * 現在的用途是給 build-scenes.sh 組場景背景，不再上架。
- *
- * slot 相同的東西互相取代（同時只能戴一頂帽子）。
- * group 只影響商城怎麼分區顯示，不影響穿戴規則。
+ * 共用環境、可拖移布置的裝飾，以及每物種三套完整穿搭。
+ * 套裝使用整隻已穿好衣服的角色動畫，一次換上，不再疊單品素材。
+ * 舊單品仍可查詢購買紀錄，並免費解鎖對應套裝。
+ * outfit 部位同時只穿一套；group 只影響商城分類。
  */
 
 /** 五個環境。圖是整張場景插畫，不是小圖示。 */
@@ -70,13 +64,13 @@ const SCENE_ITEMS = SCENES.map(([id, name, price, desc]) => ({
 }));
 
 /** 這隻看得到的商城內容 */
-export const shopFor = (species) => [...SCENE_ITEMS, ...DECORATIONS, ...wardrobeOf(species)];
+export const shopFor = (species) => [...SCENE_ITEMS, ...DECORATIONS, ...outfitsFor(species)];
 
 /**
  * 查一件商品。要涵蓋所有物種的衣服，不能只看目前這隻的——
  * 換寵物之後舊的穿戴紀錄還在 pet_history 裡，查得到才顯示得出來。
  */
-const EVERYTHING = [...SCENE_ITEMS, ...DECORATIONS, ...ALL_WEAR];
+const EVERYTHING = [...SCENE_ITEMS, ...DECORATIONS, ...ALL_OUTFITS, ...ALL_WEAR];
 
 /** 商城的分區順序，前端照這個排 */
 export const shopGroupsFor = (species) => [...new Set(shopFor(species).map(i => i.group))];
@@ -91,7 +85,7 @@ export const PET_PRICE = 500;
 
 function mainPet(userId) {
   const row = getDb(userId).prepare('SELECT * FROM pet WHERE id = 1').get();
-  return row ? { ...row, petKey: 'main', equipped: parse(row.equipped, {}) } : null;
+  return row ? { ...row, petKey: 'main', equipped: outfitEquipment(row.species,parse(row.equipped, {})) } : null;
 }
 
 export function listPets(userId) {
@@ -100,7 +94,7 @@ export function listPets(userId) {
   const companions = getDb(userId).prepare('SELECT * FROM pet_companions ORDER BY id').all();
   return [main, ...companions.map(row => ({
     ...row, petKey: `companion-${row.id}`, coins: main.coins, settled_to: main.settled_to,
-    equipped: { ...parse(row.equipped, {}), bg: main.equipped.bg || 'bg_room' },
+    equipped: { ...outfitEquipment(row.species,parse(row.equipped, {})), bg: main.equipped.bg || 'bg_room' },
   }))];
 }
 
@@ -241,7 +235,7 @@ export function replacePet(userId, species, name, confirmName) {
   return getPet(userId);
 }
 export const ownedItems = (userId) =>
-  getDb(userId).prepare('SELECT item_id FROM pet_items').all().map(r => r.item_id);
+  outfitOwnership(getDb(userId).prepare('SELECT item_id FROM pet_items').all().map(r => r.item_id));
 
 /* ---------------- 代幣結算 ---------------- */
 
@@ -426,6 +420,7 @@ export function petState(userId) {
 export function buyItem(userId, itemId, petKey = null) {
   const item = itemOf(itemId);
   if (!item) throw Object.assign(new Error('沒有這個商品'), { status: 404 });
+  if(legacyOutfitFor(itemId)) throw Object.assign(new Error('單品已改為完整套裝，請到套裝區選購'),{status:400});
   const pet = petKey ? petByKey(userId, petKey) : getPet(userId);
   if (!pet) throw Object.assign(new Error('還沒有寵物'), { status: 400 });
   if (item.species && item.species !== pet.species) throw Object.assign(new Error('這件穿搭不適合這隻寵物'), { status: 400 });
@@ -455,17 +450,19 @@ export function equipItem(userId, itemId, petKey = null) {
   }
   if (item.species && item.species !== pet.species) throw Object.assign(new Error('這件穿搭不適合這隻寵物'), { status: 400 });
   const target = item.slot === 'bg' ? mainPet(userId) : pet;
-  saveEquipment(userId, target, { ...target.equipped, [item.slot]: itemId });
+  const outfit=legacyOutfitFor(itemId);
+  saveEquipment(userId, target, { ...target.equipped, [outfit ? 'outfit' : item.slot]: outfit?.id || itemId });
   return getPet(userId);
 }
 
 export function unequipSlot(userId, slot, petKey = null) {
   if (slot === 'bg') throw Object.assign(new Error('背景不能移除'), { status: 400 });
-  if (!['hat', 'cloth', 'acc'].includes(slot)) throw Object.assign(new Error('沒有這個穿搭部位'), { status: 400 });
+  if (!['outfit','hat', 'cloth', 'acc'].includes(slot)) throw Object.assign(new Error('沒有這個穿搭部位'), { status: 400 });
   const pet = petKey ? petByKey(userId, petKey) : getPet(userId);
   if (!pet) throw Object.assign(new Error('還沒有寵物'), { status: 400 });
   const equipped = { ...pet.equipped };
   delete equipped[slot];
+  if(['hat','cloth','acc'].includes(slot)) delete equipped.outfit;
   saveEquipment(userId, pet, equipped);
   return getPet(userId);
 }
