@@ -1,0 +1,1221 @@
+[
+  {
+    "slug": "room",
+    "group": "小房間擺飾",
+    "columns": 4,
+    "source": "C:\\Users\\ChihChien\\.codex\\generated_images\\01a135f3-1b70-79d1-a0ff-66088859ec00\\exec-9e1aad8f-3713-47bb-a051-935efd6d0fd5.png",
+    "items": [
+      {
+        "id": "lib-2-room-01",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "床墊",
+        "price": 40,
+        "img": "/pets/lib/lib-2-room-01.webp"
+      },
+      {
+        "id": "lib-2-room-02",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "飯碗",
+        "price": 48,
+        "img": "/pets/lib/lib-2-room-02.webp"
+      },
+      {
+        "id": "lib-2-room-03",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "地毯",
+        "price": 56,
+        "img": "/pets/lib/lib-2-room-03.webp"
+      },
+      {
+        "id": "lib-2-room-04",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "書架",
+        "price": 64,
+        "img": "/pets/lib/lib-2-room-04.webp"
+      },
+      {
+        "id": "lib-2-room-05",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "盆栽",
+        "price": 72,
+        "img": "/pets/lib/lib-2-room-05.webp"
+      },
+      {
+        "id": "lib-2-room-06",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "毛線球",
+        "price": 80,
+        "img": "/pets/lib/lib-2-room-06.webp"
+      },
+      {
+        "id": "lib-2-room-07",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "抓抓板",
+        "price": 88,
+        "img": "/pets/lib/lib-2-room-07.webp"
+      },
+      {
+        "id": "lib-2-room-08",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "小桌子",
+        "price": 96,
+        "img": "/pets/lib/lib-2-room-08.webp"
+      },
+      {
+        "id": "lib-2-room-09",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "玩具箱",
+        "price": 104,
+        "img": "/pets/lib/lib-2-room-09.webp"
+      },
+      {
+        "id": "lib-2-room-10",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "壁畫",
+        "price": 112,
+        "img": "/pets/lib/lib-2-room-10.webp"
+      },
+      {
+        "id": "lib-3-room-01",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "小床",
+        "price": 40,
+        "img": "/pets/lib/lib-3-room-01.webp"
+      },
+      {
+        "id": "lib-3-room-02",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "飯碗",
+        "price": 48,
+        "img": "/pets/lib/lib-3-room-02.webp"
+      },
+      {
+        "id": "lib-3-room-03",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "水碗",
+        "price": 56,
+        "img": "/pets/lib/lib-3-room-03.webp"
+      },
+      {
+        "id": "lib-3-room-04",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "地毯",
+        "price": 64,
+        "img": "/pets/lib/lib-3-room-04.webp"
+      },
+      {
+        "id": "lib-3-room-05",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "書架",
+        "price": 72,
+        "img": "/pets/lib/lib-3-room-05.webp"
+      },
+      {
+        "id": "lib-3-room-06",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "抓抓板",
+        "price": 80,
+        "img": "/pets/lib/lib-3-room-06.webp"
+      },
+      {
+        "id": "lib-3-room-07",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "盆栽",
+        "price": 88,
+        "img": "/pets/lib/lib-3-room-07.webp"
+      },
+      {
+        "id": "lib-3-room-08",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "玩具箱",
+        "price": 96,
+        "img": "/pets/lib/lib-3-room-08.webp"
+      },
+      {
+        "id": "lib-3-room-09",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "毛線球",
+        "price": 104,
+        "img": "/pets/lib/lib-3-room-09.webp"
+      },
+      {
+        "id": "lib-3-room-10",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "小魚乾",
+        "price": 112,
+        "img": "/pets/lib/lib-3-room-10.webp"
+      },
+      {
+        "id": "lib-3-room-11",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "小夜燈",
+        "price": 120,
+        "img": "/pets/lib/lib-3-room-11.webp"
+      },
+      {
+        "id": "lib-3-room-12",
+        "slot": "decor",
+        "group": "小房間擺飾",
+        "name": "獎盃",
+        "price": 128,
+        "img": "/pets/lib/lib-3-room-12.webp"
+      }
+    ],
+    "prompt": "Use case: precise-object-edit / background-extraction. Asset: transparent sprite atlas for a cozy pet room. Reference image 1 is the user's furniture design language (preserve the cute pet-sized objects and warm palette). Reference image 2 is the actual room environment; match its softer warm brown outlines, gentle warm daylight, slight front-above perspective. Redraw ALL 22 complete individual objects at crisp resolution, repair chopped edges, remove ALL opaque white backgrounds and white sticker outlines, no white tiles, no room backdrop. Genuine transparent alpha. Keep legitimate white ceramic materials. EXACTLY FOUR columns and SIX evenly spaced rows, left-to-right then top-to-bottom. One complete isolated object centered with ample transparent margin in each cell, no crossing boundaries, last two cells empty. Exact cell subjects: 1. 床墊; 2. 飯碗; 3. 地毯; 4. 書架; 5. 盆栽; 6. 毛線球; 7. 抓抓板; 8. 小桌子; 9. 玩具箱; 10. 壁畫; 11. 小床 (distinct alternate matching design); 12. 飯碗 (distinct alternate matching design); 13. 水碗 (distinct alternate matching design); 14. 地毯 (distinct alternate matching design); 15. 書架 (distinct alternate matching design); 16. 抓抓板 (distinct alternate matching design); 17. 盆栽 (distinct alternate matching design); 18. 玩具箱 (distinct alternate matching design); 19. 毛線球 (distinct alternate matching design); 20. 小魚乾 (distinct alternate matching design); 21. 小夜燈 (distinct alternate matching design); 22. 獎盃 (distinct alternate matching design). Do not print any numbers or labels. No animals, no floor under objects, only a subtle contact shadow per object. Preserve each object's identity; bowls distinct from beds, plant pots complete, furniture legs complete. Target atlas portrait 4:6 with large crisp individual sprites."
+  },
+  {
+    "slug": "yard",
+    "group": "庭院擺飾",
+    "columns": 4,
+    "source": "C:\\Users\\ChihChien\\.codex\\generated_images\\01a135f3-1b70-79d1-a0ff-66088859ec00\\exec-0eabd9a0-dd2d-434c-97cf-de55c977bf06.png",
+    "items": [
+      {
+        "id": "lib-2-yard-01",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "花圃",
+        "price": 45,
+        "img": "/pets/lib/lib-2-yard-01.webp"
+      },
+      {
+        "id": "lib-2-yard-02",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "木椅",
+        "price": 53,
+        "img": "/pets/lib/lib-2-yard-02.webp"
+      },
+      {
+        "id": "lib-2-yard-03",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "小帳篷",
+        "price": 61,
+        "img": "/pets/lib/lib-2-yard-03.webp"
+      },
+      {
+        "id": "lib-2-yard-04",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "水盆",
+        "price": 69,
+        "img": "/pets/lib/lib-2-yard-04.webp"
+      },
+      {
+        "id": "lib-2-yard-05",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "樹樁",
+        "price": 77,
+        "img": "/pets/lib/lib-2-yard-05.webp"
+      },
+      {
+        "id": "lib-2-yard-06",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "鞦韆",
+        "price": 85,
+        "img": "/pets/lib/lib-2-yard-06.webp"
+      },
+      {
+        "id": "lib-2-yard-07",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "石子路",
+        "price": 93,
+        "img": "/pets/lib/lib-2-yard-07.webp"
+      },
+      {
+        "id": "lib-2-yard-08",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "菜圃盆栽",
+        "price": 101,
+        "img": "/pets/lib/lib-2-yard-08.webp"
+      },
+      {
+        "id": "lib-2-yard-09",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "圍欄",
+        "price": 109,
+        "img": "/pets/lib/lib-2-yard-09.webp"
+      },
+      {
+        "id": "lib-2-yard-10",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "風車裝飾",
+        "price": 117,
+        "img": "/pets/lib/lib-2-yard-10.webp"
+      },
+      {
+        "id": "lib-3-yard-01",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "花圃",
+        "price": 45,
+        "img": "/pets/lib/lib-3-yard-01.webp"
+      },
+      {
+        "id": "lib-3-yard-02",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "木椅",
+        "price": 53,
+        "img": "/pets/lib/lib-3-yard-02.webp"
+      },
+      {
+        "id": "lib-3-yard-03",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "小帳篷",
+        "price": 61,
+        "img": "/pets/lib/lib-3-yard-03.webp"
+      },
+      {
+        "id": "lib-3-yard-04",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "水盆",
+        "price": 69,
+        "img": "/pets/lib/lib-3-yard-04.webp"
+      },
+      {
+        "id": "lib-3-yard-05",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "樹樁",
+        "price": 77,
+        "img": "/pets/lib/lib-3-yard-05.webp"
+      },
+      {
+        "id": "lib-3-yard-06",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "鞦韆",
+        "price": 85,
+        "img": "/pets/lib/lib-3-yard-06.webp"
+      },
+      {
+        "id": "lib-3-yard-07",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "菜圃盆栽",
+        "price": 93,
+        "img": "/pets/lib/lib-3-yard-07.webp"
+      },
+      {
+        "id": "lib-3-yard-08",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "石燈",
+        "price": 101,
+        "img": "/pets/lib/lib-3-yard-08.webp"
+      },
+      {
+        "id": "lib-3-yard-09",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "蝴蝶裝飾",
+        "price": 109,
+        "img": "/pets/lib/lib-3-yard-09.webp"
+      },
+      {
+        "id": "lib-3-yard-10",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "小橋",
+        "price": 117,
+        "img": "/pets/lib/lib-3-yard-10.webp"
+      },
+      {
+        "id": "lib-3-yard-11",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "木柵欄",
+        "price": 125,
+        "img": "/pets/lib/lib-3-yard-11.webp"
+      },
+      {
+        "id": "lib-3-yard-12",
+        "slot": "decor",
+        "group": "庭院擺飾",
+        "name": "風車",
+        "price": 133,
+        "img": "/pets/lib/lib-3-yard-12.webp"
+      }
+    ],
+    "prompt": "Asset: crisp transparent pet game decoration sprite atlas, improve and complete reference objects. Reference 1: user's cute object style and identity; Reference 2: environment lighting and perspective. Redraw 22 COMPLETE isolated objects in EXACTLY 4 columns by 6 evenly spaced rows, ordered left to right, top to bottom: 1: 花圃; 2: 木椅; 3: 小帳篷; 4: 水盆; 5: 樹樁; 6: 鞦韆; 7: 石子路; 8: 菜圃盆栽; 9: 圍欄; 10: 風車裝飾; 11: 花圃 distinct alternate design; 12: 木椅 distinct alternate design; 13: 小帳篷 distinct alternate design; 14: 水盆 distinct alternate design; 15: 樹樁 distinct alternate design; 16: 鞦韆 distinct alternate design; 17: 菜圃盆栽 distinct alternate design; 18: 石燈 distinct alternate design; 19: 蝴蝶裝飾 distinct alternate design; 20: 小橋 distinct alternate design; 21: 木柵欄 distinct alternate design; 22: 風車 distinct alternate design. Final 2 cells EMPTY. No labels, numbers or grid lines. Match warm cozy room illustrated style with soft brown outlines, subtle watercolor texture, warm diffused light, gentle view from front and slightly above. COMPLETE feet, legs, rims, leaves and handles; do not clip. True transparent alpha everywhere outside objects, NO opaque white background, NO white sticker outlines, NO colored backdrops, NO glows or large cast shadows, NO animals. Each item centered with at least 15% clear margin inside its own cell. Pet-sized furnishings. Preserve recognizable object identities from reference, use two charming variations for repeated names."
+  },
+  {
+    "slug": "beach",
+    "group": "海邊擺飾",
+    "columns": 4,
+    "source": "C:\\Users\\ChihChien\\.codex\\generated_images\\01a135f3-1b70-79d1-a0ff-66088859ec00\\exec-07d16498-c343-4782-a03d-256f56501df2.png",
+    "items": [
+      {
+        "id": "lib-2-beach-01",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "沙堡",
+        "price": 45,
+        "img": "/pets/lib/lib-2-beach-01.webp"
+      },
+      {
+        "id": "lib-2-beach-02",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "遮陽傘",
+        "price": 53,
+        "img": "/pets/lib/lib-2-beach-02.webp"
+      },
+      {
+        "id": "lib-2-beach-03",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "躺椅",
+        "price": 61,
+        "img": "/pets/lib/lib-2-beach-03.webp"
+      },
+      {
+        "id": "lib-2-beach-04",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "救生圈",
+        "price": 69,
+        "img": "/pets/lib/lib-2-beach-04.webp"
+      },
+      {
+        "id": "lib-2-beach-05",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "貝殼",
+        "price": 77,
+        "img": "/pets/lib/lib-2-beach-05.webp"
+      },
+      {
+        "id": "lib-2-beach-06",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "冰飲攤",
+        "price": 85,
+        "img": "/pets/lib/lib-2-beach-06.webp"
+      },
+      {
+        "id": "lib-2-beach-07",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "漂流木",
+        "price": 93,
+        "img": "/pets/lib/lib-2-beach-07.webp"
+      },
+      {
+        "id": "lib-2-beach-08",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "海星",
+        "price": 101,
+        "img": "/pets/lib/lib-2-beach-08.webp"
+      },
+      {
+        "id": "lib-2-beach-09",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "小船",
+        "price": 109,
+        "img": "/pets/lib/lib-2-beach-09.webp"
+      },
+      {
+        "id": "lib-2-beach-10",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "旗子",
+        "price": 117,
+        "img": "/pets/lib/lib-2-beach-10.webp"
+      },
+      {
+        "id": "lib-3-beach-01",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "遮陽傘",
+        "price": 45,
+        "img": "/pets/lib/lib-3-beach-01.webp"
+      },
+      {
+        "id": "lib-3-beach-02",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "躺椅",
+        "price": 53,
+        "img": "/pets/lib/lib-3-beach-02.webp"
+      },
+      {
+        "id": "lib-3-beach-03",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "沙堡",
+        "price": 61,
+        "img": "/pets/lib/lib-3-beach-03.webp"
+      },
+      {
+        "id": "lib-3-beach-04",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "救生圈",
+        "price": 69,
+        "img": "/pets/lib/lib-3-beach-04.webp"
+      },
+      {
+        "id": "lib-3-beach-05",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "冰飲攤",
+        "price": 77,
+        "img": "/pets/lib/lib-3-beach-05.webp"
+      },
+      {
+        "id": "lib-3-beach-06",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "貝殼",
+        "price": 85,
+        "img": "/pets/lib/lib-3-beach-06.webp"
+      },
+      {
+        "id": "lib-3-beach-07",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "海星",
+        "price": 93,
+        "img": "/pets/lib/lib-3-beach-07.webp"
+      },
+      {
+        "id": "lib-3-beach-08",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "小船",
+        "price": 101,
+        "img": "/pets/lib/lib-3-beach-08.webp"
+      },
+      {
+        "id": "lib-3-beach-09",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "漂流木",
+        "price": 109,
+        "img": "/pets/lib/lib-3-beach-09.webp"
+      },
+      {
+        "id": "lib-3-beach-10",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "椰子樹",
+        "price": 117,
+        "img": "/pets/lib/lib-3-beach-10.webp"
+      },
+      {
+        "id": "lib-3-beach-11",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "沙灘球",
+        "price": 125,
+        "img": "/pets/lib/lib-3-beach-11.webp"
+      },
+      {
+        "id": "lib-3-beach-12",
+        "slot": "decor",
+        "group": "海邊擺飾",
+        "name": "貝殼盆栽",
+        "price": 133,
+        "img": "/pets/lib/lib-3-beach-12.webp"
+      }
+    ],
+    "prompt": "Asset: crisp transparent pet game decoration sprite atlas, improve and complete reference objects. Reference 1: user's cute object style and identity; Reference 2: environment lighting and perspective. Redraw 22 COMPLETE isolated objects in EXACTLY 4 columns by 6 evenly spaced rows, ordered left to right, top to bottom: 1: 沙堡; 2: 遮陽傘; 3: 躺椅; 4: 救生圈; 5: 貝殼; 6: 冰飲攤; 7: 漂流木; 8: 海星; 9: 小船; 10: 旗子; 11: 遮陽傘 distinct alternate design; 12: 躺椅 distinct alternate design; 13: 沙堡 distinct alternate design; 14: 救生圈 distinct alternate design; 15: 冰飲攤 distinct alternate design; 16: 貝殼 distinct alternate design; 17: 海星 distinct alternate design; 18: 小船 distinct alternate design; 19: 漂流木 distinct alternate design; 20: 椰子樹 distinct alternate design; 21: 沙灘球 distinct alternate design; 22: 貝殼盆栽 distinct alternate design. Final 2 cells EMPTY. No labels, numbers or grid lines. Match warm cozy room illustrated style with soft brown outlines, subtle watercolor texture, warm diffused light, gentle view from front and slightly above. COMPLETE feet, legs, rims, leaves and handles; do not clip. True transparent alpha everywhere outside objects, NO opaque white background, NO white sticker outlines, NO colored backdrops, NO glows or large cast shadows, NO animals. Each item centered with at least 15% clear margin inside its own cell. Pet-sized furnishings. Preserve recognizable object identities from reference, use two charming variations for repeated names."
+  },
+  {
+    "slug": "space",
+    "group": "太空艙擺飾",
+    "columns": 4,
+    "source": "C:\\Users\\ChihChien\\.codex\\generated_images\\01a135f3-1b70-79d1-a0ff-66088859ec00\\exec-4281dd62-661a-4812-a914-a17f8137a9a6.png",
+    "items": [
+      {
+        "id": "lib-2-space-01",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "太空床",
+        "price": 70,
+        "img": "/pets/lib/lib-2-space-01.webp"
+      },
+      {
+        "id": "lib-2-space-02",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "控制台",
+        "price": 80,
+        "img": "/pets/lib/lib-2-space-02.webp"
+      },
+      {
+        "id": "lib-2-space-03",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "星球吊飾",
+        "price": 90,
+        "img": "/pets/lib/lib-2-space-03.webp"
+      },
+      {
+        "id": "lib-2-space-04",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "盆栽",
+        "price": 100,
+        "img": "/pets/lib/lib-2-space-04.webp"
+      },
+      {
+        "id": "lib-2-space-05",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "小機器人",
+        "price": 110,
+        "img": "/pets/lib/lib-2-space-05.webp"
+      },
+      {
+        "id": "lib-2-space-06",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "漂浮球",
+        "price": 120,
+        "img": "/pets/lib/lib-2-space-06.webp"
+      },
+      {
+        "id": "lib-2-space-07",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "星星燈",
+        "price": 130,
+        "img": "/pets/lib/lib-2-space-07.webp"
+      },
+      {
+        "id": "lib-2-space-08",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "食物盒",
+        "price": 140,
+        "img": "/pets/lib/lib-2-space-08.webp"
+      },
+      {
+        "id": "lib-2-space-09",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "觀景窗",
+        "price": 150,
+        "img": "/pets/lib/lib-2-space-09.webp"
+      },
+      {
+        "id": "lib-2-space-10",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "太空海報",
+        "price": 160,
+        "img": "/pets/lib/lib-2-space-10.webp"
+      },
+      {
+        "id": "lib-3-space-01",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "太空床",
+        "price": 70,
+        "img": "/pets/lib/lib-3-space-01.webp"
+      },
+      {
+        "id": "lib-3-space-02",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "控制台",
+        "price": 80,
+        "img": "/pets/lib/lib-3-space-02.webp"
+      },
+      {
+        "id": "lib-3-space-03",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "漂浮球",
+        "price": 90,
+        "img": "/pets/lib/lib-3-space-03.webp"
+      },
+      {
+        "id": "lib-3-space-04",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "小機器人",
+        "price": 100,
+        "img": "/pets/lib/lib-3-space-04.webp"
+      },
+      {
+        "id": "lib-3-space-05",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "星球盆栽",
+        "price": 110,
+        "img": "/pets/lib/lib-3-space-05.webp"
+      },
+      {
+        "id": "lib-3-space-06",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "星星燈",
+        "price": 120,
+        "img": "/pets/lib/lib-3-space-06.webp"
+      },
+      {
+        "id": "lib-3-space-07",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "觀景窗",
+        "price": 130,
+        "img": "/pets/lib/lib-3-space-07.webp"
+      },
+      {
+        "id": "lib-3-space-08",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "太空食物盒",
+        "price": 140,
+        "img": "/pets/lib/lib-3-space-08.webp"
+      },
+      {
+        "id": "lib-3-space-09",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "隕石裝飾",
+        "price": 150,
+        "img": "/pets/lib/lib-3-space-09.webp"
+      },
+      {
+        "id": "lib-3-space-10",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "宇宙海報",
+        "price": 160,
+        "img": "/pets/lib/lib-3-space-10.webp"
+      },
+      {
+        "id": "lib-3-space-11",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "地毯",
+        "price": 170,
+        "img": "/pets/lib/lib-3-space-11.webp"
+      },
+      {
+        "id": "lib-3-space-12",
+        "slot": "decor",
+        "group": "太空艙擺飾",
+        "name": "太空獎盃",
+        "price": 180,
+        "img": "/pets/lib/lib-3-space-12.webp"
+      }
+    ],
+    "prompt": "Improve user's pet-room decoration assets: create ONE sprite atlas with 22 complete crisp items, EXACT 4 evenly spaced columns and 6 evenly spaced rows. Uniform cells, centered sprites, at least 15 percent transparent margin, final 2 cells empty. Ordered cell subjects: 1 太空床; 2 控制台; 3 星球吊飾; 4 盆栽; 5 小機器人; 6 漂浮球; 7 星星燈; 8 食物盒; 9 觀景窗; 10 太空海報; 11 太空床 alternate charming design; 12 控制台 alternate charming design; 13 漂浮球 alternate charming design; 14 小機器人 alternate charming design; 15 星球盆栽 alternate charming design; 16 星星燈 alternate charming design; 17 觀景窗 alternate charming design; 18 太空食物盒 alternate charming design; 19 隕石裝飾 alternate charming design; 20 宇宙海報 alternate charming design; 21 地毯 alternate charming design; 22 太空獎盃 alternate charming design. Reference 1 supplies object identities/style, reference 2 actual environment matching warm illumination, soft brown outlines, mild watercolor texture, front view slightly from above. All items fully drawn with complete legs, handles, stems, rims. True transparent alpha, no background, white panels, sticker outlines, labels, numbers, large glows, animals or attached floor. Preserve real white materials but remove any opaque white mat/background. Make furnishings cute and small enough for companion pets. Do not omit, merge or split listed objects.",
+    "cleanupPrompt": "Edit this sprite atlas only: remove ALL 22 blue numbered annotation badges and all grid lines. Keep every one of the 22 decoration objects exactly identical, in the same position and same dimensions. Retain four columns and six rows. Preserve crisp object edges, do not cut away any object. Keep genuine transparent alpha outside the objects; no labels, no numerals, no background. Do not change the planet, spacecraft, plants, lamps, posters, rug or trophy designs."
+  },
+  {
+    "slug": "gym",
+    "group": "健身房擺飾",
+    "columns": 4,
+    "source": "C:\\Users\\ChihChien\\.codex\\generated_images\\01a135f3-1b70-79d1-a0ff-66088859ec00\\exec-0aba14b6-6421-4f5c-b582-003af8fae191.png",
+    "items": [
+      {
+        "id": "lib-2-gym-01",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "跑步機",
+        "price": 60,
+        "img": "/pets/lib/lib-2-gym-01.webp"
+      },
+      {
+        "id": "lib-2-gym-02",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "啞鈴",
+        "price": 70,
+        "img": "/pets/lib/lib-2-gym-02.webp"
+      },
+      {
+        "id": "lib-2-gym-03",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "瑜珈墊",
+        "price": 80,
+        "img": "/pets/lib/lib-2-gym-03.webp"
+      },
+      {
+        "id": "lib-2-gym-04",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "沙包",
+        "price": 90,
+        "img": "/pets/lib/lib-2-gym-04.webp"
+      },
+      {
+        "id": "lib-2-gym-05",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "獎盃架",
+        "price": 100,
+        "img": "/pets/lib/lib-2-gym-05.webp"
+      },
+      {
+        "id": "lib-2-gym-06",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "計時器",
+        "price": 110,
+        "img": "/pets/lib/lib-2-gym-06.webp"
+      },
+      {
+        "id": "lib-2-gym-07",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "水壺",
+        "price": 120,
+        "img": "/pets/lib/lib-2-gym-07.webp"
+      },
+      {
+        "id": "lib-2-gym-08",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "毛巾架",
+        "price": 130,
+        "img": "/pets/lib/lib-2-gym-08.webp"
+      },
+      {
+        "id": "lib-2-gym-09",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "運動地墊",
+        "price": 140,
+        "img": "/pets/lib/lib-2-gym-09.webp"
+      },
+      {
+        "id": "lib-3-gym-01",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "跑步機",
+        "price": 60,
+        "img": "/pets/lib/lib-3-gym-01.webp"
+      },
+      {
+        "id": "lib-3-gym-02",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "啞鈴",
+        "price": 70,
+        "img": "/pets/lib/lib-3-gym-02.webp"
+      },
+      {
+        "id": "lib-3-gym-03",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "瑜伽墊",
+        "price": 80,
+        "img": "/pets/lib/lib-3-gym-03.webp"
+      },
+      {
+        "id": "lib-3-gym-04",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "跳箱",
+        "price": 90,
+        "img": "/pets/lib/lib-3-gym-04.webp"
+      },
+      {
+        "id": "lib-3-gym-05",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "水壺",
+        "price": 100,
+        "img": "/pets/lib/lib-3-gym-05.webp"
+      },
+      {
+        "id": "lib-3-gym-06",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "毛巾架",
+        "price": 110,
+        "img": "/pets/lib/lib-3-gym-06.webp"
+      },
+      {
+        "id": "lib-3-gym-07",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "計時器",
+        "price": 120,
+        "img": "/pets/lib/lib-3-gym-07.webp"
+      },
+      {
+        "id": "lib-3-gym-08",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "運動球",
+        "price": 130,
+        "img": "/pets/lib/lib-3-gym-08.webp"
+      },
+      {
+        "id": "lib-3-gym-09",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "沙包",
+        "price": 140,
+        "img": "/pets/lib/lib-3-gym-09.webp"
+      },
+      {
+        "id": "lib-3-gym-10",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "單槓",
+        "price": 150,
+        "img": "/pets/lib/lib-3-gym-10.webp"
+      },
+      {
+        "id": "lib-3-gym-11",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "獎盃架",
+        "price": 160,
+        "img": "/pets/lib/lib-3-gym-11.webp"
+      },
+      {
+        "id": "lib-3-gym-12",
+        "slot": "decor",
+        "group": "健身房擺飾",
+        "name": "植物",
+        "price": 170,
+        "img": "/pets/lib/lib-3-gym-12.webp"
+      }
+    ],
+    "prompt": "Improve user's pet-room decoration assets: create ONE sprite atlas with 21 complete crisp items, EXACT 4 evenly spaced columns and 6 evenly spaced rows. Uniform cells, centered sprites, at least 15 percent transparent margin, final 3 cells empty. Ordered cell subjects: 1 跑步機; 2 啞鈴; 3 瑜珈墊; 4 沙包; 5 獎盃架; 6 計時器; 7 水壺; 8 毛巾架; 9 運動地墊; 10 跑步機; 11 啞鈴 alternate charming design; 12 瑜伽墊 alternate charming design; 13 跳箱 alternate charming design; 14 水壺 alternate charming design; 15 毛巾架 alternate charming design; 16 計時器 alternate charming design; 17 運動球 alternate charming design; 18 沙包 alternate charming design; 19 單槓 alternate charming design; 20 獎盃架 alternate charming design; 21 植物 alternate charming design. Reference 1 supplies object identities/style, reference 2 actual environment matching warm illumination, soft brown outlines, mild watercolor texture, front view slightly from above. All items fully drawn with complete legs, handles, stems, rims. True transparent alpha, no background, white panels, sticker outlines, labels, numbers, large glows, animals or attached floor. Preserve real white materials but remove any opaque white mat/background. Make furnishings cute and small enough for companion pets. Do not omit, merge or split listed objects."
+  },
+  {
+    "slug": "toys",
+    "group": "玩具",
+    "columns": 3,
+    "source": "C:\\Users\\ChihChien\\.codex\\generated_images\\01a135f3-1b70-79d1-a0ff-66088859ec00\\exec-8b64c7c2-ea78-4dff-80b6-e6edd7ef96bc.png",
+    "items": [
+      {
+        "id": "lib-2-toy-01",
+        "slot": "decor",
+        "group": "玩具",
+        "name": "毛線球",
+        "price": 40,
+        "img": "/pets/lib/lib-2-toy-01.webp"
+      },
+      {
+        "id": "lib-2-toy-02",
+        "slot": "decor",
+        "group": "玩具",
+        "name": "逗貓棒",
+        "price": 48,
+        "img": "/pets/lib/lib-2-toy-02.webp"
+      },
+      {
+        "id": "lib-2-toy-03",
+        "slot": "decor",
+        "group": "玩具",
+        "name": "小魚乾玩具",
+        "price": 56,
+        "img": "/pets/lib/lib-2-toy-03.webp"
+      },
+      {
+        "id": "lib-2-toy-04",
+        "slot": "decor",
+        "group": "玩具",
+        "name": "滾球",
+        "price": 64,
+        "img": "/pets/lib/lib-2-toy-04.webp"
+      },
+      {
+        "id": "lib-2-toy-05",
+        "slot": "decor",
+        "group": "玩具",
+        "name": "木積木",
+        "price": 72,
+        "img": "/pets/lib/lib-2-toy-05.webp"
+      },
+      {
+        "id": "lib-2-toy-06",
+        "slot": "decor",
+        "group": "玩具",
+        "name": "小球門",
+        "price": 80,
+        "img": "/pets/lib/lib-2-toy-06.webp"
+      },
+      {
+        "id": "lib-2-toy-07",
+        "slot": "decor",
+        "group": "玩具",
+        "name": "隧道",
+        "price": 88,
+        "img": "/pets/lib/lib-2-toy-07.webp"
+      },
+      {
+        "id": "lib-2-toy-08",
+        "slot": "decor",
+        "group": "玩具",
+        "name": "小鼓",
+        "price": 96,
+        "img": "/pets/lib/lib-2-toy-08.webp"
+      },
+      {
+        "id": "lib-2-toy-09",
+        "slot": "decor",
+        "group": "玩具",
+        "name": "泡泡機",
+        "price": 104,
+        "img": "/pets/lib/lib-2-toy-09.webp"
+      },
+      {
+        "id": "lib-2-toy-10",
+        "slot": "decor",
+        "group": "玩具",
+        "name": "飛盤",
+        "price": 112,
+        "img": "/pets/lib/lib-2-toy-10.webp"
+      }
+    ],
+    "prompt": "Create ONE refined transparent sprite atlas for a cozy companion-pet room, based on user's reference object style. 10 complete separate props. EXACTLY 3 evenly spaced columns and 4 evenly spaced rows, generous margins within uniform cells. Ordered subjects LEFT TO RIGHT, TOP TO BOTTOM: 毛線球 / 逗貓棒 / 小魚乾玩具 / 滾球 / 木積木 / 小球門 / 隧道 / 小鼓 / 泡泡機 / 飛盤. Leave remaining 2 cells empty. All items are pet-sized, warm soft brown outlines, mellow watercolor textures, soft warm daylight, front view slightly from above. Improve missing edges, complete handles, leaves, food portions and feet. No white sticker borders, no white background, no opaque tiles, no labels or numerals even as annotation, no grid lines, no animals, no large glow. Actual transparent alpha background; preserve legitimate white ceramic portions. Keep each whole prop strictly in its own cell; no clipping, overlapping or missing items."
+  },
+  {
+    "slug": "food",
+    "group": "食物餐具",
+    "columns": 3,
+    "source": "C:\\Users\\ChihChien\\.codex\\generated_images\\01a135f3-1b70-79d1-a0ff-66088859ec00\\exec-f7e136fb-85c1-42b9-8a42-3d187fdd0609.png",
+    "items": [
+      {
+        "id": "lib-2-food-01",
+        "slot": "decor",
+        "group": "食物餐具",
+        "name": "小魚乾盤",
+        "price": 35,
+        "img": "/pets/lib/lib-2-food-01.webp"
+      },
+      {
+        "id": "lib-2-food-02",
+        "slot": "decor",
+        "group": "食物餐具",
+        "name": "胡蘿蔔盤",
+        "price": 41,
+        "img": "/pets/lib/lib-2-food-02.webp"
+      },
+      {
+        "id": "lib-2-food-03",
+        "slot": "decor",
+        "group": "食物餐具",
+        "name": "草料盆",
+        "price": 47,
+        "img": "/pets/lib/lib-2-food-03.webp"
+      },
+      {
+        "id": "lib-2-food-04",
+        "slot": "decor",
+        "group": "食物餐具",
+        "name": "種子碗",
+        "price": 53,
+        "img": "/pets/lib/lib-2-food-04.webp"
+      },
+      {
+        "id": "lib-2-food-05",
+        "slot": "decor",
+        "group": "食物餐具",
+        "name": "水碗",
+        "price": 59,
+        "img": "/pets/lib/lib-2-food-05.webp"
+      },
+      {
+        "id": "lib-2-food-06",
+        "slot": "decor",
+        "group": "食物餐具",
+        "name": "點心罐",
+        "price": 65,
+        "img": "/pets/lib/lib-2-food-06.webp"
+      }
+    ],
+    "prompt": "Create ONE refined transparent sprite atlas for a cozy companion-pet room, based on user's reference object style. 6 complete separate props. EXACTLY 3 evenly spaced columns and 2 evenly spaced rows, generous margins within uniform cells. Ordered subjects LEFT TO RIGHT, TOP TO BOTTOM: 小魚乾盤 / 胡蘿蔔盤 / 草料盆 / 種子碗 / 水碗 / 點心罐. Leave remaining 0 cells empty. All items are pet-sized, warm soft brown outlines, mellow watercolor textures, soft warm daylight, front view slightly from above. Improve missing edges, complete handles, leaves, food portions and feet. No white sticker borders, no white background, no opaque tiles, no labels or numerals even as annotation, no grid lines, no animals, no large glow. Actual transparent alpha background; preserve legitimate white ceramic portions. Keep each whole prop strictly in its own cell; no clipping, overlapping or missing items."
+  },
+  {
+    "slug": "plants",
+    "group": "植物",
+    "columns": 3,
+    "source": "C:\\Users\\ChihChien\\.codex\\generated_images\\01a135f3-1b70-79d1-a0ff-66088859ec00\\exec-bf6b773a-8c13-4fe9-b302-cf3bbc2c6a4b.png",
+    "items": [
+      {
+        "id": "lib-2-plant-01",
+        "slot": "decor",
+        "group": "植物",
+        "name": "多肉植物",
+        "price": 40,
+        "img": "/pets/lib/lib-2-plant-01.webp"
+      },
+      {
+        "id": "lib-2-plant-02",
+        "slot": "decor",
+        "group": "植物",
+        "name": "小花盆",
+        "price": 48,
+        "img": "/pets/lib/lib-2-plant-02.webp"
+      },
+      {
+        "id": "lib-2-plant-03",
+        "slot": "decor",
+        "group": "植物",
+        "name": "仙人掌",
+        "price": 56,
+        "img": "/pets/lib/lib-2-plant-03.webp"
+      },
+      {
+        "id": "lib-2-plant-04",
+        "slot": "decor",
+        "group": "植物",
+        "name": "小樹苗",
+        "price": 64,
+        "img": "/pets/lib/lib-2-plant-04.webp"
+      },
+      {
+        "id": "lib-2-plant-05",
+        "slot": "decor",
+        "group": "植物",
+        "name": "草叢",
+        "price": 72,
+        "img": "/pets/lib/lib-2-plant-05.webp"
+      },
+      {
+        "id": "lib-2-plant-06",
+        "slot": "decor",
+        "group": "植物",
+        "name": "吊盆植物",
+        "price": 80,
+        "img": "/pets/lib/lib-2-plant-06.webp"
+      }
+    ],
+    "prompt": "Create ONE refined transparent sprite atlas for a cozy companion-pet room, based on user's reference object style. 6 complete separate props. EXACTLY 3 evenly spaced columns and 2 evenly spaced rows, generous margins within uniform cells. Ordered subjects LEFT TO RIGHT, TOP TO BOTTOM: 多肉植物 / 小花盆 / 仙人掌 / 小樹苗 / 草叢 / 吊盆植物. Leave remaining 0 cells empty. All items are pet-sized, warm soft brown outlines, mellow watercolor textures, soft warm daylight, front view slightly from above. Improve missing edges, complete handles, leaves, food portions and feet. No white sticker borders, no white background, no opaque tiles, no labels or numerals even as annotation, no grid lines, no animals, no large glow. Actual transparent alpha background; preserve legitimate white ceramic portions. Keep each whole prop strictly in its own cell; no clipping, overlapping or missing items."
+  },
+  {
+    "slug": "collectibles",
+    "group": "收藏獎勵",
+    "columns": 3,
+    "source": "C:\\Users\\ChihChien\\.codex\\generated_images\\01a135f3-1b70-79d1-a0ff-66088859ec00\\exec-3954b2de-231b-4eca-8f9b-75ad44292e84.png",
+    "items": [
+      {
+        "id": "lib-2-trophy-01",
+        "slot": "decor",
+        "group": "收藏獎勵",
+        "name": "獎盃",
+        "price": 90,
+        "img": "/pets/lib/lib-2-trophy-01.webp"
+      },
+      {
+        "id": "lib-2-trophy-02",
+        "slot": "decor",
+        "group": "收藏獎勵",
+        "name": "獎牌",
+        "price": 110,
+        "img": "/pets/lib/lib-2-trophy-02.webp"
+      },
+      {
+        "id": "lib-2-trophy-03",
+        "slot": "decor",
+        "group": "收藏獎勵",
+        "name": "相框",
+        "price": 130,
+        "img": "/pets/lib/lib-2-trophy-03.webp"
+      },
+      {
+        "id": "lib-2-trophy-04",
+        "slot": "decor",
+        "group": "收藏獎勵",
+        "name": "證書",
+        "price": 150,
+        "img": "/pets/lib/lib-2-trophy-04.webp"
+      },
+      {
+        "id": "lib-2-trophy-05",
+        "slot": "decor",
+        "group": "收藏獎勵",
+        "name": "展示櫃",
+        "price": 170,
+        "img": "/pets/lib/lib-2-trophy-05.webp"
+      }
+    ],
+    "prompt": "ONE transparent sprite atlas for user's cozy pet room. Improve five complete decoration items in EXACTLY 3 columns and 2 rows (last cell empty), uniformly spaced cells with generous clear margins. LEFT TO RIGHT then TOP TO BOTTOM subjects: 獎盃 / 獎牌 / 相框 / 證書 / 展示櫃. Draw complete object shapes, no broken edges or chopped corners. Reference style: charming pet-sized props, soft warm brown contours, pastel watercolor textures, gentle daylight, view from front and slightly above. Preserve legitimate white surfaces within objects but eliminate white matte background or sticker outlines. ACTUAL TRANSPARENT ALPHA outside each complete object. NO numbers, text annotations, grid lines, backdrop, animals, large glow or cast shadow. For 春聯 and 證書, use decorative abstract motifs rather than readable text. Objects should match a warm small-pet home, with stable bases for placement."
+  },
+  {
+    "slug": "seasonal",
+    "group": "節慶裝飾",
+    "columns": 3,
+    "source": "C:\\Users\\ChihChien\\.codex\\generated_images\\01a135f3-1b70-79d1-a0ff-66088859ec00\\exec-49e511a9-9560-432b-a0d4-60932033fd09.png",
+    "items": [
+      {
+        "id": "lib-2-fest-01",
+        "slot": "decor",
+        "group": "節慶裝飾",
+        "name": "聖誕樹",
+        "price": 70,
+        "img": "/pets/lib/lib-2-fest-01.webp"
+      },
+      {
+        "id": "lib-2-fest-02",
+        "slot": "decor",
+        "group": "節慶裝飾",
+        "name": "南瓜燈",
+        "price": 82,
+        "img": "/pets/lib/lib-2-fest-02.webp"
+      },
+      {
+        "id": "lib-2-fest-03",
+        "slot": "decor",
+        "group": "節慶裝飾",
+        "name": "春聯",
+        "price": 94,
+        "img": "/pets/lib/lib-2-fest-03.webp"
+      },
+      {
+        "id": "lib-2-fest-04",
+        "slot": "decor",
+        "group": "節慶裝飾",
+        "name": "燈籠",
+        "price": 106,
+        "img": "/pets/lib/lib-2-fest-04.webp"
+      },
+      {
+        "id": "lib-2-fest-05",
+        "slot": "decor",
+        "group": "節慶裝飾",
+        "name": "生日蛋糕",
+        "price": 118,
+        "img": "/pets/lib/lib-2-fest-05.webp"
+      }
+    ],
+    "prompt": "ONE transparent sprite atlas for user's cozy pet room. Improve five complete decoration items in EXACTLY 3 columns and 2 rows (last cell empty), uniformly spaced cells with generous clear margins. LEFT TO RIGHT then TOP TO BOTTOM subjects: 聖誕樹 / 南瓜燈 / 春聯 / 燈籠 / 生日蛋糕. Draw complete object shapes, no broken edges or chopped corners. Reference style: charming pet-sized props, soft warm brown contours, pastel watercolor textures, gentle daylight, view from front and slightly above. Preserve legitimate white surfaces within objects but eliminate white matte background or sticker outlines. ACTUAL TRANSPARENT ALPHA outside each complete object. NO numbers, text annotations, grid lines, backdrop, animals, large glow or cast shadow. For 春聯 and 證書, use decorative abstract motifs rather than readable text. Objects should match a warm small-pet home, with stable bases for placement."
+  }
+]

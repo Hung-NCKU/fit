@@ -5,12 +5,13 @@
  * 飲食紀錄推算出來，不是另外一套數值。吃太少牠會瘦、吃太多牠會圓、
  * 連續幾天沒記錄牠會餓。代幣靠記錄飲食與達標賺，不能用別的方式取得。
  *
- * 外觀一律用 emoji 組出來，不需要任何圖檔或繪圖函式庫 ——
- * 這個專案其他地方（分頁列、標籤）也是這樣做的。
+ * 動物使用專屬動畫，裝飾可購買後拖移布置；多隻寵物共用環境與錢包。
  */
 import { getDb } from './db.js';
 import { dailySummary, today, daysAgo } from './records.js';
 import { ALL_WEAR, wardrobeOf } from './pet-wardrobe.js';
+import { readFileSync } from 'node:fs';
+const DECORATIONS = JSON.parse(readFileSync(new URL('./pet-catalog.json', import.meta.url), 'utf8')).filter(item => item.slot === 'decor');
 
 /* ---------------- 可選的寵物 ---------------- */
 
@@ -69,13 +70,13 @@ const SCENE_ITEMS = SCENES.map(([id, name, price, desc]) => ({
 }));
 
 /** 這隻看得到的商城內容 */
-export const shopFor = (species) => [...SCENE_ITEMS, ...wardrobeOf(species)];
+export const shopFor = (species) => [...SCENE_ITEMS, ...DECORATIONS, ...wardrobeOf(species)];
 
 /**
  * 查一件商品。要涵蓋所有物種的衣服，不能只看目前這隻的——
  * 換寵物之後舊的穿戴紀錄還在 pet_history 裡，查得到才顯示得出來。
  */
-const EVERYTHING = [...SCENE_ITEMS, ...ALL_WEAR];
+const EVERYTHING = [...SCENE_ITEMS, ...DECORATIONS, ...ALL_WEAR];
 
 /** 商城的分區順序，前端照這個排 */
 export const shopGroupsFor = (species) => [...new Set(shopFor(species).map(i => i.group))];
@@ -228,6 +229,7 @@ export function replacePet(userId, species, name, confirmName) {
   }
 
   db.exec('DELETE FROM pet_selection');
+  db.exec('DELETE FROM pet_room_decor');
   db.exec('DELETE FROM pet_items');
   db.exec('DELETE FROM pet');
   const fresh = adoptPet(userId, species, name);
@@ -445,6 +447,11 @@ export function equipItem(userId, itemId, petKey = null) {
   if (!ownedItems(userId).includes(itemId)) throw Object.assign(new Error('還沒有這個東西'), { status: 400 });
   const pet = petKey ? petByKey(userId, petKey) : getPet(userId);
   if (!pet) throw Object.assign(new Error('還沒有寵物'), { status: 400 });
+  if (item.slot === 'decor') {
+    const scene = mainPet(userId).equipped.bg || 'bg_room';
+    getDb(userId).prepare('INSERT OR IGNORE INTO pet_room_decor(scene, item_id) VALUES (?, ?)').run(scene, itemId);
+    return getPet(userId);
+  }
   if (item.species && item.species !== pet.species) throw Object.assign(new Error('這件穿搭不適合這隻寵物'), { status: 400 });
   const target = item.slot === 'bg' ? mainPet(userId) : pet;
   saveEquipment(userId, target, { ...target.equipped, [item.slot]: itemId });
@@ -460,4 +467,27 @@ export function unequipSlot(userId, slot, petKey = null) {
   delete equipped[slot];
   saveEquipment(userId, pet, equipped);
   return getPet(userId);
+}
+
+export function roomDecor(userId) {
+  const pet = mainPet(userId);
+  if (!pet) return [];
+  return getDb(userId).prepare('SELECT item_id, x, y, scale FROM pet_room_decor WHERE scene = ?').all(pet.equipped.bg || 'bg_room')
+    .map(row => ({ ...itemOf(row.item_id), x: row.x, y: row.y, scale: row.scale })).filter(item => item.id);
+}
+
+export function arrangeDecor(userId, itemId, position) {
+  const item = itemOf(itemId);
+  const pet = mainPet(userId);
+  if (!pet || item?.slot !== 'decor' || !ownedItems(userId).includes(itemId)) throw Object.assign(new Error('只能布置已購買的裝飾'), { status: 400 });
+  const db = getDb(userId);
+  const scene = pet.equipped.bg || 'bg_room';
+  if (position === null) {
+    db.prepare('DELETE FROM pet_room_decor WHERE scene = ? AND item_id = ?').run(scene, itemId);
+  } else {
+    const { x, y, scale } = position || {};
+    if (![x,y,scale].every(Number.isFinite) || x < 5 || x > 95 || y < 30 || y > 95 || scale < .6 || scale > 1.5) throw Object.assign(new Error('裝飾位置或大小超出範圍'), { status: 400 });
+    db.prepare('INSERT INTO pet_room_decor(scene,item_id,x,y,scale) VALUES (?,?,?,?,?) ON CONFLICT(scene,item_id) DO UPDATE SET x=excluded.x,y=excluded.y,scale=excluded.scale').run(scene,itemId,x,y,scale);
+  }
+  return roomDecor(userId);
 }

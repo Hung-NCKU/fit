@@ -2,6 +2,7 @@ import {
   SPECIES, shopFor, getPet, adoptPet, ownedItems,
   settleCoins, petState, buyItem, equipItem, unequipSlot, speciesOf, replacePet,
   listPets, purchasePet, selectPet, renamePet, PET_PRICE, itemOf,
+  roomDecor, arrangeDecor,
 } from '../pet.js';
 import { behaviorOf } from '../pet-behavior.js';
 import { getUser } from '../users.js';
@@ -48,6 +49,7 @@ export default async function petRoutes(app) {
       })),
       petsForSale: SPECIES.map(s => ({ species: s.id, name: s.name, nick: s.nick, price: PET_PRICE, img: `/pets/${s.id}-pet.webp` })),
       owned: ownedItems(u),
+      decorations: roomDecor(u),
       shop: shopFor(pet.species),
       settled,
     };
@@ -96,5 +98,9 @@ export default async function petRoutes(app) {
     return req.body?.slot
       ? unequipSlot(req.userId, req.body.slot, req.body?.petKey)
       : equipItem(req.userId, req.body?.item, req.body?.petKey);
+  });
+  app.patch('/pet/room', async (req) => {
+    writeGuard(req);
+    return arrangeDecor(req.userId, req.body?.item, req.body?.position);
   });
 }

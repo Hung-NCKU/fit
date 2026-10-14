@@ -5,6 +5,8 @@ import { session } from '../auth.js';
 import UserTabs from '../components/UserTabs.vue';
 import PetCarousel from '../components/PetCarousel.vue';
 import PetActor from '../components/PetActor.vue';
+import RoomDecor from '../components/RoomDecor.vue';
+import DecorArt from '../components/DecorArt.vue';
 
 const viewing = ref(session.user);
 const data = ref(null);
@@ -14,6 +16,10 @@ const error = ref('');
 // :disabled="busy" 在 busy 為 '' 時會真的把按鈕停用掉。
 const busy = ref(null);
 const tab = ref('home');            // home | shop
+const arranging = ref(false);
+const decorSelected = ref('');
+const shopSection = ref('全部');
+watch(tab, () => { arranging.value = false; });
 const picked = ref('');
 const petName = ref('');
 
@@ -109,12 +115,11 @@ function confirmTry() {
 
 const bg = computed(() => itemById(shown.value.bg));
 const hat = computed(() => itemById(shown.value.hat));
-const decor = computed(() => itemById(shown.value.decor));
 const cloth = computed(() => itemById(shown.value.cloth));
 
 const acc = computed(() => itemById(shown.value.acc));
 
-/** 穿戴類疊在寵物身上，擺飾放在場景角落 */
+/** 穿戴類跟著個別寵物；房間擺飾獨立保存位置。 */
 const worn = computed(() => [hat.value, cloth.value, acc.value].filter(Boolean));
 
 
@@ -122,7 +127,7 @@ const worn = computed(() => [hat.value, cloth.value, acc.value].filter(Boolean))
 
 
 // 穿搭素材只有帽子、衣服、配件三個部位，沒有鞋襪；
-// 擺飾也退場了——場景背景本來就把家具畫進去了（build-scenes.sh）。
+// 裝飾使用獨立清單，不佔用穿搭部位。
 const SLOTS = [
   { id: 'bg',    label: '環境' },
   { id: 'hat',   label: '帽子' },
@@ -134,8 +139,30 @@ const SLOTS = [
 const shopGroups = computed(() => {
   const list = data.value?.shop || [];
   const names = [...new Set(list.map(i => i.group))];
-  return names.map(g => ({ group: g, items: list.filter(i => i.group === g) }));
+  return names.filter(g => shopSection.value === '全部' || g === shopSection.value).map(g => ({ group: g, items: list.filter(i => i.group === g) }));
 });
+const shopSections = computed(() => ['全部', '寵物', ...new Set((data.value?.shop || []).map(i=>i.group))]);
+const decorations = computed(() => {
+  const list = data.value?.decorations || [];
+  return trying.value?.slot === 'decor' && !list.some(i=>i.id===trying.value.id)
+    ? [...list, {...trying.value,x:70,y:85,scale:1}] : list;
+});
+const selectedDecor = computed(() => (data.value?.decorations || []).find(i=>i.id===decorSelected.value));
+const storedDecor = computed(() => (data.value?.shop || []).filter(i=>i.slot==='decor' && owned.value.has(i.id) && !(data.value?.decorations || []).some(p=>p.id===i.id)));
+const isUsed = item => item.slot === 'decor' ? (data.value?.decorations || []).some(i=>i.id===item.id) : equipped.value[item.slot]===item.id;
+const moveDecor = ({id,position}) => act(async()=>{
+  try { await api.arrangeDecor(id,position); }
+  catch(e) { await load(); throw e; }
+},'arrange');
+const resizeDecor = event => {
+  const item=selectedDecor.value;
+  if (item) moveDecor({id:item.id,position:{x:item.x,y:item.y,scale:Number(event.target.value)}});
+};
+function toggleArranging() {
+  arranging.value = !arranging.value;
+  trying.value = null;
+  if (arranging.value) sceneEl.value?.scrollIntoView({ behavior:'smooth', block:'start' });
+}
 
 async function act(fn, key) {
   if (busy.value) return;
@@ -272,10 +299,10 @@ function confirmRename() {
         <!-- 場景：背景、寵物、裝備疊出來，動作由 pet-fsm.js 的狀態機決定 -->
         <div ref="sceneEl" class="scene" :style="{ '--tint': pet.tint || '#f6efdf', '--floor-lift': sceneHeight * .12 + 'px' }">
           <img class="scene-bg" :src="sceneImg" :alt="bg?.name || '小房間'" />
-          <img v-if="decor" class="scene-decor" :src="decor.img" :alt="decor.name" />
+          <RoomDecor :items="decorations" :editable="mine && arranging && !busy" :selected="decorSelected" @select="decorSelected=$event" @move="moveDecor" />
           <PetActor v-for="(member, index) in roster" :key="member.petKey"
             :pet="member" :index="index" :count="roster.length" :state="state" :scene-height="sceneHeight"
-            :selected="member.petKey === pet.petKey" :interactive="mine && !busy"
+            :selected="member.petKey === pet.petKey" :interactive="mine && !busy && !arranging"
             :preview="tab === 'shop' && member.petKey === pet.petKey"
             :wearing="member.petKey === pet.petKey ? worn : undefined" @select="choosePet" />
         </div>
@@ -326,6 +353,19 @@ function confirmRename() {
 
       <!-- 牠的窩：目前穿戴的東西 -->
       <div v-if="tab === 'home'" class="card stack">
+        <template v-if="mine">
+          <div class="spread"><h3 style="margin:0">布置小屋</h3><button :disabled="busy" @click="toggleArranging">{{ arranging ? '完成布置' : '編輯布置' }}</button></div>
+          <p class="small muted">購買裝飾後會放入環境。開啟編輯後，直接拖曳裝飾；放開自動保存。不同環境各自保留布置。</p>
+          <div v-if="arranging && selectedDecor" class="stack">
+            <b>{{ selectedDecor.name }}</b>
+            <label>裝飾大小<input type="range" min="0.6" max="1.5" step="0.1" :value="selectedDecor.scale" :disabled="busy" @change="resizeDecor" /></label>
+            <button :disabled="busy" @click="moveDecor({id:selectedDecor.id,position:null})">收起裝飾（保留已購買商品）</button>
+          </div>
+          <div v-if="arranging" class="row wrap">
+            <button v-for="item in data.decorations" :key="item.id" :class="{on:decorSelected===item.id}" @click="decorSelected=item.id">{{ item.name }}</button>
+            <button v-for="item in storedDecor" :key="item.id" :disabled="busy" @click="act(()=>api.equipItem(item.id,pet.petKey),'place')">放入 {{ item.name }}</button>
+          </div>
+        </template>
         <h3 style="margin:0">目前的布置</h3>
         <div v-for="s in SLOTS" :key="s.id" class="spread slot">
           <span>
@@ -350,7 +390,8 @@ function confirmRename() {
 
       <!-- 商城 -->
       <template v-else>
-        <div class="card stack">
+        <label>商城分類<select v-model="shopSection"><option v-for="section in shopSections" :key="section">{{ section }}</option></select></label>
+        <div v-if="shopSection === '全部' || shopSection === '寵物'" class="card stack">
           <h3 style="margin:0">再養一隻</h3>
           <p class="small muted">十種寵物每隻 10,000 代幣。購買時取名，加入同一個家；同一物種也能養多隻。</p>
           <div class="grid shop">
@@ -366,13 +407,14 @@ function confirmRename() {
             <button
               v-for="i in g.items" :key="i.id"
               class="item"
-              :class="{ on: equipped[i.slot] === i.id, trying: trying?.id === i.id }"
+              :class="{ on: isUsed(i), trying: trying?.id === i.id }"
               :disabled="busy" @click="tryOn(i)"
             >
-              <img class="item-face" :src="i.img" :alt="i.name" loading="lazy" />
+              <DecorArt v-if="i.slot === 'decor'" class="item-face" :item="i" />
+              <img v-else class="item-face" :src="i.img" :alt="i.name" loading="lazy" />
               <span class="small">{{ i.name }}</span>
 
-              <span v-if="equipped[i.slot] === i.id" class="badge soft small">使用中</span>
+              <span v-if="isUsed(i)" class="badge soft small">{{ i.slot === 'decor' ? '已擺放' : '使用中' }}</span>
               <span v-else-if="owned.has(i.id)" class="small muted">已擁有</span>
               <span v-else class="small" :class="{ poor: pet.coins < i.price }">🪙 {{ i.price }}</span>
             </button>
@@ -382,7 +424,8 @@ function confirmRename() {
 
       <!-- 試穿中：釘在畫面底部，捲到哪裡都按得到 -->
       <div v-if="trying" class="trybar">
-        <img class="item-face small-face" :src="trying.img" :alt="trying.name" />
+        <DecorArt v-if="trying.slot === 'decor'" class="item-face small-face" :item="trying" />
+        <img v-else class="item-face small-face" :src="trying.img" :alt="trying.name" />
         <span class="stack tight">
           <b class="small">{{ trying.name }}</b>
           <span class="small muted">
@@ -396,7 +439,7 @@ function confirmRename() {
           class="primary small"
           :disabled="busy || (!owned.has(trying.id) && pet.coins < trying.price)"
           @click="confirmTry"
-        >{{ owned.has(trying.id) ? '換上' : '買下' }}</button>
+        >{{ owned.has(trying.id) ? trying.slot === 'decor' ? '放入小屋' : '換上' : '買下' }}</button>
       </div>
     </template>
   </div>

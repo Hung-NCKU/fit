@@ -135,6 +135,14 @@ CREATE TABLE IF NOT EXISTS pet_items (
   item_id     TEXT PRIMARY KEY,
   acquired_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
+CREATE TABLE IF NOT EXISTS pet_room_decor (
+  scene TEXT NOT NULL,
+  item_id TEXT NOT NULL REFERENCES pet_items(item_id),
+  x REAL NOT NULL DEFAULT 70,
+  y REAL NOT NULL DEFAULT 85,
+  scale REAL NOT NULL DEFAULT 1,
+  PRIMARY KEY (scene, item_id)
+);
 
 -- 換寵物會把上一隻連同代幣與買過的東西全部清掉。開發期間這件事發生過四次，
 -- 每次都只能靠手動改資料庫救回來，而且當天的備份不見得涵蓋得到。
