@@ -370,7 +370,9 @@ function confirmRename() {
         <div v-if="data.care && tab==='home'" class="pet-care stack">
           <label>今日心情 <b>{{ data.care.mood }} / 100</b><progress :value="data.care.mood" max="100" aria-label="今日心情"></progress></label>
           <label>今日飽足度（越高越不餓） <b>{{ data.care.fullness }} / 100</b><progress :value="data.care.fullness" max="100" aria-label="今日飽足度"></progress></label>
-          <p class="small muted">運動就是陪寵物玩耍；記錄飲食能提高飽足度，達到每日熱量目標就會全滿。點一下寵物心情 +2，每 30 秒一次，每天最多 10 次。</p>
+          <p class="small muted">運動就是陪寵物玩耍；記錄飲食能提高飽足度，達到每日熱量目標就會全滿。點一下寵物心情 +2，每 30 秒一次，每天最多 10 次（+20）；其他心情加成需透過運動取得，飲食只影響飽足度。</p>
+          <p class="small">今日陪玩 +{{ data.care.interactionMood }} / 20 · 運動 +{{ data.care.exerciseMood }} / 40</p>
+          <p v-if="data.care.interactions >= data.care.interactionLimit" class="small">陪玩加成已滿；可以繼續互動，想提高心情就去記錄運動。</p>
           <button v-if="mine" :disabled="interacting || busy" @click="playWithPet(pet.petKey)">陪牠玩</button>
           <p v-if="careMessage" class="small" role="status">{{ careMessage }}</p>
         </div>
