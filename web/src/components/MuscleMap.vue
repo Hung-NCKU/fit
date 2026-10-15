@@ -39,7 +39,7 @@ const select=id=>emit('update:modelValue',id);
 <template>
   <div class="muscle-map">
     <div class="spread map-heading"><b>想練哪裡？</b><div class="row face-switch" aria-label="人體方向"><button :class="{on:side==='front'}" :aria-pressed="side==='front'" @click="side='front'">正面</button><button :class="{on:side==='back'}" :aria-pressed="side==='back'" @click="side='back'">背面</button></div></div>
-    <p class="small muted map-hint">點選肌肉，杏橘色標示目前選擇的訓練部位。</p>
+    <p class="small muted map-hint">點選肌肉，橘紅色標示目前選擇的訓練部位。</p>
     <svg class="body-map" viewBox="0 0 1024 1536" aria-label="可選擇訓練部位的人體示意圖">
       <defs><mask :id="`${uid}-silhouette`" mask-type="alpha"><image :href="imageUrl" width="1024" height="1536" /></mask></defs>
       <image :href="imageUrl" width="1024" height="1536" class="anatomy-plate" />
@@ -60,8 +60,8 @@ const select=id=>emit('update:modelValue',id);
 .map-heading {gap:.5rem;}.map-hint {margin:.5rem 0 .4rem;line-height:1.6;}.face-switch {gap:.3rem;}.face-switch button {padding:.3rem .7rem;font-size:.8rem;min-height:36px;}
 .on {background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:650;}
 .body-map {display:block;width:100%;height:460px;margin:.2rem auto;background:radial-gradient(ellipse at 50% 40%,#fffdf7,#fff0d6);border:1px solid #ead5b3;border-radius:18px;}
-.anatomy-plate {pointer-events:none;}.muscle {cursor:pointer;outline:none;}.muscle path {fill:#cf7948;fill-opacity:0;stroke:#885335;stroke-opacity:0;stroke-width:3;transition:fill-opacity .15s;pointer-events:all;}.muscle.selected path {fill-opacity:.36;stroke-opacity:.6;}.muscle.subdued path {fill-opacity:.1;stroke-opacity:0;}.muscle:hover path,.muscle:focus-visible path {fill-opacity:.25;stroke-opacity:1;}.muscle.selected:hover path {fill-opacity:.42;}.muscle:focus-visible path {stroke-width:7;}.focus-highlight {fill:#cf7948;fill-opacity:.42;stroke:#885335;stroke-width:3;pointer-events:none;}
-.map-legend {display:flex;align-items:center;justify-content:center;gap:.4rem;margin:.5rem 0 .8rem;font-size:.8rem;font-weight:650;}.map-legend i {width:9px;height:9px;background:#cf7948;border-radius:50%;}.map-legend span {color:var(--muted);font-size:.7rem;font-weight:400;}
+.anatomy-plate {pointer-events:none;}.muscle {cursor:pointer;outline:none;}.muscle path {fill:#ee4b24;fill-opacity:0;stroke:#a82e18;stroke-opacity:0;stroke-width:3;transition:fill-opacity .15s;pointer-events:all;}.muscle.selected path {fill-opacity:.64;stroke-opacity:.9;}.muscle.subdued path {fill-opacity:.1;stroke-opacity:0;}.muscle:hover path,.muscle:focus-visible path {fill-opacity:.4;stroke-opacity:1;}.muscle.selected:hover path {fill-opacity:.72;}.muscle:focus-visible path {stroke-width:7;}.focus-highlight {fill:#ee4b24;fill-opacity:.42;stroke:#a82e18;stroke-width:3;pointer-events:none;}
+.map-legend {display:flex;align-items:center;justify-content:center;gap:.4rem;margin:.5rem 0 .8rem;font-size:.8rem;font-weight:650;}.map-legend i {width:9px;height:9px;background:#ee4b24;border-radius:50%;}.map-legend span {color:var(--muted);font-size:.7rem;font-weight:400;}
 .muscle-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem;}.muscle-options button {min-height:42px;font-size:.8rem;padding:.4rem .3rem;}.map-note {margin:.6rem 0 0;line-height:1.6;}
 @media(max-width:360px){.body-map {height:420px;}}
 @media(prefers-reduced-motion:reduce){.muscle path {transition:none;}}
