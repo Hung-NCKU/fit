@@ -5,7 +5,7 @@ import PetPickup from './PetPickup.vue';
 import OutfitFrames from './OutfitFrames.vue';
 import { pickNext } from '../pet-fsm.js';
 import { roamingBounds, roamingTarget, roamingDuration, roamingFacing } from '../pet-roaming.js';
-const props = defineProps({ pet: Object, state: Object, sceneHeight: Number, sceneWidth:Number, roomKey:String, paused:Boolean, index: Number, count: Number, selected: Boolean, interactive: Boolean, wearing: Array, preview: Boolean, decorations:Array, celebration:Object });
+const props = defineProps({ pet: Object, state: Object, sceneHeight: Number, sceneWidth:Number, roomKey:String, paused:Boolean, index: Number, count: Number, selected: Boolean, interactive: Boolean, wearing: Array, preview: Boolean, decorations:Array, celebration:Object, reminder:String });
 const emit=defineEmits(['select','move','interact']);
 const current = ref(null);
 const initialPosition=()=>props.pet.position || {x:props.count===1?50:14+props.index*72/(props.count-1),y:88};
@@ -112,7 +112,7 @@ const style = computed(() => ({
       <PetFrames v-else :species="pet.species" :pose="pose" :label="pet.speciesName" :resting="clothes.length > 0 && current?.pose === 'sleep'" />
     </span>
     <span class="name">{{ pet.name }}</span>
-    <span v-if="speech && !preview" class="pet-speech" role="status">{{ speech }}</span>
+    <span v-if="(speech || reminder && selected && !paused && !lifted) && !preview" class="pet-speech" role="status">{{ speech || reminder }}</span>
   </button>
 </template>
 <style scoped>

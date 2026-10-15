@@ -8,6 +8,7 @@ import PetActor from '../components/PetActor.vue';
 import RoomDecor from '../components/RoomDecor.vue';
 import DecorArt from '../components/DecorArt.vue';
 import OutfitFrames from '../components/OutfitFrames.vue';
+import {careReminder} from '../../../shared/pet-care-reminder.js';
 import { consumeFeedback } from '../pet-feedback.js';
 import { confirmAction } from '../confirm.js';
 
@@ -70,6 +71,7 @@ async function load() {
 watch(viewing, () => { data.value = null; tab.value = 'home'; trying.value = null; purchase.value = null; renaming.value = false; load(); });
 onMounted(load);
 
+const reminder=computed(()=>mine.value && tab.value==='home' ? careReminder(data.value?.care) : '');
 const pet = computed(() => data.value?.pet || null);
 const state = computed(() => data.value?.state || null);
 const mine = computed(() => data.value?.mine !== false);
@@ -351,7 +353,7 @@ function confirmRename() {
           <img class="scene-bg" :src="sceneImg" :alt="bg?.name || '小房間'" />
           <RoomDecor :items="decorations" :editable="mine && arranging && !busy" :selected="decorSelected" @select="decorSelected=$event" @move="moveDecor" />
           <PetActor v-for="(member, index) in roster" :key="member.petKey"
-            :decorations="decorations" :celebration="celebration"
+            :decorations="decorations" :celebration="celebration" :reminder="reminder"
             :pet="member" :index="index" :count="roster.length" :state="state" :scene-height="sceneHeight"
             :scene-width="sceneWidth" :paused="arranging || tab === 'shop'"
             :room-key="equipped.bg" @move="movePet"
@@ -365,13 +367,13 @@ function confirmRename() {
             :disabled="!mine || busy" @click="choosePet(member.petKey)">{{ member.name }} · {{ member.speciesName }}</button>
         </div>
         <p class="small muted">共 {{ roster.length }} 隻寵物，共用代幣與環境；目前替「{{ pet.name }}」挑選穿搭。{{ mine ? '點住寵物可拎起拖移，放開後保存位置。' : '' }}</p>
-        <p class="says">{{ state.says }}</p>
+        <p class="says">{{ reminder || state.says }}</p>
 
         <div v-if="data.care && tab==='home'" class="pet-care stack">
           <label>今日心情 <b>{{ data.care.mood }} / 100</b><progress :value="data.care.mood" max="100" aria-label="今日心情"></progress></label>
           <label>今日飽足度（越高越不餓） <b>{{ data.care.fullness }} / 100</b><progress :value="data.care.fullness" max="100" aria-label="今日飽足度"></progress></label>
-          <p class="small muted">運動就是陪寵物玩耍；記錄飲食能提高飽足度，達到每日熱量目標就會全滿。點一下寵物心情 +2，每 30 秒一次，每天最多 10 次（+20）；其他心情加成需透過運動取得，飲食只影響飽足度。</p>
-          <p class="small">今日陪玩 +{{ data.care.interactionMood }} / 20 · 運動 +{{ data.care.exerciseMood }} / 40</p>
+          <p class="small muted">運動就是陪寵物玩耍；記錄飲食能提高飽足度，達到每日熱量目標就會全滿。點一下寵物心情 +2，每 30 秒一次，每天最多 5 次（+10）；其他心情加成需透過運動取得，飲食只影響飽足度。</p>
+          <p class="small">今日陪玩 +{{ data.care.interactionMood }} / {{ data.care.interactionMoodLimit }} · 運動 +{{ data.care.exerciseMood }} / {{ data.care.exerciseMoodLimit }}</p>
           <p v-if="data.care.interactions >= data.care.interactionLimit" class="small">陪玩加成已滿；可以繼續互動，想提高心情就去記錄運動。</p>
           <button v-if="mine" :disabled="interacting || busy" @click="playWithPet(pet.petKey)">陪牠玩</button>
           <p v-if="careMessage" class="small" role="status">{{ careMessage }}</p>

@@ -22,12 +22,12 @@ it('徒手運動與有氧都提高心情，不依賴負重',()=>{
  expect(care.petCare('eli',key).mood).toBe(before+9);
  records.addWorkout('eli',{date:records.today(),exercise:'快走',category:'cardio',duration_min:15});expect(care.petCare('eli',key).mood).toBe(before+15);
 });
-it('互動持久化、30秒冷卻、每日十次，跨日重算且不給代幣',()=>{
+it('互動持久化、30秒冷卻、每日五次，跨日重算且不給代幣',()=>{
  const key=pet.getPet('eli').petKey,coins=pet.getPet('eli').coins;
  expect(care.interactPet('eli',key).credited).toBe(true);expect(care.petCare('eli',key).mood).toBe(42);
  expect(care.interactPet('eli',key).credited).toBe(false);
- for(let i=1;i<10;i++){vi.setSystemTime(Date.now()+30000);expect(care.interactPet('eli',key).credited).toBe(true);}
- vi.setSystemTime(Date.now()+30000);expect(care.interactPet('eli',key).credited).toBe(false);expect(care.petCare('eli',key).mood).toBe(60);
+ for(let i=1;i<5;i++){vi.setSystemTime(Date.now()+30000);expect(care.interactPet('eli',key).credited).toBe(true);}
+ vi.setSystemTime(Date.now()+30000);expect(care.interactPet('eli',key).credited).toBe(false);expect(care.petCare('eli',key).mood).toBe(50);
  expect(pet.getPet('eli').coins).toBe(coins);
  vi.setSystemTime(Date.now()+86400000);expect(care.petCare('eli',key).interactions).toBe(0);expect(care.interactPet('eli',key).credited).toBe(true);
  expect(()=>care.interactPet('eli','companion-99999')).toThrow();
@@ -36,8 +36,8 @@ it('互動持久化、30秒冷卻、每日十次，跨日重算且不給代幣',
 it('飲食不增加心情；陪玩達上限後仍能靠運動提升至100',()=>{
  const key=pet.getPet('eli').petKey,target=db.getProfile('eli').target_kcal;
  records.addMeal('eli',{date:records.today(),name:'餐點',kcal:target});expect(care.petCare('eli',key).mood).toBe(40);
- for(let i=0;i<10;i++){care.interactPet('eli',key);vi.setSystemTime(Date.now()+30000);}
- expect(care.petCare('eli',key).mood).toBe(60);expect(care.interactPet('eli',key).message).toContain('上限');
- records.addWorkout('eli',{date:records.today(),exercise:'徒手深蹲',category:'legs',sets:3,reps:10});expect(care.petCare('eli',key).mood).toBe(69);
- records.addWorkout('eli',{date:records.today(),exercise:'快走',category:'cardio',duration_min:90});expect(care.petCare('eli',key).mood).toBe(100);
+ for(let i=0;i<5;i++){care.interactPet('eli',key);vi.setSystemTime(Date.now()+30000);}
+ expect(care.petCare('eli',key).mood).toBe(50);expect(care.interactPet('eli',key).message).toContain('上限');
+ records.addWorkout('eli',{date:records.today(),exercise:'徒手深蹲',category:'legs',sets:3,reps:10});expect(care.petCare('eli',key).mood).toBe(59);
+ records.addWorkout('eli',{date:records.today(),exercise:'快走',category:'cardio',duration_min:120});expect(care.petCare('eli',key).mood).toBe(100);
 });
