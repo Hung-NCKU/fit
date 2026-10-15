@@ -48,13 +48,13 @@ it('cardio records use time and calories, with separate daily and range minutes'
  const updated=records.updateWorkout('eli',row.id,{duration_min:20});expect(updated.duration_min).toBe(20);expect(updated.calories_kcal).toBe(129.4);
 });
 it('exercise rewards are once daily per type and deletion / editing cannot reset the cap',()=>{
- const first=records.addWorkout('eli',strength());expect(pet.rewardWorkoutSaved('eli',first.date)).toBe(8);
+ const first=records.addWorkout('eli',strength());expect(pet.rewardWorkoutSaved('eli',first.date)).toBe(20);
  records.updateWorkout('eli',first.id,{note:'修改'});expect(pet.rewardWorkoutSaved('eli',first.date)).toBe(0);
  const a=records.addWorkout('eli',{date:first.date,exercise:'快走',category:'cardio',duration_min:7});expect(pet.rewardWorkoutSaved('eli',a.date)).toBe(0);
- const b=records.addWorkout('eli',{date:first.date,exercise:'快走',category:'cardio',duration_min:8});expect(pet.rewardWorkoutSaved('eli',b.date)).toBe(6);
+ const b=records.addWorkout('eli',{date:first.date,exercise:'快走',category:'cardio',duration_min:8});expect(pet.rewardWorkoutSaved('eli',b.date)).toBe(15);
  records.deleteWorkout('eli',first.id);records.deleteWorkout('eli',a.id);records.deleteWorkout('eli',b.id);
  records.addWorkout('eli',{...strength(),requestId:'energy-strength-002'});expect(pet.rewardWorkoutSaved('eli',first.date)).toBe(0);
- expect(pet.getPet('eli').coins).toBe(14);expect(pet.rewardOverview('eli')).toMatchObject({exerciseEarned:14,instantEarned:14,instantRemaining:14});
+ expect(pet.getPet('eli').coins).toBe(35);expect(pet.rewardOverview('eli')).toMatchObject({exerciseEarned:35,instantEarned:35,instantRemaining:35});
  expect(pet.rewardWorkoutSaved('eli','2026-10-14')).toBe(0);
 });
 it('legacy schema migration adds an average estimate without changing original sets and weights',()=>{

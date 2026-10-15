@@ -1,3 +1,4 @@
+import {coinRulesFor} from '../../shared/coin-rules.js';
 /**
  * 寵物。參考 Neko Atsume：養一隻小動物，用代幣買布置與裝扮。
  *
@@ -244,7 +245,6 @@ export const ownedItems = (userId) =>
 /** 一天最多拿多少 */
 const COIN_LOGGED = 2;      // 有記錄就好
 const COIN_KCAL = 8;        // 熱量落在目標 ±10%
-const COIN_PROTEIN = 8;     // 蛋白質達到目標九成
 
 /**
  * 新規則上線日：這天（含）之後，「有記錄 +2」與「熱量達標 +8」改成記錄當下入帳
@@ -252,12 +252,13 @@ const COIN_PROTEIN = 8;     // 蛋白質達到目標九成
  * 否則上線前還沒結算到的日子會少拿。
  */
 const INSTANT_FROM = '2026-10-14';
-const COIN_PER_MEAL = 2;
-const MAX_REWARDED_MEALS = 3; // 每天最多 +6；修改不算新增
+// 每筆金額依日期規則取得，舊帳本保留原金額。
+const MAX_REWARDED_MEALS = 3; // 每天最多三筆；修改不算新增
 
 /** 某一天結算時可以拿幾枚 */
 export function coinsForDay(userId, date) {
   const s = dailySummary(userId, date);
+  const rates=coinRulesFor(date);
   if (!s.nutrition.items) return 0;          // 完全沒記錄
 
   const legacy = date < INSTANT_FROM;
@@ -265,25 +266,26 @@ export function coinsForDay(userId, date) {
   const tk = s.targets.kcal || 0;
   const tp = s.targets.protein_g || 0;
   if (legacy && tk && Math.abs(s.nutrition.kcal - tk) <= tk * 0.1) c += COIN_KCAL;
-  if (tp && s.nutrition.protein_g >= tp * 0.9) c += COIN_PROTEIN;
+  if (tp && s.nutrition.protein_g >= tp * 0.9) c += rates.protein;
   return c;
 }
 
-/** 今日新增飲食每筆 +2、最多三筆；新增或修改首次熱量達標 +8。 */
+/** 今日新增飲食每筆依日期規則給獎、最多三筆；熱量達標每天一次。 */
 export function rewardMealSaved(userId, date, { isNew = false, mealId = null } = {}) {
   if (!getPet(userId) || date !== today() || date < INSTANT_FROM) return 0;
   const db = getDb(userId);
   db.exec('BEGIN IMMEDIATE');
   try {
     let earned = 0;
+    const rates=coinRulesFor(date);
     const count = db.prepare('SELECT COUNT(*) AS n FROM pet_meal_rewards WHERE date = ?').get(date).n;
     if (isNew && Number.isInteger(mealId) && count < MAX_REWARDED_MEALS) {
       const meal = db.prepare('SELECT date, kcal FROM meals WHERE id = ?').get(mealId);
       if (meal?.date === date && meal.kcal > 0) {
         const r = db.prepare('INSERT OR IGNORE INTO pet_meal_rewards (meal_id, date) VALUES (?, ?)').run(mealId, date);
         if (r.changes) {
-          earned += COIN_PER_MEAL;
-          db.prepare('INSERT INTO pet_reward_ledger(reward_key,date,reason,amount) VALUES (?,?,?,?)').run(`meal:${mealId}`, date, '新增有效飲食', COIN_PER_MEAL);
+          earned += rates.meal;
+          db.prepare('INSERT INTO pet_reward_ledger(reward_key,date,reason,amount) VALUES (?,?,?,?)').run(`meal:${mealId}`, date, '新增有效飲食', rates.meal);
         }
       }
     }
@@ -292,8 +294,8 @@ export function rewardMealSaved(userId, date, { isNew = false, mealId = null } =
     if (tk && summary.nutrition.items && Math.abs(summary.nutrition.kcal - tk) <= tk * 0.1) {
       const r = db.prepare('INSERT OR IGNORE INTO pet_daily_bonus (date) VALUES (?)').run(date);
       if (r.changes) {
-        earned += COIN_KCAL;
-        db.prepare('INSERT INTO pet_reward_ledger(reward_key,date,reason,amount) VALUES (?,?,?,?)').run(`kcal:${date}`, date, '熱量首次達標', COIN_KCAL);
+        earned += rates.kcal;
+        db.prepare('INSERT INTO pet_reward_ledger(reward_key,date,reason,amount) VALUES (?,?,?,?)').run(`kcal:${date}`, date, '熱量首次達標', rates.kcal);
       }
     }
     if (earned) db.prepare('UPDATE pet SET coins = coins + ? WHERE id = 1').run(earned);
@@ -358,8 +360,8 @@ export function rewardWorkoutSaved(userId,date=today()) {
   if(date!==today() || !getPet(userId)) return 0;
   const db=getDb(userId);db.exec('BEGIN IMMEDIATE');
   try {
-    const p=exerciseRewardProgress(userId,date);let earned=0;
-    for(const [key,ready,amount,reason] of [['strength',p.strengthSets>=3,8,'肌力累積完成 3 組'],['cardio',p.cardioMinutes>=15,6,'有氧累積完成 15 分鐘']]) {
+    const p=exerciseRewardProgress(userId,date),rates=coinRulesFor(date);let earned=0;
+    for(const [key,ready,amount,reason] of [['strength',p.strengthSets>=3,rates.strength,'肌力累積完成 3 組'],['cardio',p.cardioMinutes>=15,rates.cardio,'有氧累積完成 15 分鐘']]) {
       if(!ready)continue;
       const row=db.prepare('INSERT OR IGNORE INTO pet_reward_ledger(reward_key,date,reason,amount) VALUES (?,?,?,?)').run(key+':'+date,date,reason,amount);
       if(row.changes)earned+=amount;
@@ -387,9 +389,15 @@ export function rewardOverview(userId) {
     ORDER BY date DESC, created_at DESC LIMIT 30
   `).all();
   const exercise=exerciseRewardProgress(userId,date);
-  const exerciseEarned=(exercise.strengthPaid?8:0)+(exercise.cardioPaid?6:0);
-  return { date,exercise,exerciseEarned,instantEarned: meals * 2 + (kcal ? 8 : 0)+exerciseEarned, instantRemaining: Math.max(0, 3 - meals) * 2 + (kcal ? 0 : 8)+(exercise.strengthPaid?0:8)+(exercise.cardioPaid?0:6),
-    proteinPending: proteinPending ? 8 : 0, meals, kcal, entries };
+  const rates=coinRulesFor(date);
+  // 舊憑證缺少金額時沿用當年2／8；已發獎勵不以新倍率重算。
+  const earned=db.prepare(`SELECT reward_key,amount FROM pet_reward_ledger WHERE date=? AND (reward_key LIKE 'meal:%' OR reward_key LIKE 'kcal:%' OR reward_key LIKE 'strength:%' OR reward_key LIKE 'cardio:%')`).all(date);
+  const legacyMeals=db.prepare("SELECT COUNT(*) AS n FROM pet_meal_rewards m WHERE date=? AND NOT EXISTS(SELECT 1 FROM pet_reward_ledger l WHERE l.reward_key='meal:' || m.meal_id)").get(date).n;
+  const legacyKcal=kcal && !earned.some(e=>e.reward_key==='kcal:'+date) ? 8 : 0;
+  const exerciseEarned=earned.filter(e=>e.reward_key.startsWith('strength:') || e.reward_key.startsWith('cardio:')).reduce((sum,e)=>sum+e.amount,0);
+  return {date,exercise,exerciseEarned,rates,instantEarned:earned.reduce((sum,e)=>sum+e.amount,0)+legacyMeals*2+legacyKcal,
+    instantRemaining:Math.max(0,3-meals)*rates.meal+(kcal?0:rates.kcal)+(exercise.strengthPaid?0:rates.strength)+(exercise.cardioPaid?0:rates.cardio),
+    proteinPending:proteinPending ? rates.protein : 0,meals,kcal,entries};
 }
 
 /* ---------------- 心情與體態 ---------------- */

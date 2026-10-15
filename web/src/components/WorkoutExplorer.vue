@@ -1,4 +1,5 @@
 <script setup>
+import {COIN_RULES as coins} from '../../../shared/coin-rules.js';
 import { ref, computed, watch, nextTick } from 'vue';
 import { api, todayStr, CATEGORIES } from '../api.js';
 import { session } from '../auth.js';
@@ -138,7 +139,7 @@ async function saveSets() {
         <template v-if="customOnly"><label>動作名稱<input v-model="custom.name" placeholder="例如：槓鈴深蹲" required maxlength="120" :disabled="saving || !!pending" /></label><label>部位<select v-model="custom.category" :disabled="saving || !!pending"><option v-for="(label,key) in Object.fromEntries(Object.entries(CATEGORIES).filter(([k])=>k!=='cardio'))" :key="key" :value="key">{{ label }}</option></select></label><label>記錄方式<select v-model="custom.mode" :disabled="saving || !!pending || completed.length>0"><option value="reps">每組次數</option><option value="time">每組秒數</option></select></label></template>
         <div class="spread record-heading"><label>訓練日期<input v-model="date" type="date" required :disabled="saving || !!pending" /></label><b class="small" role="status">{{ completed.length }} / {{ sets.length }} 組完成</b></div>
         <div class="set-progress" role="progressbar" :aria-valuenow="completed.length" :aria-valuemin="0" :aria-valuemax="sets.length || 1" aria-label="已完成組數"><span :style="{width:`${sets.length ? completed.length/sets.length*100 : 0}%`}"></span></div>
-        <p class="small muted set-hint">每組可填不同重量與次數（徒手填 0）；完成後勾選，儲存時只記錄已勾選的組。已勾選的組可取消勾選後修改；每天累積完成 3 組可得 +8 代幣，同日限一次。</p>
+        <p class="small muted set-hint">每組可填不同重量與次數（徒手填 0）；完成後勾選，儲存時只記錄已勾選的組。已勾選的組可取消勾選後修改；每天累積完成 3 組可得 +{{ coins.strength }} 代幣，同日限一次。</p>
         <div class="set-columns small muted"><span>組</span><span>重量 kg</span><span>{{ exercise.mode==='time'?'時間 秒':'次數' }}</span><span>RPE</span><span>完成</span><span>刪除</span></div>
         <div v-for="(set,index) in sets" :key="index" class="set-row" :class="{finished:set.done}">
           <b class="set-number">{{ index+1 }}</b>

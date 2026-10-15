@@ -1,3 +1,4 @@
+import {installFixedAppViewport} from './app-viewport.js';
 import { createApp } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import App from './App.vue';
@@ -24,6 +25,7 @@ const router = createRouter({
   ],
 });
 
+installFixedAppViewport();
 createApp(App).use(router).mount('#app');
 
 // Service worker 只在打包後的正式版註冊，開發模式會干擾 Vite 的熱更新

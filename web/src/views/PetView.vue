@@ -1,4 +1,5 @@
 <script setup>
+import {COIN_RULES as coins} from '../../../shared/coin-rules.js';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { api } from '../api.js';
 import { session } from '../auth.js';
@@ -458,18 +459,18 @@ function confirmRename() {
           >移除</button>
         </div>
         <p v-if="mine" class="small muted" style="margin:0">
-          今日新增有效飲食每筆立即 +2，每天最多三筆（+6）；修改、刪除及補登過去日期不發新增獎勵。
-          今日熱量首次落在目標 ±10% 立即 +8，每天一次；修改也可觸發這份達標獎勵。
-          蛋白質達目標九成 +8，隔天開啟自己的寵物頁時自動結算，每天一次。
-          今日肌力累積 3 組 +8、有氧累積 15 分鐘 +6，各每天一次；連同飲食最多 36 枚。
+          今日新增有效飲食每筆立即 +{{ coins.meal }}，每天最多三筆（+{{ coins.meal*3 }}）；修改、刪除及補登過去日期不發新增獎勵。
+          今日熱量首次落在目標 ±10% 立即 +{{ coins.kcal }}，每天一次；修改也可觸發這份達標獎勵。
+          蛋白質達目標九成 +{{ coins.protein }}，隔天開啟自己的寵物頁時自動結算，每天一次。
+          今日肌力累積 3 組 +{{ coins.strength }}、有氧累積 15 分鐘 +{{ coins.cardio }}，各每天一次；連同飲食最多 {{ coins.dailyMax }} 枚。
         </p>
       </div>
       <div v-if="mine && data.rewards && tab === 'home'" class="card stack rewards">
         <h3 style="margin:0">今天的代幣</h3>
-        <div v-if="data.rewards.exercise" class="small">肌力 {{ data.rewards.exercise.strengthSets }}/3 組 · {{ data.rewards.exercise.strengthPaid ? '已入帳 +8' : '累積 3 組 +8' }}；有氧 {{ Math.round(data.rewards.exercise.cardioMinutes*10)/10 }}/15 分鐘 · {{ data.rewards.exercise.cardioPaid ? '已入帳 +6' : '累積 15 分鐘 +6' }}</div>
+        <div v-if="data.rewards.exercise" class="small">肌力 {{ data.rewards.exercise.strengthSets }}/3 組 · {{ data.rewards.exercise.strengthPaid ? '今日已領取' : '累積 3 組 +'+coins.strength }}；有氧 {{ Math.round(data.rewards.exercise.cardioMinutes*10)/10 }}/15 分鐘 · {{ data.rewards.exercise.cardioPaid ? '今日已領取' : '累積 15 分鐘 +'+coins.cardio }}</div>
         <div class="row wrap"><b>已入帳 +{{ data.rewards.instantEarned }}</b><span>今天還可立即獲得 {{ data.rewards.instantRemaining }} 枚</span></div>
-        <div class="small">新增飲食 {{ data.rewards.meals }}/3 筆 · {{ data.rewards.kcal ? '熱量獎勵已入帳 +8' : '首次熱量達標可得 +8' }}</div>
-        <div class="small">{{ data.rewards.proteinPending ? '蛋白質今日已達標：+8 待隔天結算' : '蛋白質達目標九成可得 +8，隔天結算' }}</div>
+        <div class="small">新增飲食 {{ data.rewards.meals }}/3 筆 · {{ data.rewards.kcal ? '熱量獎勵已領取' : '首次熱量達標可得 +'+coins.kcal }}</div>
+        <div class="small">{{ data.rewards.proteinPending ? '蛋白質今日已達標：+'+data.rewards.proteinPending+' 待隔天結算' : '蛋白質達目標九成可得 +'+coins.protein+'，隔天結算' }}</div>
         <RouterLink to="/meals?new=1">記下一餐</RouterLink>
         <details>
           <summary>查看最近入帳明細</summary>

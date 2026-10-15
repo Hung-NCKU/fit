@@ -1,4 +1,5 @@
 <script setup>
+import {COIN_RULES as coins} from '../../../shared/coin-rules.js';
 import {ref,watch,nextTick} from 'vue';
 import {api,todayStr} from '../api.js';
 import {session} from '../auth.js';
@@ -48,7 +49,7 @@ async function save() {
 </script>
 <template>
   <section ref="root" class="card stack cardio-recorder" aria-labelledby="cardio-title">
-    <div><span class="small muted">依活動種類與總時間，估算消耗熱量</span><h2 id="cardio-title">{{ editingId ? '編輯有氧紀錄' : '今天做了哪些有氧？' }}</h2><p class="small muted">選擇活動，填入實際完成的總時間；其他活動也能直接輸入名稱。當天累積 15 分鐘可得 +6 代幣，同日限一次。</p></div>
+    <div><span class="small muted">依活動種類與總時間，估算消耗熱量</span><h2 id="cardio-title">{{ editingId ? '編輯有氧紀錄' : '今天做了哪些有氧？' }}</h2><p class="small muted">選擇活動，填入實際完成的總時間；其他活動也能直接輸入名稱。當天累積 15 分鐘可得 +{{ coins.cardio }} 代幣，同日限一次。</p></div>
     <p v-if="success" class="cardio-success" role="status">✓ {{ success }}</p>
     <form class="stack" @submit.prevent="save">
       <fieldset class="stack" :disabled="saving || !!pending">
