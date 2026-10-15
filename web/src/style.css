@@ -8,10 +8,10 @@
   --text: #38291f;
   --muted: #735d4c;
 
-  /* 奶油垂耳狗、暖杏色背景與藍色啞鈴，對應同一套品牌色。 */
-  --accent: #235c96;
-  --accent-dim: #b5cee8;
-  --accent-soft: #e4eef9;
+  /* 奶油杏色底搭配暖橄欖綠，選中狀態與主要按鈕使用同一套色。 */
+  --accent: #4e653d;
+  --accent-dim: #bccbac;
+  --accent-soft: #e7eedf;
   --on-accent: #ffffff;
   --amber: #efb357;
   --amber-soft: #ffe8b5;
@@ -96,9 +96,9 @@ button.primary {
   font-weight: 700;
   border-radius: 14px;
   padding: .75rem 1rem;
-  box-shadow: 0 4px 10px rgba(35, 92, 150, .15);
+  box-shadow: 0 4px 10px rgba(78, 101, 61, .15);
 }
-button.primary:hover:not(:disabled) { background: #194b7e; border-color: #194b7e; }
+button.primary:hover:not(:disabled) { background: #3c502e; border-color: #3c502e; }
 
 button.ghost { background: transparent; }
 button.icon {
@@ -122,7 +122,7 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--accent-dim);
-  box-shadow: 0 0 0 3px rgba(35, 92, 150, .15);
+  box-shadow: 0 0 0 3px rgba(78, 101, 61, .15);
 }
 textarea { resize: vertical; }
 input, select, textarea { accent-color: var(--accent); }
@@ -167,7 +167,7 @@ label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: .2
 }
 .badge.ai { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
 
-/* 一般狀態採用清楚的藍字與淺藍底；代幣另用暖金色。 */
+/* 一般狀態使用橄欖綠字與淺綠底；代幣另用暖金色。 */
 .badge.soft {
   color: var(--accent);
   background: var(--accent-soft);

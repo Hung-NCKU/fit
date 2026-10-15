@@ -69,6 +69,11 @@ CREATE TABLE IF NOT EXISTS workouts (
   created_at   TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 CREATE INDEX IF NOT EXISTS idx_workouts_date ON workouts(date);
+CREATE TABLE IF NOT EXISTS workout_save_requests (
+  request_id TEXT PRIMARY KEY,
+  payload_hash TEXT NOT NULL,
+  workout_id INTEGER NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS weights (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -205,6 +210,7 @@ CREATE TABLE IF NOT EXISTS pet_reward_ledger (
   // 腰圍是脂肪的代理指標：體重在漲而腰圍沒漲，就是增肌而不是增脂。
   // 可為空，只想記體重的人不被迫填。
   addColumn('weights', 'waist_cm', 'REAL');
+  addColumn('workouts', 'set_details', "TEXT NOT NULL DEFAULT '[]'");
 
   // 餐點縮圖（JPEG）。清單裡的小圖本來直接載原始照片，平均 300KB；
   // 縮成約 15KB 後第一次要求時算一次，之後存這裡重複使用。

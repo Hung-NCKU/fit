@@ -1,0 +1,32 @@
+{
+  "verifiedOn": "2026-10-15",
+  "muscles": [
+    {"id":"chest","name":"胸部","detail":"胸大肌","category":"chest","side":"front"},
+    {"id":"shoulders","name":"肩膀","detail":"三角肌","category":"shoulders","side":"front"},
+    {"id":"biceps","name":"二頭肌","detail":"上臂前側","category":"arms","side":"front"},
+    {"id":"core","name":"核心","detail":"腹部","category":"core","side":"front"},
+    {"id":"quads","name":"大腿前側","detail":"股四頭肌","category":"legs","side":"front"},
+    {"id":"back","name":"背部","detail":"背闊肌與上背","category":"back","side":"back"},
+    {"id":"triceps","name":"三頭肌","detail":"上臂後側","category":"arms","side":"back"},
+    {"id":"glutes","name":"臀部","detail":"臀肌","category":"legs","side":"back"},
+    {"id":"hamstrings","name":"大腿後側","detail":"腿後肌群","category":"legs","side":"back"},
+    {"id":"calves","name":"小腿","detail":"小腿後側","category":"legs","side":"back"}
+  ],
+  "exercises": [
+    {"id":"barbell-bench","name":"槓鈴臥推","english":"Barbell bench press","muscles":["chest","triceps","shoulders"],"equipment":"槓鈴","category":"chest","mode":"reps","videoId":"rT7DgCr-3pg","videoTitle":"How To: Barbell Bench Press","channel":"ScottHermanFitness"},
+    {"id":"push-up","name":"伏地挺身","english":"Push-up","muscles":["chest","triceps","core"],"equipment":"徒手","category":"chest","mode":"reps","videoId":"0pkjOk0EiAk","videoTitle":"The Push-Up","channel":"CrossFit"},
+    {"id":"shoulder-press","name":"啞鈴肩推","english":"Dumbbell shoulder press","muscles":["shoulders","triceps"],"equipment":"啞鈴","category":"shoulders","mode":"reps","videoId":"qEwKCR5JCog","videoTitle":"How To: Dumbbell Shoulder Press","channel":"ScottHermanFitness"},
+    {"id":"lateral-raise","name":"啞鈴側平舉","english":"Dumbbell lateral raise","muscles":["shoulders"],"equipment":"啞鈴","category":"shoulders","mode":"reps","videoId":"3VcKaXpzqRo","videoTitle":"How To: Dumbbell Side Lateral Raise","channel":"ScottHermanFitness"},
+    {"id":"lat-pulldown","name":"滑輪下拉","english":"Lat pulldown","muscles":["back","biceps"],"equipment":"滑輪","category":"back","mode":"reps","videoId":"CAwf7n6Luuc","videoTitle":"How To: Lat Pulldown | 3 GOLDEN RULES","channel":"ScottHermanFitness"},
+    {"id":"cable-row","name":"坐姿滑輪划船","english":"Seated cable row","muscles":["back","biceps"],"equipment":"滑輪","category":"back","mode":"reps","videoId":"GZbfZ033f74","videoTitle":"How To: Seated Low Row (LF Cable)","channel":"ScottHermanFitness"},
+    {"id":"barbell-curl","name":"槓鈴二頭彎舉","english":"Barbell bicep curl","muscles":["biceps"],"equipment":"槓鈴","category":"arms","mode":"reps","videoId":"QZEqB6wUPxQ","videoTitle":"How To: Barbell Bicep Curl | 3 GOLDEN RULES","channel":"ScottHermanFitness"},
+    {"id":"dumbbell-curl","name":"交替啞鈴彎舉","english":"Alternating dumbbell curl","muscles":["biceps"],"equipment":"啞鈴","category":"arms","mode":"reps","videoId":"sAq_ocpRh_I","videoTitle":"How To: Alternating Dumbbell Curl","channel":"ScottHermanFitness"},
+    {"id":"tricep-pushdown","name":"滑輪三頭下壓","english":"Tricep pushdown","muscles":["triceps"],"equipment":"滑輪","category":"arms","mode":"reps","videoId":"2-LAMcpzODU","videoTitle":"How To: Tricep Pushdown (Life Fitness Cable)","channel":"ScottHermanFitness"},
+    {"id":"plank","name":"棒式","english":"Plank","muscles":["core"],"equipment":"徒手","category":"core","mode":"time","videoId":"fqzUlmyTpJk","videoTitle":"How To: Plank | 3 GOLDEN RULES! (MADE BETTER!)","channel":"ScottHermanFitness"},
+    {"id":"barbell-squat","name":"槓鈴深蹲","english":"Barbell back squat","muscles":["quads","glutes"],"equipment":"槓鈴","category":"legs","mode":"reps","videoId":"SW_C1A-rejs","videoTitle":"How To: Deep Barbell Back Squat","channel":"ScottHermanFitness"},
+    {"id":"goblet-squat","name":"高腳杯深蹲","english":"Goblet squat","muscles":["quads","glutes"],"equipment":"啞鈴","category":"legs","mode":"reps","videoId":"MeIiIdhvXT4","videoTitle":"How To: Goblet Squat","channel":"ScottHermanFitness"},
+    {"id":"romanian-deadlift","name":"羅馬尼亞硬舉","english":"Romanian deadlift","muscles":["hamstrings","glutes","back"],"equipment":"槓鈴","category":"legs","mode":"reps","videoId":"JCXUYuzwNrM","videoTitle":"How To: Romanian Deadlift (Barbell)","channel":"ScottHermanFitness"},
+    {"id":"glute-bridge","name":"臀橋","english":"Glute bridge","muscles":["glutes","hamstrings"],"equipment":"徒手","category":"legs","mode":"reps","videoId":"8bbE64NuDTU","videoTitle":"How To: Glute Bridge","channel":"ScottHermanFitness"},
+    {"id":"calf-raise","name":"單腳提踵","english":"Single-leg calf raise","muscles":["calves"],"equipment":"徒手","category":"legs","mode":"reps","videoId":"ORT4oJ_R8Qs","videoTitle":"How To: Single-Leg Calf Raise","channel":"ScottHermanFitness"}
+  ]
+}

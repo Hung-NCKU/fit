@@ -99,15 +99,14 @@ onMounted(async () => {
       </header>
 
       <header v-else class="topbar">
-        <span class="logo"><img class="brand-icon" src="/icon-192.png?v=fitness-puppy-v1" alt="" />健身養寵</span>
-        <span class="muted small page">{{ title }}</span>
-        <span v-if="session.name" class="who">{{ session.name }}</span>
-        <span class="bell-spacer"></span>
+        <span class="logo"><img class="brand-icon" src="/icon-192.png?v=fitness-puppy-v1" alt="" /><span class="brand-copy"><b>健身養寵</b><span class="brand-subtitle">{{ title }}<template v-if="session.name"> · {{ session.name }}</template></span></span></span>
+        <div class="header-tools">
         <DeleteAccount v-if="session.authed" />
         <NewAccount v-if="session.authed" />
         <NotifyToggle />
         <button v-if="canShowInstall" class="icon install" @click="install">📲 安裝</button>
         <button v-if="session.authRequired" class="icon logout" @click="logout">登出</button>
+        </div>
       </header>
 
       <div v-if="showHint" class="hint">
@@ -162,7 +161,7 @@ onMounted(async () => {
 
 .topbar {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: .6rem;
   /* 上方多留狀態列的高度，並讓 topbar 的底色一路填到螢幕頂端，
      不然 iPhone 上時間與訊號會直接壓在「健身養寵」上面 */
@@ -172,20 +171,23 @@ onMounted(async () => {
   flex: 0 0 auto;
   position: relative;      /* 提醒設定面板以這裡為基準 */
 }
-.logo { display:inline-flex; align-items:center; gap:.4rem; font-weight:700; letter-spacing:.02em; color:var(--text); }
-.brand-icon { width:28px; height:28px; border-radius:8px; vertical-align:middle; }
+.logo { display:inline-flex; align-items:center; gap:.55rem; letter-spacing:.02em; color:var(--text); min-width:0; }
+.brand-icon { width:36px; height:36px; border-radius:11px; flex-shrink:0; }
+.brand-copy { display:flex; flex-direction:column; gap:.28rem; min-width:0; line-height:1.15; }
+.brand-copy b {font-size:.94rem;}
+.brand-subtitle {font-size:.72rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;letter-spacing:0;}
+.header-tools { display:flex; align-items:center; justify-content:flex-end; gap:.25rem; margin-left:auto; flex-wrap:wrap; }
 
-/* 標題列擠不下時的取捨。
-   手機上一排要放：logo、頁名、使用者、鈴鐺、新增帳號、安裝、登出，
-   不處理的話每個字都會折行（實際在 1080px 的裝置上就是這樣）。
-   頁名下方分頁列本來就有，窄螢幕先收掉它。 */
+/* 品牌與分頁／使用者上下排列；窄螢幕讓右側操作列完整換行。 */
 .topbar > * { flex: 0 0 auto; }
+.topbar .logo { flex:1 1 120px; }
+.topbar .header-tools {flex:0 1 auto;}
 .topbar .logo { white-space: nowrap; }
 
 @media (max-width: 460px) {
-  .page { display: none; }
   .topbar { gap: .45rem; flex-wrap:wrap; }
-  .topbar .who { max-width:35vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .brand-subtitle {max-width:120px;}
+  .topbar .header-tools {max-width:100%;}
 }
 
 .content {
@@ -197,16 +199,6 @@ onMounted(async () => {
   padding-left: calc(1rem + var(--safe-left));
   padding-right: calc(1rem + var(--safe-right));
   -webkit-overflow-scrolling: touch;
-}
-
-.who {
-  margin-left: .2rem;
-  padding: .12rem .6rem;
-  font-size: .75rem;
-  font-weight: 600;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
 }
 
 .bell-spacer { margin-left: auto; }

@@ -6,6 +6,7 @@ import TrendChart from '../components/TrendChart.vue';
 import Ring from '../components/Ring.vue';
 import UserTabs from '../components/UserTabs.vue';
 import { useRoute } from 'vue-router';
+import { workoutLabel } from '../workout-metrics.js';
 
 const C = {
   kcal: 'var(--accent)',
@@ -351,9 +352,7 @@ onMounted(() => {
           <tr v-for="w in workouts" :key="w.id">
             <td>{{ w.exercise }} <span class="badge">{{ CATEGORIES[w.category] || '其他' }}</span></td>
             <td class="num muted">
-              <template v-if="w.sets">{{ w.sets }}×{{ w.reps }}</template>
-              <template v-if="w.weight_kg"> @{{ w.weight_kg }}kg</template>
-              <template v-if="w.duration_min"> {{ w.duration_min }}分</template>
+              {{ workoutLabel(w) }}
             </td>
           </tr>
         </tbody>

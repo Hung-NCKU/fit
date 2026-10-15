@@ -1,4 +1,6 @@
 import { getDb, getProfile, GOAL_LABEL } from './db.js';
+import { normalizeSets, decodeWorkout, workoutVolumeSql } from './workout-sets.js';
+import { createHash } from 'node:crypto';
 
 export const today = () => new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD (本地時區)
 
@@ -66,36 +68,54 @@ export const deleteMeal = (userId, id) =>
 /* ---------------- 訓練 ---------------- */
 
 export function addWorkout(userId, input, source = 'manual') {
-  const r = getDb(userId).prepare(`
-    INSERT INTO workouts (date, exercise, category, sets, reps, weight_kg, duration_min, rpe, source, note)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    str(input.date, today()), str(input.exercise, '未命名'), str(input.category, 'other'),
-    num(input.sets), num(input.reps), num(input.weight_kg), num(input.duration_min),
-    num(input.rpe), source, str(input.note),
-  );
-  return getWorkout(userId, Number(r.lastInsertRowid));
+  const details=input.set_details === undefined ? [] : normalizeSets(input.set_details);
+  const values=[str(input.date,today()),str(input.exercise,'未命名'),str(input.category,'other'),details.length || num(input.sets),
+    details.length ? details[0].reps : num(input.reps),details.length ? details[0].weight_kg : num(input.weight_kg),
+    details.length ? details.reduce((sum,s)=>sum+s.duration_s,0)/60 : num(input.duration_min),num(input.rpe),source,str(input.note),JSON.stringify(details)];
+  const parsedDate=new Date(values[0]+'T00:00:00Z');
+  if(details.length && (!/^\d{4}-\d{2}-\d{2}$/.test(values[0]) || Number.isNaN(parsedDate.valueOf()) || parsedDate.toISOString().slice(0,10)!==values[0] || !values[1].trim() || values[1].length>120)) throw Object.assign(new Error('日期或動作名稱無效'),{status:400});
+  const id=input.requestId;
+  if(id!==undefined && (typeof id!=='string' || !/^[a-zA-Z0-9-]{16,80}$/.test(id))) throw Object.assign(new Error('儲存識別碼無效'),{status:400});
+  const hash=createHash('sha256').update(JSON.stringify(values)).digest('hex');
+  const db=getDb(userId);
+  const existing=id && db.prepare('SELECT * FROM workout_save_requests WHERE request_id=?').get(id);
+  if(existing) {
+    if(existing.payload_hash!==hash) throw Object.assign(new Error('同一筆儲存請求不可更換內容'),{status:409});
+    const row=getWorkout(userId,existing.workout_id);
+    if(!row) throw Object.assign(new Error('這份紀錄已被刪除，不會重新新增'),{status:409});
+    return row;
+  }
+  if(id) db.exec('BEGIN IMMEDIATE');
+  try {
+    const r=db.prepare(`INSERT INTO workouts (date,exercise,category,sets,reps,weight_kg,duration_min,rpe,source,note,set_details) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(...values);
+    const rowId=Number(r.lastInsertRowid);
+    if(id) {db.prepare('INSERT INTO workout_save_requests VALUES (?,?,?)').run(id,hash,rowId);db.exec('COMMIT');}
+    return getWorkout(userId,rowId);
+  } catch(err) {if(id) db.exec('ROLLBACK');throw err;}
 }
 
 export const getWorkout = (userId, id) =>
-  getDb(userId).prepare('SELECT * FROM workouts WHERE id = ?').get(id);
+  decodeWorkout(getDb(userId).prepare('SELECT * FROM workouts WHERE id = ?').get(id));
 
 export function listWorkouts(userId, { from, to, date, limit = 500 } = {}) {
   const db = getDb(userId);
-  if (date) return db.prepare('SELECT * FROM workouts WHERE date = ? ORDER BY id').all(date);
-  if (from && to) return db.prepare('SELECT * FROM workouts WHERE date BETWEEN ? AND ? ORDER BY date DESC, id DESC').all(from, to);
-  return db.prepare('SELECT * FROM workouts ORDER BY date DESC, id DESC LIMIT ?').all(limit);
+  if (date) return db.prepare('SELECT * FROM workouts WHERE date = ? ORDER BY id').all(date).map(decodeWorkout);
+  if (from && to) return db.prepare('SELECT * FROM workouts WHERE date BETWEEN ? AND ? ORDER BY date DESC, id DESC').all(from, to).map(decodeWorkout);
+  return db.prepare('SELECT * FROM workouts ORDER BY date DESC, id DESC LIMIT ?').all(limit).map(decodeWorkout);
 }
 
 export function updateWorkout(userId, id, patch) {
   const cur = getWorkout(userId, id);
   if (!cur) return null;
   const w = { ...cur, ...patch };
+  const changesAggregate=['sets','reps','weight_kg','duration_min'].some(key=>patch[key]!==undefined && Number(patch[key])!==Number(cur[key]));
+  const details=patch.set_details!==undefined ? Array.isArray(patch.set_details) && !patch.set_details.length ? [] : normalizeSets(patch.set_details) : changesAggregate ? [] : cur.set_details;
+  if(details.length) {w.sets=details.length;w.reps=details[0].reps;w.weight_kg=details[0].weight_kg;w.duration_min=details.reduce((sum,s)=>sum+s.duration_s,0)/60;}
   getDb(userId).prepare(`
-    UPDATE workouts SET date=?, exercise=?, category=?, sets=?, reps=?, weight_kg=?, duration_min=?, rpe=?, note=?
+    UPDATE workouts SET date=?, exercise=?, category=?, sets=?, reps=?, weight_kg=?, duration_min=?, rpe=?, note=?, set_details=?
     WHERE id=?
   `).run(str(w.date), str(w.exercise), str(w.category), num(w.sets), num(w.reps),
-         num(w.weight_kg), num(w.duration_min), num(w.rpe), str(w.note), id);
+         num(w.weight_kg), num(w.duration_min), num(w.rpe), str(w.note), JSON.stringify(details), id);
   return getWorkout(userId, id);
 }
 
@@ -162,7 +182,7 @@ export function dailySummary(userId, date = today()) {
     FROM meals WHERE date = ?
   `).get(date);
   const w = db.prepare(`
-    SELECT COUNT(*) items, COALESCE(SUM(sets*reps*weight_kg),0) volume_kg,
+    SELECT COUNT(*) items, COALESCE(SUM(${workoutVolumeSql}),0) volume_kg,
            COALESCE(SUM(duration_min),0) duration_min
     FROM workouts WHERE date = ?
   `).get(date);
@@ -189,7 +209,7 @@ export function rangeSummary(userId, from, to) {
     FROM meals WHERE date BETWEEN ? AND ? GROUP BY date ORDER BY date
   `).all(from, to);
   const training = db.prepare(`
-    SELECT date, COUNT(*) items, SUM(sets*reps*weight_kg) volume_kg, SUM(duration_min) duration_min
+    SELECT date, COUNT(*) items, SUM(${workoutVolumeSql}) volume_kg, SUM(duration_min) duration_min
     FROM workouts WHERE date BETWEEN ? AND ? GROUP BY date ORDER BY date
   `).all(from, to);
   const weights = db.prepare(`
@@ -234,7 +254,7 @@ export function recentContext(userId, days = 7) {
   const todayW = listWorkouts(userId, { date: to });
   if (todayW.length) {
     lines.push('今天的訓練明細：');
-    lines.push(todayW.map(w => `  ${w.exercise} ${w.sets}x${w.reps} @${w.weight_kg}kg`).join('\n'));
+    lines.push(todayW.map(w => `  ${w.exercise} `+(w.set_details.length ? w.set_details.map((s,i)=>`第${i+1}組 ${s.duration_s ? `${s.duration_s}秒` : `${s.weight_kg}kg×${s.reps}下`}`).join('、') : `${w.sets}x${w.reps} @${w.weight_kg}kg`)).join('\n'));
   }
 
   if (weights.length) lines.push(`體重紀錄：${weights.map(w => `${w.date} ${w.weight_kg}kg`).join('、')}`);

@@ -1,10 +1,14 @@
 <script setup>
 import { confirmAction } from '../confirm.js';
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { api, todayStr, CATEGORIES } from '../api.js';
 import { session } from '../auth.js';
 import { useRoute } from 'vue-router';
 import UserTabs from '../components/UserTabs.vue';
+import WorkoutExplorer from '../components/WorkoutExplorer.vue';
+import { workoutVolume, workoutLabel } from '../workout-metrics.js';
+import catalog from '../../../shared/workout-catalog.json';
+const explorer=ref(null);
 
 const rows = ref([]);
 const error = ref('');
@@ -63,7 +67,10 @@ async function save() {
   }
 }
 
-function edit(w) {
+async function edit(w) {
+  if(w.set_details?.length && catalog.exercises.some(e=>e.name===w.exercise)) {
+    showForm.value=false;await nextTick();await explorer.value?.startEdit(w);return;
+  }
   form.value = { ...w };
   editingId.value = w.id;
   showForm.value = true;
@@ -91,7 +98,7 @@ const grouped = computed(() => {
   return [...map.entries()].map(([date, items]) => ({
     date,
     items,
-    volume: Math.round(items.reduce((a, w) => a + w.sets * w.reps * w.weight_kg, 0)),
+    volume: Math.round(items.reduce((a, w) => a + workoutVolume(w), 0)),
     minutes: Math.round(items.reduce((a, w) => a + w.duration_min, 0)),
   }));
 });
@@ -103,15 +110,16 @@ watch(() => route.query.new, v => { if (v === '1') { cancel(); showForm.value = 
 <template>
   <div class="stack">
     <div class="spread">
-      <h1 style="margin:0">訓練紀錄</h1>
-      <button v-if="isMine" class="primary" @click="showForm ? cancel() : (showForm = true)">
-        {{ showForm ? '取消' : '＋ 新增' }}
+      <h1 style="margin:0">訓練</h1>
+      <button v-if="isMine" @click="showForm ? cancel() : (showForm = true)">
+        {{ showForm ? '返回動作探索' : '＋ 手動新增' }}
       </button>
     </div>
 
     <UserTabs v-model="viewing" />
 
     <div v-if="error" class="error">{{ error }}</div>
+    <WorkoutExplorer v-if="isMine && !showForm" ref="explorer" @saved="load" />
 
     <div v-if="showForm && isMine" class="card">
       <div class="grid form">
@@ -141,7 +149,7 @@ watch(() => route.query.new, v => { if (v === '1') { cancel(); showForm.value = 
 
     <div v-if="loading" class="card empty">載入中…</div>
     <div v-else-if="!grouped.length" class="card empty">
-      <template v-if="isMine">還沒有訓練紀錄。可以直接在「教練」頁說「我今天做了深蹲 4 組 8 下 25 公斤」。</template>
+      <template v-if="isMine">還沒有訓練紀錄。從上方選一個部位與動作，或使用手動新增。</template>
       <template v-else>對方還沒有訓練紀錄。</template>
     </div>
 
@@ -152,33 +160,33 @@ watch(() => route.query.new, v => { if (v === '1') { cancel(); showForm.value = 
           {{ g.items.length }} 項 · 總量 {{ g.volume }} kg<template v-if="g.minutes"> · {{ g.minutes }} 分</template>
         </span>
       </div>
-      <table>
-        <tbody>
-          <tr v-for="w in g.items" :key="w.id">
-            <td>
-              {{ w.exercise }}
+      <div class="workout-logs">
+          <article v-for="w in g.items" :key="w.id" class="workout-log">
+            <div class="spread log-title">
+              <b>{{ w.exercise }}</b>
+              <div v-if="isMine" class="row log-actions">
+                <button class="icon" :aria-label="`編輯${w.exercise}`" @click="edit(w)">✎</button>
+                <button class="icon" :aria-label="`刪除${w.exercise}`" @click="remove(w)">✕</button>
+              </div>
+            </div>
+            <div class="row wrap small">
               <span class="badge">{{ CATEGORIES[w.category] || '其他' }}</span>
               <span v-if="w.source === 'ai'" class="badge ai">AI</span>
-              <div v-if="w.note" class="small muted">{{ w.note }}</div>
-            </td>
-            <td class="num muted" style="white-space:nowrap">
-              <template v-if="w.sets">{{ w.sets }}×{{ w.reps }}</template>
-              <template v-if="w.weight_kg"> @{{ w.weight_kg }}kg</template>
-              <template v-if="w.duration_min"> {{ w.duration_min }}分</template>
-              <template v-if="w.rpe"> · RPE {{ w.rpe }}</template>
-            </td>
-            <td v-if="isMine" style="width:1%; white-space:nowrap">
-              <button class="icon" title="編輯" @click="edit(w)">✎</button>
-              <button class="icon" title="刪除" @click="remove(w)">✕</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              <span>{{ workoutLabel(w) }}</span>
+            </div>
+            <details v-if="w.set_details?.length" class="small set-history">
+              <summary>查看每組 · 總量 {{ Math.round(workoutVolume(w)*10)/10 }} kg</summary>
+              <div v-for="(set,index) in w.set_details" :key="index" class="saved-set"><span>第 {{ index+1 }} 組</span><b>{{ set.duration_s ? `${set.duration_s} 秒` : `${set.weight_kg} kg × ${set.reps} 下` }}</b><span class="muted">{{ set.rpe ? `RPE ${set.rpe}` : '—' }}</span></div>
+            </details>
+            <p v-if="w.note" class="small muted log-note">{{ w.note }}</p>
+          </article>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.workout-logs {display:grid;gap:.6rem;}.workout-log {padding:.8rem 0;border-top:1px solid var(--border);}.workout-log:first-child {border-top:0;}.log-title {margin-bottom:.35rem;}.log-title b {overflow-wrap:anywhere;}.log-actions {flex-shrink:0;gap:.1rem;}.set-history {margin-top:.7rem;}.saved-set {display:flex;justify-content:space-between;gap:.7rem;padding:.55rem 0;border-bottom:1px solid var(--border);}.log-note {margin:.4rem 0 0;overflow-wrap:anywhere;}
 .form { grid-template-columns: repeat(3, 1fr); }
 .span2 { grid-column: span 3; }
 @media (max-width: 560px) {
