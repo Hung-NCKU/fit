@@ -28,6 +28,7 @@ const decorSelected = ref('');
 const shopSection = ref('全部');
 const shopSearch = ref('');
 const shopOwned = ref('all');
+const shopSort = ref('default');
 const roomUndo = ref([]);
 const celebration = ref(null);
 const interacting=ref(false),careMessage=ref('');
@@ -166,6 +167,13 @@ const SLOTS = [
 /** 商城照後端給的分區排，一區一張卡 */
 const shopGroups = computed(() => {
   const list = (data.value?.shop || []).filter(i=>i.name.includes(shopSearch.value.trim()) && (shopOwned.value==='all' || owned.value.has(i.id) === (shopOwned.value==='owned')));
+  if (shopSort.value !== 'default') {
+    const selected=list.filter(i=>shopSection.value==='全部' || i.group===shopSection.value);
+    if(shopSection.value==='全部' || shopSection.value==='寵物') selected.push(...petsForSale.value.map(animal=>({...animal,id:'pet:'+animal.species,isPet:true})));
+    const direction=shopSort.value==='priceAsc'?1:-1;
+    selected.sort((a,b)=>direction*(a.price-b.price));
+    return selected.length ? [{group:shopSort.value==='priceAsc'?'價格由低到高':'價格由高到低',items:selected}] : [];
+  }
   const names = [...new Set(list.map(i => i.group))];
   return names.filter(g => shopSection.value === '全部' || g === shopSection.value).map(g => ({ group: g, items: list.filter(i => i.group === g) }));
 });
@@ -489,10 +497,11 @@ function confirmRename() {
           <label>搜尋商品<input v-model="shopSearch" type="search" placeholder="搜尋套裝、裝飾或寵物名稱" /></label>
           <div class="row wrap">
             <label>商城分類<select v-model="shopSection"><option v-for="section in shopSections" :key="section">{{ section }}</option></select></label>
+            <label>商品排序<select v-model="shopSort"><option value="default">預設分類</option><option value="priceAsc">價格由低到高</option><option value="priceDesc">價格由高到低</option></select></label>
             <label>擁有狀態<select v-model="shopOwned"><option value="all">全部商品</option><option value="owned">已購買</option><option value="unowned">尚未購買</option></select></label>
           </div>
         </div>
-        <div v-if="(shopSection === '全部' || shopSection === '寵物') && petsForSale.length" class="card stack">
+        <div v-if="shopSort === 'default' && (shopSection === '全部' || shopSection === '寵物') && petsForSale.length" class="card stack">
           <h3 style="margin:0">再養一隻</h3>
           <p class="small muted">十種寵物每隻 {{ data.petsForSale[0]?.price.toLocaleString() }} 代幣。購買時取名，加入同一個家；同一物種也能養多隻。</p>
           <div class="grid shop">
@@ -510,7 +519,7 @@ function confirmRename() {
               v-for="i in g.items" :key="i.id"
               class="item"
               :class="{ on: isUsed(i), trying: trying?.id === i.id }"
-              :disabled="busy" @click="tryOn(i)"
+              :disabled="busy || (i.isPet && pet.coins < i.price)" @click="i.isPet ? openPurchase(i) : tryOn(i)"
             >
               <DecorArt v-if="i.slot === 'decor'" class="item-face" :item="i" />
               <OutfitFrames v-else-if="i.slot==='outfit'" class="item-face" :outfit="i.id" :label="i.name" still />
