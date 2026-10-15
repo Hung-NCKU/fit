@@ -72,7 +72,7 @@ function schedule() {
 
 export function startScheduler() {
   scheduleCoach();
-  console.log("[coach-reminder] 每日 08:00 Asia/Taipei，寫入私人教練對話（不需推播訂閱）");
+  console.log("[coach-reminder] 每日 08:00 安排、00:00 前日回顧 Asia/Taipei，寫入私人教練對話（不需推播訂閱）");
   if (!pushEnabled()) {
     console.warn('[notify] 沒有設定 VAPID 金鑰，熱量推播不會啟動；教練對話提醒照常');
     return;

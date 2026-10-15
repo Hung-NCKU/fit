@@ -16,7 +16,7 @@ beforeAll(async()=>{
 });
 beforeEach(()=>{
   for(const user of ['eli','martina']){
-    db.getDb(user).exec('DELETE FROM coach_deliveries;DELETE FROM coach_plans;DELETE FROM chat_messages;DELETE FROM workouts;DELETE FROM meals;');
+    db.getDb(user).exec('DELETE FROM coach_deliveries;DELETE FROM coach_plans;DELETE FROM chat_messages;DELETE FROM workouts;DELETE FROM meals;DELETE FROM weights;');
     db.updateProfile(user,{notes:'一般無特殊限制',age:28,activity:1.55,goal:'muscle_gain',weight_kg:77,height_cm:180,goal_weight_kg:82});
   }
 });
@@ -31,7 +31,7 @@ it('starter is immediate, morning delivery once per day, never adds food or work
   expect(plans.ensureCoachMessages('eli',morning)).toMatchObject({initial:false,daily:true});
   expect(plans.ensureCoachMessages('eli',morning)).toMatchObject({initial:false,daily:false});
   const messages=db.getDb('eli').prepare('SELECT * FROM chat_messages').all();
-  expect(messages).toHaveLength(2);expect(messages[1].content).toContain('2026-10-19');
+  expect(messages).toHaveLength(3);expect(messages[2].content).toContain('2026-10-19');
   expect(records.listWorkouts('eli')).toHaveLength(0);expect(records.listMeals('eli')).toHaveLength(0);
 });
 it('late service start catches up only today; receipt survives cleared chat',()=>{
@@ -39,7 +39,7 @@ it('late service start catches up only today; receipt survives cleared chat',()=
   db.getDb('eli').exec('DELETE FROM chat_messages');
   expect(plans.ensureCoachMessages('eli',new Date('2026-10-19T15:59:00Z'))).toMatchObject({initial:false,daily:false});
   expect(plans.ensureCoachMessages('eli',new Date('2026-10-20T00:00:00Z'))).toMatchObject({initial:false,daily:true});
-  expect(db.getDb('eli').prepare('SELECT content FROM chat_messages').all()).toHaveLength(1);
+  expect(db.getDb('eli').prepare('SELECT content FROM chat_messages').all()).toHaveLength(2);
 });
 it('meal target allocations sum to stored personal targets, body data changes refresh starter',()=>{
   const first=plans.ensureCoachMessages('eli',morning).plan;
@@ -86,4 +86,24 @@ it('failed receipt write rolls back the chat message',()=>{
   try {expect(()=>plans.ensureCoachMessages('eli',morning)).toThrow('receipt failure');
     expect(store.prepare('SELECT COUNT(*) n FROM chat_messages').get().n).toBe(0);
   } finally {store.exec('DROP TRIGGER fail_coach_receipt');}
+});
+
+it('midnight reviews previous Taipei day once, with body comparisons and no future data',()=>{
+ records.addWeight('eli',{date:'2026-10-17',weight_kg:77,body_fat_pct:20,waist_cm:80});
+ records.addWeight('eli',{date:'2026-10-19',weight_kg:76.8,body_fat_pct:19.8,waist_cm:79});
+ records.addWeight('eli',{date:'2026-10-21',weight_kg:90});
+ const before=plans.ensureCoachMessages('eli',new Date('2026-10-19T15:59:59Z'));
+ expect(before.review).toBe(true);
+ const at=plans.ensureCoachMessages('eli',new Date('2026-10-19T16:00:00Z'));
+ expect(at.review).toBe(true);
+ expect(plans.ensureCoachMessages('eli',new Date('2026-10-19T16:01:00Z')).review).toBe(false);
+ const text=db.getDb('eli').prepare("SELECT content FROM chat_messages WHERE id=(SELECT message_id FROM coach_deliveries WHERE kind='daily_review' AND delivery_key='2026-10-19')").get().content;
+ expect(text).toContain('76.8kg');expect(text).toContain('較 2026-10-17 -0.2');expect(text).toContain('個百分點');expect(text).not.toContain('90kg');expect(text).toContain('沒有飲食紀錄');expect(text).toContain('不能直接當成增肌或減脂成果');
+ expect(db.getDb('martina').prepare('SELECT COUNT(*) n FROM coach_deliveries').get().n).toBe(0);
+});
+it('review summarizes recorded food and exercise without inventing body updates',()=>{
+ records.addMeal('eli',{date:'2026-10-19',name:'午餐',kcal:600,protein_g:30});
+ records.addWorkout('eli',{date:'2026-10-19',exercise:'深蹲',category:'legs',sets:3,reps:10});
+ const text=plans.formatNightReview('eli',plans.getCoachPlan('eli'),'2026-10-19');
+ expect(text).toContain('600 kcal');expect(text).toContain('肌力 3 組');expect(text).toContain('kcal');expect(text).not.toContain('體態更新');expect(text).not.toContain('累計負重');
 });

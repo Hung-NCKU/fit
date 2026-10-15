@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { getDb, getProfile, GOAL_LABEL } from './db.js';
-import { listWorkouts } from './records.js';
+import { dailySummary, listMeals, listWorkouts } from './records.js';
 
 export const COACH_TIME_ZONE = 'Asia/Taipei';
 export function taipeiClock(now = new Date()) {
@@ -81,6 +81,46 @@ export function formatDailyPlan(userId, plan, date) {
   return `**${date} 早安，${plan.name}！今天的飲食與運動**\n每日 08:00 提醒（台灣時間；離線時於恢復服務後補上當日訊息）。\n\n**今日運動**\n${training}\n\n**今日飲食**\n${dietText(plan)}\n\n以上是待執行建議，不代表你已吃過或練完。`;
 }
 
+
+// Review only the completed Taipei calendar day. No historical backlog on deployment.
+export function previousCoachDate(date) {
+  const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-1);return d.toISOString().slice(0,10);
+}
+export function formatNightReview(userId,plan,date) {
+  const {nutrition:n,workout:w}=dailySummary(userId,date);
+  const meals=listMeals(userId,{date}),workouts=listWorkouts(userId,{date});
+  const round=v=>Math.round(Number(v)*10)/10;
+  const lines=[`**${date} 每日回顧｜${plan.name}**`,'台灣時間午夜整理已結束的一天；以下根據已儲存紀錄與目前設定，以規則產生評論。未記錄不代表沒有吃飯或運動。','', '**飲食**'];
+  if(n.items) {
+    lines.push(`已記錄 ${n.items} 筆：${meals.slice(0,12).map(m=>m.name).join('、')}${meals.length>12?'等':''}。`,`攝取 ${round(n.kcal)} kcal；蛋白質 ${round(n.protein_g)}g、碳水 ${round(n.carb_g)}g、脂肪 ${round(n.fat_g)}g。`);
+    if(!plan.needsAssessment) {
+      lines.push(`比較本次產生回顧時的目標：${plan.target.kcal} kcal；蛋白質 ${plan.target.protein}g、碳水 ${plan.target.carb}g、脂肪 ${plan.target.fat}g。`);
+      const ratio=n.kcal/plan.target.kcal;
+      lines.push(ratio>=0.9&&ratio<=1.1?'紀錄熱量接近目標，保持規律進食。':ratio<0.9?'紀錄熱量低於目標；先確認是否漏記，若已記完整，明天可用正常餐點補足日常需求。':'紀錄熱量高於目標；先檢視份量與點心，明天恢復正常安排，不必跳餐補償。');
+      if(n.protein_g<plan.target.protein*0.9) lines.push('蛋白質紀錄未達目標九成；先確認完整度，明天可分散在三餐攝取。');
+    }
+  } else lines.push('沒有飲食紀錄，無法判斷攝取是否足夠；明天可從記錄一餐開始。');
+  lines.push('','**運動**');
+  if(w.items) {
+    const sets=workouts.filter(x=>x.category!=='cardio'&&x.category!=='other').reduce((a,x)=>a+(x.set_details?.length||x.sets||0),0);
+    lines.push(`共 ${w.items} 筆：${workouts.slice(0,12).map(x=>x.exercise).join('、')}${workouts.length>12?'等':''}。肌力 ${sets} 組；有氧 ${round(w.cardio_min)} 分鐘；紀錄的估計消耗 ${round(w.calories_kcal)} kcal${w.calories_missing?`（另有 ${w.calories_missing} 筆尚無熱量估計）`:''}。`,'有完成活動很棒；明天依疲勞程度安排恢復，肌力訓練後避免勉強重複高強度。運動消耗是估計值，不直接當成額外進食額度。');
+  } else lines.push('沒有運動紀錄，無法判斷是否活動；若今天是休息日可好好恢復，有活動也可以補記。');
+  const store=getDb(userId),body=store.prepare('SELECT * FROM weights WHERE date=?').get(date);
+  if(body) {
+    lines.push('','**體態更新**');
+    const fields=[['weight_kg','體重','kg'],['body_fat_pct','體脂','%'],['waist_cm','腰圍','cm']];
+    for(const [key,label,unit] of fields) {
+      if(body[key]==null) continue;
+      const prev=store.prepare(`SELECT date,${key} value FROM weights WHERE date<? AND ${key} IS NOT NULL ORDER BY date DESC LIMIT 1`).get(date);
+      const diff=prev?round(body[key]-prev.value):null;
+      lines.push(`- ${label}：${round(body[key])}${unit}${prev?`；較 ${prev.date} ${diff>0?'+':''}${diff}${key==='body_fat_pct'?' 個百分點':unit}`:'；尚無更早紀錄可比較'}。`);
+    }
+    lines.push('單日體重、體脂與腰圍會受水分、量測時間與設備影響，不能直接當成增肌或減脂成果。建議固定相近條件量測，觀察數週趨勢，再配合飲食、訓練表現與恢復調整。');
+  }
+  if(plan.needsAssessment) lines.push('','個人檔案有需要先評估的年齡或健康條件；飲食與運動調整請先確認個別限制，這裡不自動開立處方。');
+  return lines.join('\n');
+}
+
 // Message and receipt commit together. Restarts / multiple tabs cannot duplicate a delivery.
 function deliver(userId,kind,key,content) {
   const db = getDb(userId);
@@ -96,6 +136,8 @@ export function ensureCoachMessages(userId,now = new Date()) {
   const plan = getCoachPlan(userId);
   const initial = deliver(userId,'starter',plan.fingerprint,formatStarterPlan(plan));
   const {date,hour} = taipeiClock(now);
+  const previous=previousCoachDate(date);
+  const review=previous >= '2026-10-15' ? deliver(userId,'daily_review',previous,formatNightReview(userId,plan,previous)) : false;
   const daily = hour >= 8 ? deliver(userId,'daily',date,formatDailyPlan(userId,plan,date)) : false;
-  return {plan,initial,daily};
+  return {plan,initial,daily,review};
 }

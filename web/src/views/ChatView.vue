@@ -321,7 +321,7 @@ onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visi
       <p v-if="bookmarkLoading" class="small" role="status">讀取問題中…</p>
       </div>
     </details>
-    <details v-if="coachPlan" class="coach-plan-card"><summary>我的{{ coachPlan.goal }}計畫 · 每日 08:00 提醒</summary><p class="small muted">台灣時間 · 依個人檔案建立起始安排；調整身體資料或目標後會更新。</p><p>{{ coachPlan.basis }}</p><template v-if="!coachPlan.needsAssessment"><p>每日 {{ coachPlan.target.kcal }} kcal · 蛋白質 {{ coachPlan.target.protein }}g</p><p>{{ coachPlan.rationale }}</p><ul><li v-for="e in coachPlan.strength" :key="e.name">{{ e.name }}：{{ e.sets }} 組 × {{ e.reps }}</li></ul><p class="small muted">{{ coachPlan.assumptions }}</p></template><p v-else>請先確認個人健康限制，再安排具體訓練與飲食。</p><button type="button" @click="preparePlanChange">跟教練調整計畫</button></details>
+    <details v-if="coachPlan" class="coach-plan-card"><summary>我的{{ coachPlan.goal }}計畫 · 08:00 安排 · 00:00 回顧</summary><p class="small muted">台灣時間 · 早上提供安排，午夜回顧前一天的飲食、運動與當日體態紀錄。依已記錄資料與目前目標產生規則式建議；服務離線時恢復後補上前一天回顧。</p><p>{{ coachPlan.basis }}</p><template v-if="!coachPlan.needsAssessment"><p>每日 {{ coachPlan.target.kcal }} kcal · 蛋白質 {{ coachPlan.target.protein }}g</p><p>{{ coachPlan.rationale }}</p><ul><li v-for="e in coachPlan.strength" :key="e.name">{{ e.name }}：{{ e.sets }} 組 × {{ e.reps }}</li></ul><p class="small muted">{{ coachPlan.assumptions }}</p></template><p v-else>請先確認個人健康限制，再安排具體訓練與飲食。</p><button type="button" @click="preparePlanChange">跟教練調整計畫</button></details>
     <div v-if="!geminiReady" class="error" style="margin-bottom:.8rem">
       AI 對話暫時無法使用；預設計畫與每日提醒仍可查看，也能直接記錄飲食與訓練。
     </div>
