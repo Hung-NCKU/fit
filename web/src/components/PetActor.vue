@@ -6,7 +6,7 @@ import PetPickup from './PetPickup.vue';
 import OutfitFrames from './OutfitFrames.vue';
 import { pickNext } from '../pet-fsm.js';
 import { roamingBounds, roamingTarget, roamingDuration, roamingFacing } from '../pet-roaming.js';
-const props = defineProps({ pet: Object, state: Object, sceneHeight: Number, sceneWidth:Number, roomKey:String, paused:Boolean, index: Number, count: Number, selected: Boolean, interactive: Boolean, wearing: Array, preview: Boolean, decorations:Array, celebration:Object, reminder:String });
+const props = defineProps({ pet: Object, state: Object, sceneHeight: Number, sceneWidth:Number, roomKey:String, paused:Boolean, index: Number, count: Number, selected: Boolean, interactive: Boolean, movable:{type:Boolean,default:true}, wearing: Array, preview: Boolean, decorations:Array, celebration:Object, reminder:String });
 const emit=defineEmits(['select','move','interact']);
 const current = ref(null);
 const initialPosition=()=>props.pet.position || {x:props.count===1?50:14+props.index*72/(props.count-1),y:88};
@@ -26,7 +26,7 @@ function say(text, celebrate=false) {
   clearTimeout(speechTimer); speechTimer=setTimeout(()=>{speech.value='';joyful.value=false;},4500);
 }
 watch(()=>props.celebration, value=>{
-  if (!value || !props.selected) return;
+  if (!value || (value.petKey ? value.petKey!==props.pet.petKey : !props.selected)) return;
   journey=null; moving.value=false; nextTrip=performance.now()+5000;
   say(({meal:'記下這一餐了！謝謝你帶我一起成長 🐾',workout:'你運動，我也一起玩了！今天好開心 ✨',interaction:'陪我玩，我好開心！🐾',weight:'留下今天的體態紀錄了，我陪你慢慢來！'})[value.kind] || '今天也一起留下紀錄了！',true);
 }, { immediate: true });
@@ -70,7 +70,7 @@ const pose = computed(() => clothes.value.length || props.preview ? 'idle' : joy
 watch(()=>props.roomKey,()=>{journey=null;position.value={...initialPosition()};});
 watch(()=>props.pet.position,p=>{if(p && !lifted.value && !journey) position.value={...p};});
 function lift(event) {
-  if(!props.interactive || props.paused) return;
+  if(!props.interactive || !props.movable || props.paused) return;
   const rect=event.currentTarget.parentElement.getBoundingClientRect();
   pointerDrag={id:event.pointerId,x:event.clientX,y:event.clientY,from:{...position.value},rect};
   journey=null;moving.value=false;lifted.value=true;
@@ -105,7 +105,7 @@ const style = computed(() => ({
 }));
 </script>
 <template>
-  <button class="actor" :class="{ selected, roaming: moving, lifted, landing, joyful }" :style="style" :disabled="!interactive" :aria-label="`選擇寵物 ${pet.name}`"
+  <button class="actor" :class="{ selected, visiting:!movable, roaming: moving, lifted, landing, joyful }" :style="style" :disabled="!interactive" :aria-label="`選擇寵物 ${pet.name}`"
     @pointerdown.stop="lift" @pointermove="dragPet" @pointerup="drop($event)" @pointercancel="drop($event,true)" @click="clickPet">
     <span class="body" :class="{ resting: current?.pose === 'sleep' }">
       <OutfitFrames v-if="outfit" :outfit="outfit.id" :pose="lifted ? 'pickup' : moving ? 'walk' : 'idle'" :label="`${pet.speciesName}・${outfit.name}`" :resting="!lifted && current?.pose === 'sleep'" />
@@ -118,7 +118,8 @@ const style = computed(() => ({
 </template>
 <style scoped>
 .actor { position:absolute; padding:0; border:0; background:transparent; background-image:none; box-shadow:none; appearance:none; -webkit-appearance:none; -webkit-tap-highlight-color:transparent; transition:none; outline:none; aspect-ratio:1; transform:translate(-50%,12%); overflow:visible; color:#433c32; touch-action:none; cursor:grab; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
-.actor.lifted { cursor:grabbing; }
+.actor.visiting { cursor:pointer; touch-action:pan-y; }
+  .actor.lifted { cursor:grabbing; }
 .lifted .body { animation:pickup .9s ease-in-out infinite; transform:translateY(-12px) scale(1.06); filter:drop-shadow(0 12px 5px #0002); }
 @keyframes pickup { 0%,100% {transform:translateY(-12px) scale(1.06) rotate(-1.5deg);} 50% {transform:translateY(-14px) scale(1.06) rotate(1.5deg);} }
 .landing .body { animation:land .25s ease-out; }

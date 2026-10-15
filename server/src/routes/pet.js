@@ -90,7 +90,7 @@ export default async function petRoutes(app) {
     writeGuard(req);
     return reply.code(201).send(purchasePet(req.userId, req.body?.species, req.body?.name, req.body?.requestId));
   });
-  app.post('/pet/interact', async req => {writeGuard(req);return interactPet(req.userId,req.body?.petKey);});
+  app.post('/pet/interact', async req => interactPet(viewUser(req),req.body?.petKey));
   app.post('/pet/select', async (req) => {
     writeGuard(req);
     return selectPet(req.userId, req.body?.petKey);

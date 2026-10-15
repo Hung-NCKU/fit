@@ -33,16 +33,16 @@ const roomUndo = ref([]);
 const celebration = ref(null);
 const interacting=ref(false),careMessage=ref('');
 async function playWithPet(key) {
-  if(!mine.value || interacting.value || busy.value)return;
+  if(interacting.value || busy.value)return;
   const user=viewing.value,version=reqId;
   interacting.value=true;careMessage.value='';
   try {
-    if(key!==pet.value.petKey)await api.selectPet(key);
-    const result=await api.interactPet(key);
+    if(mine.value && key!==pet.value.petKey)await api.selectPet(key);
+    const result=await api.interactPet(key,user);
     const fresh=await api.pet(user);
     if(viewing.value!==user || reqId!==version)return;
     data.value=fresh;careMessage.value=result.message;
-    celebration.value={kind:'interaction',at:Date.now()};
+    celebration.value={kind:'interaction',petKey:key,at:Date.now()};
   } catch(e) {if(viewing.value===user && reqId===version)careMessage.value=e.message;}
   finally {interacting.value=false;}
 }
@@ -73,7 +73,7 @@ async function load() {
   }
 }
 
-watch(viewing, () => { data.value = null; tab.value = 'home'; trying.value = null; purchase.value = null; renaming.value = false; load(); });
+watch(viewing, () => { data.value = null; careMessage.value=''; celebration.value=null; tab.value = 'home'; trying.value = null; purchase.value = null; renaming.value = false; load(); });
 onMounted(load);
 
 const reminder=computed(()=>mine.value && tab.value==='home' ? careReminder(data.value?.care) : '');
@@ -381,7 +381,7 @@ function confirmRename() {
             :pet="member" :index="index" :count="roster.length" :state="state" :scene-height="sceneHeight"
             :scene-width="sceneWidth" :paused="arranging || tab === 'shop'"
             :room-key="equipped.bg" @move="movePet"
-            :selected="member.petKey === pet.petKey" :interactive="mine && !busy && !arranging"
+            :selected="member.petKey === pet.petKey" :interactive="!busy && !interacting && !arranging" :movable="mine"
             :preview="tab === 'shop' && member.petKey === pet.petKey"
             :wearing="member.petKey === pet.petKey ? worn : undefined" @select="choosePet" @interact="playWithPet" />
         </div>
@@ -406,7 +406,8 @@ function confirmRename() {
           <ExpandableNote label="心情與飽足度說明" preview="運動就是陪寵物玩耍；記錄飲食能提高飽足度，達到每日熱量目標就會全滿。"><p>當主人運動時，就像陪寵物一起玩耍，能讓牠的心情更好；記錄每天吃下的食物，則會提高寵物的飽足度，達到每日熱量目標時，飽足度就會全滿。平常也可以點一下寵物陪牠玩，每次增加 2 點心情，每 30 秒可獲得一次加成，每天最多 5 次，合計增加 10 點。陪玩額度用完後，仍然可以繼續互動；想再提高心情，就要透過運動累積加成。飲食只影響飽足度，不會額外增加心情。</p></ExpandableNote>
           <p class="small">今日陪玩 +{{ data.care.interactionMood }} / {{ data.care.interactionMoodLimit }} · 運動 +{{ data.care.exerciseMood }} / {{ data.care.exerciseMoodLimit }}</p>
           <p v-if="data.care.interactions >= data.care.interactionLimit" class="small">陪玩加成已滿；可以繼續互動，想提高心情就去記錄運動。</p>
-          <button v-if="mine" :disabled="interacting || busy" @click="playWithPet(pet.petKey)">陪牠玩</button>
+          <p v-if="!mine" class="small muted">可以點選寵物或按下陪玩；與主人共用每隻寵物每天 +10 的陪玩上限，不改動對方的布置與紀錄。</p>
+          <button :disabled="interacting || busy" @click="playWithPet(pet.petKey)">{{ interacting ? '陪玩中…' : '陪牠玩' }}</button>
           <p v-if="careMessage" class="small" role="status">{{ careMessage }}</p>
         </div>
         <div class="row wrap stats small">
