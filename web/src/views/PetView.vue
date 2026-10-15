@@ -6,6 +6,7 @@ import { api } from '../api.js';
 import { session } from '../auth.js';
 import UserTabs from '../components/UserTabs.vue';
 import PetCarousel from '../components/PetCarousel.vue';
+import ExpandableNote from '../components/ExpandableNote.vue';
 import PetActor from '../components/PetActor.vue';
 import RoomDecor from '../components/RoomDecor.vue';
 import DecorArt from '../components/DecorArt.vue';
@@ -375,7 +376,7 @@ function confirmRename() {
         <div v-if="data.care && tab==='home'" class="pet-care stack">
           <label>今日心情 <b>{{ data.care.mood }} / 100</b><progress :value="data.care.mood" max="100" aria-label="今日心情"></progress></label>
           <label>今日飽足度（越高越不餓） <b>{{ data.care.fullness }} / 100</b><progress :value="data.care.fullness" max="100" aria-label="今日飽足度"></progress></label>
-          <p class="small muted">運動就是陪寵物玩耍；記錄飲食能提高飽足度，達到每日熱量目標就會全滿。點一下寵物心情 +2，每 30 秒一次，每天最多 5 次（+10）；其他心情加成需透過運動取得，飲食只影響飽足度。</p>
+          <ExpandableNote label="心情與飽足度說明" preview="運動就是陪寵物玩耍；記錄飲食能提高飽足度，達到每日熱量目標就會全滿。"><p>當主人運動時，就像陪寵物一起玩耍，能讓牠的心情更好；記錄每天吃下的食物，則會提高寵物的飽足度，達到每日熱量目標時，飽足度就會全滿。平常也可以點一下寵物陪牠玩，每次增加 2 點心情，每 30 秒可獲得一次加成，每天最多 5 次，合計增加 10 點。陪玩額度用完後，仍然可以繼續互動；想再提高心情，就要透過運動累積加成。飲食只影響飽足度，不會額外增加心情。</p></ExpandableNote>
           <p class="small">今日陪玩 +{{ data.care.interactionMood }} / {{ data.care.interactionMoodLimit }} · 運動 +{{ data.care.exerciseMood }} / {{ data.care.exerciseMoodLimit }}</p>
           <p v-if="data.care.interactions >= data.care.interactionLimit" class="small">陪玩加成已滿；可以繼續互動，想提高心情就去記錄運動。</p>
           <button v-if="mine" :disabled="interacting || busy" @click="playWithPet(pet.petKey)">陪牠玩</button>
@@ -460,12 +461,9 @@ function confirmRename() {
             class="icon" :disabled="busy" @click="unequip(s.id)"
           >移除</button>
         </div>
-        <p v-if="mine" class="small muted" style="margin:0">
-          今日新增有效飲食每筆立即 +{{ coins.meal }}，每天最多三筆（+{{ coins.meal*3 }}）；修改、刪除及補登過去日期不發新增獎勵。
-          今日熱量首次落在目標 ±10% 立即 +{{ coins.kcal }}，每天一次；修改也可觸發這份達標獎勵。
-          蛋白質達目標九成 +{{ coins.protein }}，隔天開啟自己的寵物頁時自動結算，每天一次。
-          今日肌力累積 3 組 +{{ coins.strength }}、有氧累積 15 分鐘 +{{ coins.cardio }}，各每天一次；連同飲食最多 {{ coins.dailyMax }} 枚。
-        </p>
+        <ExpandableNote v-if="mine" label="代幣獲取規則" :preview="`今日新增有效飲食每筆立即 +${coins.meal}，每天最多三筆；飲食與運動達標也能獲得代幣。`">
+          <p>每天新增有效飲食紀錄時，每筆可立即獲得 {{ coins.meal }} 枚代幣，每天最多獎勵三筆，共 {{ coins.meal*3 }} 枚；修改、刪除或補登過去日期，不會再發新增獎勵。當日攝取熱量首次落在目標的正負 10% 內時，可立即獲得 {{ coins.kcal }} 枚，每天限一次，透過修改紀錄達標也能領取這份獎勵。蛋白質達到每日目標的九成後，可獲得 {{ coins.protein }} 枚，會在隔天開啟自己的寵物頁時自動結算，每天一次。運動方面，當天肌力訓練累積完成 3 組，可得 {{ coins.strength }} 枚；有氧累積 15 分鐘，可得 {{ coins.cardio }} 枚，兩項各限每天一次。連同飲食獎勵，每日合計最多可獲得 {{ coins.dailyMax }} 枚代幣。</p>
+        </ExpandableNote>
       </div>
       <div v-if="mine && data.rewards && tab === 'home'" class="card stack rewards">
         <h3 style="margin:0">今天的代幣</h3>

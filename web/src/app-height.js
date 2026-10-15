@@ -5,7 +5,8 @@ export function installAppHeight(win=window,doc=document){
   const viewport=win.visualViewport;
   if(viewport?.scale && Math.abs(viewport.scale-1)>.02)return;
   const editing=doc.activeElement?.matches?.('input,textarea,[contenteditable="true"]');
-  const height=editing && viewport?.height<win.innerHeight*.8 ? viewport.height+viewport.offsetTop : win.innerHeight;
+  const fullHeight=win.innerHeight;
+  const height=editing && viewport?.height<fullHeight*.8 ? viewport.height : fullHeight;
   if(Number.isFinite(height) && height>0)doc.documentElement.style.setProperty('--app-height',`${Math.round(height)}px`);
  }
  function settle(){

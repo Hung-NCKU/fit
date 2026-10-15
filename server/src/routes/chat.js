@@ -1,3 +1,4 @@
+import {questionBookmarks,questionContext} from '../chat-bookmarks.js';
 import { ensureCoachMessages } from '../coach-plan.js';
 import { chat, saveMessage, loadHistory, clearHistory } from '../coach.js';
 import { saveDataUrl } from '../uploads.js';
@@ -7,6 +8,9 @@ import { beginRequest, requestStatus, updateRequest, finishRequest, cancelReques
 
 export default async function chatRoutes(app) {
   // 對話是私人的，不開放跨帳號查看
+  const privateBookmarks=req=>{if(req.query?.user && req.query.user!==req.userId)throw Object.assign(new Error('只能查看自己的提問書籤'),{status:403});};
+  app.get('/chat/bookmarks',async req=>{privateBookmarks(req);return questionBookmarks(req.userId,req.query?.before ?? null);});
+  app.get('/chat/questions/:id',async req=>{privateBookmarks(req);return questionContext(req.userId,req.params.id);});
   app.get('/chat/plan', async req => ensureCoachMessages(req.userId).plan);
   app.get('/chat/history', async req => {
     ensureCoachMessages(req.userId);

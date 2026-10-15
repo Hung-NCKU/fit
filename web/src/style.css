@@ -208,4 +208,5 @@ html.installed-app,html.installed-app body { touch-action:pan-x pan-y; }
 
 /* Use the measured viewport on cold launch, resume, rotation and keyboard changes. */
 html,body,#app { height:var(--app-height,100%); }
-body { overflow:hidden; }
+html,body { overflow:hidden; overscroll-behavior:none; }
+body { position:fixed; inset:0; width:100%; }

@@ -197,6 +197,7 @@ onMounted(async () => {
   min-height: 0;
   min-width: 0;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   padding: 1rem;
   padding-left: calc(1rem + var(--safe-left));
   padding-right: calc(1rem + var(--safe-right));

@@ -91,6 +91,8 @@ export const api = {
   daily: (date, user) => request('/summary/daily' + qs({ date, user })),
   range: (days, user) => request('/summary/range' + qs({ days, user })),
 
+  chatBookmarks: before=>request('/chat/bookmarks'+qs({before})),
+  chatQuestion: id=>request('/chat/questions/'+encodeURIComponent(id)),
   chatHistory: () => request('/chat/history'),
   sendChat: (message, image, model, requestId, retry = false) => request('/chat', { method: 'POST', body: { message, image, model, requestId, retry } }),
   chatStatus: id => request(`/chat/requests/${encodeURIComponent(id)}`),

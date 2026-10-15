@@ -9,17 +9,46 @@ import { session } from '../auth.js';
 import { recordFeedback } from '../pet-feedback.js';
 
 const chatCacheKey=['chat',session.user,new Date().toLocaleDateString('sv-SE')];
-onUnmounted(()=>patchCachedPage(chatCacheKey,previous=>[messages.value,{...previous[1],gemini:geminiReady.value},coachPlan.value]));
+onUnmounted(()=>{if(!bookmarkBrowsing.value)patchCachedPage(chatCacheKey,previous=>[messages.value,{...previous[1],gemini:geminiReady.value},coachPlan.value]);});
 const messages = ref([]);
+const bookmarkOpen=ref(false),bookmarkItems=ref([]),bookmarkFetched=ref(false),bookmarkLoading=ref(false),bookmarkMore=ref(false),bookmarkBefore=ref(null),bookmarkBrowsing=ref(false),bookmarkError=ref(''),focusedBookmark=ref(null);
+let bookmarkSequence=0,bookmarkTimer;
+const bookmarks=computed(()=>{
+ const map=new Map(bookmarkItems.value.map(item=>[String(item.id),item]));
+ for(const message of messages.value.filter(m=>m.role==='user'))map.set(String(message.id),{id:message.id,preview:message.content?.slice(0,100) || '圖片提問',created_at:message.created_at});
+ return [...map.values()].sort((a,b)=>String(b.id).startsWith('tmp-')-String(a.id).startsWith('tmp-') || (Number(b.id)||0)-(Number(a.id)||0));
+});
+async function loadBookmarks(more=false){
+ if(bookmarkLoading.value)return;const sequence=bookmarkSequence;bookmarkLoading.value=true;bookmarkError.value='';
+ try {const result=await api.chatBookmarks(more?bookmarkBefore.value:null);if(disposed || sequence!==bookmarkSequence)return;bookmarkItems.value=more?[...bookmarkItems.value,...result.items]:result.items;bookmarkMore.value=result.hasMore;bookmarkBefore.value=result.nextBefore;bookmarkFetched.value=true;}
+ catch(e){if(!disposed)bookmarkError.value=e.message;}finally{bookmarkLoading.value=false;}
+}
+watch(bookmarkOpen,value=>{if(value && !bookmarkFetched.value)loadBookmarks();});
+async function jumpToQuestion(item){
+ const sequence=++bookmarkSequence;bookmarkBrowsing.value=true;bookmarkError.value='';
+ try {
+  if(!messages.value.some(m=>String(m.id)===String(item.id))){bookmarkLoading.value=true;const context=await api.chatQuestion(item.id);if(disposed || sequence!==bookmarkSequence)return;messages.value=context;}
+  bookmarkOpen.value=false;await nextTick();
+  const node=document.getElementById('chat-message-'+item.id);if(!node)throw new Error('找不到問題位置，請重新開啟書籤');
+  focusedBookmark.value=item.id;node.focus({preventScroll:true});node.scrollIntoView({block:'center',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+  clearTimeout(bookmarkTimer);bookmarkTimer=setTimeout(()=>{focusedBookmark.value=null;},2500);
+ }catch(e){if(!disposed)bookmarkError.value=e.message;}finally{if(sequence===bookmarkSequence)bookmarkLoading.value=false;}
+}
+async function returnLatest(){
+ ++bookmarkSequence;bookmarkLoading.value=true;bookmarkError.value='';
+ try {const history=await api.chatHistory();if(disposed)return false;messages.value=history;bookmarkBrowsing.value=false;focusedBookmark.value=null;scrollDown();return true;}
+ catch(e){if(!disposed)bookmarkError.value=e.message;return false;}finally{bookmarkLoading.value=false;}
+}
+onUnmounted(()=>{++bookmarkSequence;clearTimeout(bookmarkTimer);});
 const coachPlan=ref(null), composerEl=ref(null);
 function preparePlanChange() {draft.value='我想調整訓練和飲食計畫，';nextTick(()=>composerEl.value?.focus());}
 let reminderTimer;
 async function refreshReminders() {
-  if(disposed || sending.value || document.hidden) return;
+  if(disposed || sending.value || bookmarkBrowsing.value || document.hidden) return;
   const sequence=submitSequence;
   try {
     const [history,plan]=await Promise.all([api.chatHistory(),api.coachPlan()]);
-    if(disposed || sending.value || sequence!==submitSequence) return;
+    if(disposed || sending.value || bookmarkBrowsing.value || sequence!==submitSequence) return;
     const changed=history.at(-1)?.id !== messages.value.at(-1)?.id;
     messages.value=history;coachPlan.value=plan;
     if(changed) scrollDown();
@@ -71,7 +100,7 @@ async function checkStatus() {
         feedbackReceipt = id;
       }
       const history = await api.chatHistory();
-      if (!disposed && sequence === statusSequence && receipt.value?.request_id === id) { messages.value = history; scrollDown(); }
+      if (!disposed && !bookmarkBrowsing.value && sequence === statusSequence && receipt.value?.request_id === id) { messages.value = history; scrollDown(); }
       return;
     }
   } catch (e) {
@@ -135,7 +164,7 @@ const empty = computed(() => messages.value.length === 0);
 function scrollDown() {
   nextTick(() => {
     const el = listEl.value;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (el && !bookmarkBrowsing.value) el.scrollTop = el.scrollHeight;
   });
 }
 
@@ -144,7 +173,7 @@ async function load() {
   try {
     const apply=([history,health,plan])=>{messages.value=history;coachPlan.value=plan;geminiReady.value=health.gemini;scrollDown();};
     const [history,health,plan]=await loadCachedPage(chatCacheKey,()=>Promise.all([api.chatHistory(),api.health(),api.coachPlan()]),cached=>{if(!disposed)apply(cached);});
-    if(disposed || sending.value || sequence!==submitSequence)return;
+    if(disposed || sending.value || bookmarkBrowsing.value || sequence!==submitSequence)return;
     refreshModels();
     messages.value = history;
     coachPlan.value=plan;
@@ -180,6 +209,7 @@ async function send(text = draft.value) {
   const image = pending.value?.dataUrl || null;
   if ((!msg && !image) || sending.value) return;
 
+  if(bookmarkBrowsing.value && !await returnLatest())return;
   error.value = '';
   draft.value = '';
   pending.value = null;
@@ -199,7 +229,9 @@ let pollTimer = null;
 let pollLeft = 0;
 async function syncHistory() {
   try {
-    messages.value = await api.chatHistory();
+    const history=await api.chatHistory();
+    if(disposed || bookmarkBrowsing.value)return;
+    messages.value=history;
     scrollDown();
   } catch { /* 下次再試 */ }
   const last = messages.value[messages.value.length - 1];
@@ -214,7 +246,7 @@ onUnmounted(() => { disposed = true; clearTimeout(pollTimer); clearTimeout(statu
 async function clearAll() {
   if (!await confirmAction('確定要清空所有對話紀錄嗎？（訓練與飲食紀錄不會被刪除）')) return;
   await api.clearChat();
-  messages.value = [];
+  ++bookmarkSequence;messages.value = [];bookmarkItems.value=[];bookmarkFetched.value=false;bookmarkBrowsing.value=false;bookmarkOpen.value=false;
 }
 
 function onKeydown(e) {
@@ -283,6 +315,16 @@ onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visi
       AI 對話暫時無法使用；預設計畫與每日提醒仍可查看，也能直接記錄飲食與訓練。
     </div>
 
+    <details class="question-bookmarks" :open="bookmarkOpen" @toggle="bookmarkOpen=$event.target.open">
+      <summary>我的提問書籤<span v-if="bookmarks.length">（{{ bookmarks.length }}）</span></summary>
+      <p class="small muted">點選問題，跳到當時的提問與附近回答。</p>
+      <div class="bookmark-list"><button v-for="item in bookmarks" :key="item.id" :disabled="bookmarkLoading" :aria-controls="'chat-message-'+item.id" @click="jumpToQuestion(item)"><span>{{ item.preview || '圖片提問' }}</span><small v-if="item.created_at">{{ item.created_at }}</small></button></div>
+      <p v-if="!bookmarks.length && !bookmarkLoading" class="small muted">送出提問後會自動出現在這裡。</p>
+      <button v-if="bookmarkMore" :disabled="bookmarkLoading" @click="loadBookmarks(true)">載入更早的提問</button>
+      <p v-if="bookmarkLoading" class="small" role="status">讀取問題中…</p>
+    </details>
+    <div v-if="bookmarkBrowsing" class="bookmark-location small"><span>正在查看書籤問題</span><button :disabled="bookmarkLoading" @click="returnLatest">回到最新對話</button></div>
+    <p v-if="bookmarkError" class="error small" role="alert">{{ bookmarkError }}</p>
     <div ref="listEl" class="messages">
       <div v-if="empty" class="welcome">
         <div class="hero">🏋️‍♀️</div>
@@ -294,7 +336,7 @@ onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visi
         </p>
       </div>
 
-      <div v-for="m in messages" :key="m.id" class="msg" :class="m.role">
+      <div v-for="m in messages" :key="m.id" :id="'chat-message-'+m.id" tabindex="-1" class="msg" :class="[m.role,{'bookmark-focus':focusedBookmark===m.id}]">
         <img v-if="m.localImage || m.image" class="photo"
              :src="m.localImage || photoUrl(m.image)" alt="上傳的餐點照片"
              @click="openPhoto(m.localImage || photoUrl(m.image))" />
@@ -366,12 +408,14 @@ onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visi
 </template>
 
 <style scoped>
+.question-bookmarks{flex:0 0 auto;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.65rem .8rem;margin-bottom:.6rem;max-height:35vh;overflow:auto;overscroll-behavior:contain}.question-bookmarks summary{cursor:pointer;font-size:.85rem;font-weight:650}.bookmark-list{display:grid;gap:.4rem}.bookmark-list button{text-align:left;display:grid;gap:.2rem;min-width:0}.bookmark-list button span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.bookmark-list small{color:var(--muted);font-size:.65rem}.bookmark-location{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-bottom:.5rem}.bookmark-location button{font-size:.75rem}.bookmark-focus .bubble{outline:3px solid var(--accent);outline-offset:3px}.msg:focus{outline:none}
 .chat { display: flex; flex-direction: column; height: 100%; }
 
 .messages {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   display: flex;
   flex-direction: column;
   gap: .9rem;
