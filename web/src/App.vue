@@ -1,7 +1,7 @@
 <script setup>
 import { RouterLink, RouterView, useRoute } from 'vue-router';
 import {clearPageCache} from './page-cache.js';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { api } from './api.js';
 import { session } from './auth.js';
 import LoginView from './views/LoginView.vue';
@@ -51,6 +51,28 @@ const tabs = [
 
 const title = computed(() => tabs.find(t => t.to === route.path)?.label ?? '健身養寵');
 const locked = computed(() => session.authRequired && !session.authed);
+const chromeVisible=ref(false),headerEl=ref(null);
+let chromeTimer;
+function hideChrome(){
+  // Account / notification sheets must remain usable while open.
+  if(headerEl.value?.querySelector('.sheet')){chromeTimer=setTimeout(hideChrome,5000);return;}
+  chromeVisible.value=false;
+}
+function showChrome(){
+  if(!session.ready || locked.value)return;
+  chromeVisible.value=true;clearTimeout(chromeTimer);chromeTimer=setTimeout(hideChrome,5000);
+}
+onMounted(()=>{
+  document.addEventListener('pointerdown',showChrome,true);
+  document.addEventListener('pointerup',showChrome,true);
+  document.addEventListener('keydown',showChrome,true);
+});
+onUnmounted(()=>{
+  clearTimeout(chromeTimer);
+  document.removeEventListener('pointerdown',showChrome,true);
+  document.removeEventListener('pointerup',showChrome,true);
+  document.removeEventListener('keydown',showChrome,true);
+});
 
 async function logout() {
   try {
@@ -89,7 +111,7 @@ onMounted(async () => {
 
 <template>
   <ConfirmDialog />
-  <div class="shell">
+  <div class="shell" :class="{ 'chrome-auto': session.ready && !locked, 'chrome-hidden': !chromeVisible }">
     <div v-if="!session.ready" class="boot muted small">載入中…</div>
 
     <template v-else>
@@ -100,7 +122,7 @@ onMounted(async () => {
         <button v-if="canShowInstall" class="icon install" @click="install">📲 安裝</button>
       </header>
 
-      <header v-else class="topbar">
+      <header v-else ref="headerEl" class="topbar" :inert="!chromeVisible" :aria-hidden="!chromeVisible">
         <span class="logo"><img class="brand-icon" src="/icon-192.png?v=fitness-puppy-v1" alt="" /><span class="brand-copy"><b>健身養寵</b><span class="brand-subtitle">{{ title }}<template v-if="session.name"> · {{ session.name }}</template></span></span></span>
         <div class="header-tools">
         <DeleteAccount v-if="session.authed" />
@@ -135,7 +157,7 @@ onMounted(async () => {
           </RouterView>
         </main>
 
-        <nav class="tabbar">
+        <nav class="tabbar" :inert="!chromeVisible" :aria-hidden="!chromeVisible" aria-label="頁面切換">
           <RouterLink v-for="t in tabs" :key="t.to" :to="t.to" class="tab">
             <span class="ico">{{ t.icon }}</span>
             <span class="lbl">{{ t.label }}</span>
@@ -159,6 +181,16 @@ onMounted(async () => {
   border-right: 1px solid var(--border);
 }
 
+.chrome-auto .topbar {
+  position:fixed;top:0;left:max(0px, calc((100% - 820px) / 2));width:min(100%,820px);z-index:30;
+}
+.chrome-auto .tabbar {
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,820px);z-index:30;
+}
+.chrome-auto .topbar,.chrome-auto .tabbar { transition:opacity .18s ease,visibility .18s; }
+.chrome-auto.chrome-hidden .topbar,.chrome-auto.chrome-hidden .tabbar { opacity:0;visibility:hidden;pointer-events:none; }
+.chrome-auto .content { padding-top:calc(1rem + var(--safe-top));padding-bottom:calc(1rem + var(--safe-bottom)); }
+@media(prefers-reduced-motion:reduce){.chrome-auto .topbar,.chrome-auto .tabbar{transition:none;}}
 .boot { display: grid; place-items: center; height: 100%; padding-top: var(--safe-top); }
 
 .topbar {
@@ -246,7 +278,7 @@ onMounted(async () => {
   width:min(100%,820px);
   z-index:20;
 }
-:global(html.ios-installed .content) { padding-bottom:calc(5rem + var(--safe-bottom)); }
+:global(html.ios-installed .chrome-auto .content) { padding-bottom:calc(1rem + var(--safe-bottom)); }
 :global(html.ios-installed.app-keyboard .tabbar) { display:none; }
 :global(html.ios-installed.app-keyboard .content) { padding-bottom:.75rem; }
 .tab {
