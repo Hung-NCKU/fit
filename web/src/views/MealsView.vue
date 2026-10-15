@@ -1,4 +1,5 @@
 <script setup>
+import {loadCachedPage} from '../page-cache.js';
 import { confirmAction } from '../confirm.js';
 import { ref, computed, onMounted, watch } from 'vue';
 import { api, photoUrl, todayStr, MEAL_TYPES } from '../api.js';
@@ -68,7 +69,8 @@ async function loadDay() {
   error.value = '';
   loading.value = true;
   try {
-    const data = await api.listMeals({ date: date.value, user: viewing.value });
+    const user=viewing.value,day=date.value;
+    const data=await loadCachedPage(['meals',session.user,user,'day',day],()=>api.listMeals({date:day,user}),cached=>{if(mine===reqId){rows.value=cached;loading.value=false;}});
     if (mine !== reqId) return;   // 已經有更新的請求，這份丟掉
     rows.value = data;
   } catch (e) {
@@ -82,7 +84,9 @@ async function loadDay() {
 /** 新增或刪除會改變某天的筆數，日期清單也要跟著重算 */
 async function load() {
   const mine=++reqId;loading.value=true;error.value='';
-  try {const data=await api.mealPage(date.value,viewing.value);if(mine!==reqId)return;dates.value=data.dates;date.value=data.date;rows.value=data.rows;}
+  const user=viewing.value,day=date.value;
+  const apply=data=>{dates.value=data.dates;date.value=data.date;rows.value=data.rows;};
+  try {const data=await loadCachedPage(['meals',session.user,user,'page',day],()=>api.mealPage(day,user),cached=>{if(mine===reqId){apply(cached);loading.value=false;}});if(mine!==reqId)return;apply(data);}
   catch(e) {if(mine===reqId)error.value=e.message;}
   finally {if(mine===reqId)loading.value=false;}
 }

@@ -205,3 +205,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 /* Installed app keeps one page scale; scrolling and component drag gestures remain available. */
 html.installed-app,html.installed-app body { touch-action:pan-x pan-y; }
 @media (pointer:coarse) { html.installed-app input,html.installed-app select,html.installed-app textarea { font-size:16px; } }
+
+/* Use the measured viewport on cold launch, resume, rotation and keyboard changes. */
+html,body,#app { height:var(--app-height,100%); }
+body { overflow:hidden; }

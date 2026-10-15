@@ -1,6 +1,7 @@
 <script setup>
 import { RouterLink, RouterView, useRoute } from 'vue-router';
-import { computed, onMounted, ref } from 'vue';
+import {clearPageCache} from './page-cache.js';
+import { computed, onMounted, ref, watch } from 'vue';
 import { api } from './api.js';
 import { session } from './auth.js';
 import LoginView from './views/LoginView.vue';
@@ -11,6 +12,7 @@ import NewAccount from './components/NewAccount.vue';
 import ConfirmDialog from './components/ConfirmDialog.vue';
 
 const route = useRoute();
+watch(()=>[session.user,session.authed],clearPageCache,{flush:'sync'});
 
 /* ---------------- PWA 安裝 ---------------- */
 // 事件由 index.html 的行內腳本接住（可能早在 Vue 掛載前就觸發），這裡只負責讀。

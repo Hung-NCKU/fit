@@ -1,4 +1,5 @@
 <script setup>
+import {loadCachedPage} from '../page-cache.js';
 import { confirmAction } from '../confirm.js';
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { api, CATEGORIES } from '../api.js';
@@ -29,7 +30,8 @@ async function load() {
   error.value = '';
   loading.value = true;
   try {
-    const data = await api.listWorkouts({ limit: 300, user: viewing.value });
+    const user=viewing.value;
+    const data=await loadCachedPage(['workouts',session.user,user],()=>api.listWorkouts({limit:300,user}),cached=>{if(mine===reqId){rows.value=cached;loading.value=false;}});
     if (mine !== reqId) return;   // 已經有更新的請求，這份丟掉
     rows.value = data;
   } catch (e) {

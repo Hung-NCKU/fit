@@ -6,7 +6,8 @@ export function installFixedAppViewport(win=window,doc=document) {
   const original=viewport?.getAttribute('content');
   function apply() {
     doc.documentElement.classList.toggle('installed-app',installed());
-    if(viewport)viewport.setAttribute('content',installed()?'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover':original);
+    const content=installed()?'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover':original;
+    if(viewport && viewport.getAttribute('content')!==content)viewport.setAttribute('content',content);
   }
   const blockPinch=event=>{if(installed() && event.touches?.length>1 && event.cancelable)event.preventDefault();};
   const blockGesture=event=>{if(installed() && event.cancelable)event.preventDefault();};

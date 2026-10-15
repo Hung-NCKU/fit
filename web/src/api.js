@@ -1,3 +1,4 @@
+import {invalidatePageCache,clearPageCache} from './page-cache.js';
 import { onUnauthorized } from './auth.js';
 import { recordFeedback } from './pet-feedback.js';
 
@@ -30,10 +31,12 @@ async function request(path, options = {}) {
 
   const data = await res.json().catch(() => ({}));
   if (res.status === 401 && path !== '/login') {
+    clearPageCache();
     onUnauthorized();
     throw new Error('連線已過期，請重新登入');
   }
   if (!res.ok) throw Object.assign(new Error(data.error || `請求失敗（${res.status}）`), { status: res.status });
+  if(['POST','PUT','PATCH','DELETE'].includes(options.method))invalidatePageCache(path);
   if (['POST','PATCH'].includes(options.method) && /^\/(meals|workouts|weights)(\/\d+)?$/.test(path)) {
     recordFeedback(path.startsWith('/meals') ? 'meal' : path.startsWith('/workouts') ? 'workout' : 'weight');
   }

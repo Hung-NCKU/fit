@@ -1,4 +1,5 @@
 <script setup>
+import {loadCachedPage} from '../page-cache.js';
 import { ref, computed, onMounted, watch } from 'vue';
 import { api, todayStr, MEAL_TYPES, CATEGORIES } from '../api.js';
 import { session } from '../auth.js';
@@ -44,19 +45,12 @@ async function load() {
   loading.value = true;
   error.value = '';
   try {
-    const u = viewing.value;
-    const [s, m, w, r, p, bw] = await Promise.all([
-      api.daily(date.value, u),
-      api.listMeals({ date: date.value, user: u }),
-      api.listWorkouts({ date: date.value, user: u }),
-      api.range(14, u),
-      api.getProfile(u),
-      api.listWeights(u),
-    ]);
-    if (mine !== reqId) return;   // 已經切到別人了，這份丟掉
-    summary.value = s; meals.value = m; workouts.value = w; range.value = r; profile.value = p;
-    weights.value = bw;
-    fillBody();
+    const u=viewing.value,day=date.value;
+    let lastBody=JSON.stringify(body.value);
+    const apply=([s,m,w,r,p,bw])=>{const untouched=JSON.stringify(body.value)===lastBody;summary.value=s;meals.value=m;workouts.value=w;range.value=r;profile.value=p;weights.value=bw;if(untouched)fillBody();lastBody=JSON.stringify(body.value);};
+    const fresh=await loadCachedPage(['today',session.user,u,day],()=>Promise.all([api.daily(day,u),api.listMeals({date:day,user:u}),api.listWorkouts({date:day,user:u}),api.range(14,u),api.getProfile(u),api.listWeights(u)]),cached=>{if(mine===reqId){apply(cached);loading.value=false;}});
+    if(mine!==reqId)return;
+    apply(fresh);
   } catch (e) {
     if (mine !== reqId) return;
     error.value = e.message;

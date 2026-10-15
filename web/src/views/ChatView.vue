@@ -1,4 +1,5 @@
 <script setup>
+import {loadCachedPage,patchCachedPage} from '../page-cache.js';
 import { confirmAction } from '../confirm.js';
 import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue';
 import { api, compressImage, photoUrl, MEAL_TYPES, CATEGORIES } from '../api.js';
@@ -7,6 +8,8 @@ import ModelPicker from '../components/ModelPicker.vue';
 import { session } from '../auth.js';
 import { recordFeedback } from '../pet-feedback.js';
 
+const chatCacheKey=['chat',session.user,new Date().toLocaleDateString('sv-SE')];
+onUnmounted(()=>patchCachedPage(chatCacheKey,previous=>[messages.value,{...previous[1],gemini:geminiReady.value},coachPlan.value]));
 const messages = ref([]);
 const coachPlan=ref(null), composerEl=ref(null);
 function preparePlanChange() {draft.value='我想調整訓練和飲食計畫，';nextTick(()=>composerEl.value?.focus());}
@@ -137,8 +140,12 @@ function scrollDown() {
 }
 
 async function load() {
+  const sequence=submitSequence;
   try {
-    const [history,health,plan] = await Promise.all([api.chatHistory(),api.health(),api.coachPlan(),refreshModels()]);
+    const apply=([history,health,plan])=>{messages.value=history;coachPlan.value=plan;geminiReady.value=health.gemini;scrollDown();};
+    const [history,health,plan]=await loadCachedPage(chatCacheKey,()=>Promise.all([api.chatHistory(),api.health(),api.coachPlan()]),cached=>{if(!disposed)apply(cached);});
+    if(disposed || sending.value || sequence!==submitSequence)return;
+    refreshModels();
     messages.value = history;
     coachPlan.value=plan;
     geminiReady.value = health.gemini;

@@ -1,4 +1,5 @@
 <script setup>
+import {loadCachedPage} from '../page-cache.js';
 import {COIN_RULES as coins} from '../../../shared/coin-rules.js';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { api } from '../api.js';
@@ -58,7 +59,8 @@ async function load() {
   loading.value = true;
   error.value = '';
   try {
-    const d = await api.pet(viewing.value);
+    const user=viewing.value;
+    const d=await loadCachedPage(['pet',session.user,user,new Date().toLocaleDateString('sv-SE')],()=>api.pet(user),cached=>{if(mine===reqId){data.value=cached;loading.value=false;}});
     if (mine !== reqId) return;
     data.value = d;
   } catch (e) {

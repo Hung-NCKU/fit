@@ -1,4 +1,5 @@
 <script setup>
+import {clearPageCache} from '../page-cache.js';
 import { computed, watch } from 'vue';
 import { session } from '../auth.js';
 
@@ -20,7 +21,7 @@ const viewingOther = computed(() => model.value !== session.user);
       v-for="u in session.users"
       :key="u.id"
       :class="{ on: model === u.id }"
-      @click="model = u.id"
+      @click="model !== u.id && clearPageCache(); model = u.id"
     >
       {{ u.name }}<span v-if="u.id === session.user" class="me">（我）</span>
     </button>
