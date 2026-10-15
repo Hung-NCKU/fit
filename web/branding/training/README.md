@@ -1,3 +1,19 @@
+# 寵物插畫風肌群模特（目前版本 v2）
+
+2026-10-15，依使用者要求，以內建 imagegen 重畫成與現有寵物一致的奶油杏色、暖棕輪廓線與柔和陰影。頭部留白，沒有五官與頭髮；身體為中性模型，沒有內褲、衣物、乳頭或性器官。肌肉以簡化弧形分區呈現。
+
+- 正面原圖：`anatomy-front-pet-v2-source.png`。
+- 背面原圖：`anatomy-back-pet-v2-source.png`。
+- 網站輸出：`web/public/training/anatomy-front-pet-v2.webp`、`anatomy-back-pet-v2.webp`。
+- 完整提示詞：[pet-style-v2-prompts.json](pet-style-v2-prompts.json)。
+- 風格參考：`web/public/pets/act-dog-idle.webp`；v1 人體圖只用作站姿、比例與部位座標參考。
+
+透明原圖等比例轉為寬 768 的 WebP，保留 alpha，沒有額外重繪或程式去背。互動層以杏橘色半透明覆蓋選中區域；背景配合奶油色介面，原有正背面切換、肌群點選與細分重點保留。
+
+以下保留 v1 製作紀錄，方便學習與版本比較；網站已使用 v2。
+
+---
+
 # 灰白肌群模特素材製作紀錄
 
 2026-10-15，使用內建 imagegen 生成，未使用 CLI/API 金鑰。使用者參考圖僅提供灰白肌肉線條及紅色訓練部位的視覺方向；構圖改為直立正／背面，方便點選。

@@ -17,7 +17,7 @@
 - [Anatomy 3D Atlas](https://anatomy3datlas.com/)：參考以身體區域組織資訊的方式。
 - [DAREBEE](https://darebee.com/)：參考清楚的動作探索與訓練呈現。
 
-人體圖採本專案以內建 imagegen 生成的正面／背面灰白肌肉插圖，再用互動 SVG 路徑標示選取區域；製作提示詞與原圖見 [素材紀錄](../web/branding/training/README.md)。沒有匯入這三個網站的圖片、影片檔案或 3D 模型。
+人體圖採本專案以內建 imagegen 生成的正面／背面奶油杏色、寵物插畫風的人體肌群模型，再用互動 SVG 路徑標示選取區域；製作提示詞與原圖見 [素材紀錄](../web/branding/training/README.md)。沒有匯入這三個網站的圖片、影片檔案或 3D 模型。
 
 目前的 [動作目錄](../shared/workout-catalog.json) 包含十個大部位、十個細分訓練重點、四十三個動作。每支影片保留 YouTube ID、影片標題與頻道名稱，於 2026-10-15 使用 YouTube 官方 oEmbed 核對標題與頻道；影片可能日後調整公開狀態或嵌入設定，頁面持續提供原站連結。
 

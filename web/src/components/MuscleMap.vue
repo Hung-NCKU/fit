@@ -6,25 +6,25 @@ const emit=defineEmits(['update:modelValue']);
 const side=ref('front'), uid=useId();
 watch(()=>props.modelValue,id=>{const muscle=catalog.muscles.find(m=>m.id===id);if(muscle)side.value=muscle.side;},{immediate:true});
 const visible=computed(()=>catalog.muscles.filter(m=>m.side===side.value));
-const imageUrl=computed(()=>`/training/anatomy-${side.value}-v1.webp`);
+const imageUrl=computed(()=>`/training/anatomy-${side.value}-pet-v2.webp`);
 // Coordinates follow the original generated 1024 × 1536 plates. The bitmap stays
-// neutral; symmetric hit areas tint selection without hiding the muscle fibers.
+// neutral; symmetric hit areas tint selection without hiding the illustrated muscle panels.
 const shapes={
-  shoulders:['M426 279 Q336 269 303 323 Q285 361 299 405 Q317 370 345 349Z'],
-  chest:['M437 284 Q483 281 512 293 L512 408 Q490 440 449 434 Q391 431 359 398 L350 350Z'],
-  biceps:['M338 387 Q368 407 364 446 Q354 494 329 523 Q306 540 290 519 Q276 500 286 461 L305 415Z'],
-  core:['M451 434 Q481 424 512 433 L512 660 L449 653 Q444 611 445 568Z','M386 435 L434 450 L441 635 L398 616 Q384 541 386 435Z'],
-  quads:['M361 769 Q429 800 496 785 Q499 868 466 950 Q457 984 425 1000 Q405 964 388 996 Q345 948 340 861Z'],
-  back:['M446 232 L512 221 L512 533 Q487 481 455 409 L388 322 L362 291Z','M374 424 Q410 429 461 418 L512 539 L512 625 Q451 598 404 635 Q384 579 374 424Z'],
-  triceps:['M317 389 Q342 376 358 402 L372 454 Q367 507 338 542 Q314 533 300 507 L283 473Z'],
-  glutes:['M379 663 Q444 645 512 673 L512 805 Q454 834 374 803 L347 777Z'],
-  hamstrings:['M358 827 Q422 848 498 827 Q488 919 461 982 L430 1061 L393 1030 Q360 984 346 915Z'],
-  calves:['M391 1050 Q416 1074 429 1108 Q458 1158 447 1200 Q435 1235 408 1252 Q387 1228 362 1230 Q334 1184 349 1134Z'],
+  shoulders:['M403 283 Q321 259 283 309 Q263 354 278 408 Q318 365 350 349Z'],
+  chest:['M433 294 Q485 288 512 308 L512 408 Q490 444 447 441 Q380 443 350 404 L347 366 Q378 325 433 294Z'],
+  biceps:['M332 383 Q361 401 352 448 Q337 507 306 542 L271 548 Q254 511 262 467 L281 419Z'],
+  core:['M447 439 Q483 427 512 440 L512 701 Q475 700 459 660 Q442 600 447 439Z','M385 438 L433 452 L441 618 L453 664 L395 624 Q377 535 385 438Z'],
+  quads:['M365 712 Q398 690 426 733 Q471 791 490 824 L481 927 Q471 1007 450 998 Q425 954 407 993 Q338 956 330 872 Q320 790 365 712Z'],
+  back:['M444 245 L512 212 L512 528 L469 432 Q448 370 411 324 L366 286Z','M367 420 Q417 434 448 408 L512 538 L512 633 Q464 600 417 628 Q375 568 367 420Z'],
+  triceps:['M317 383 Q349 392 350 448 L328 524 L286 556 Q263 536 260 495 L257 448Z'],
+  glutes:['M407 642 Q470 631 512 697 L512 775 Q479 815 429 811 Q387 812 362 778 L375 695Z'],
+  hamstrings:['M362 790 Q415 828 493 797 L489 895 L444 1018 L407 1060 Q369 995 346 940 Q327 862 362 790Z'],
+  calves:['M389 1054 Q418 1046 443 1091 Q471 1141 453 1197 Q445 1228 422 1236 L400 1224 Q381 1230 359 1201 Q327 1163 342 1097Z'],
 };
 const focusShapes={
-  'upper-chest':['M437 284 Q483 281 512 293 L512 329 Q428 317 366 365 L350 350Z'],
-  'middle-chest':['M366 365 Q430 322 512 330 L512 391 Q439 405 359 398Z'],
-  'lower-chest':['M359 398 Q440 407 512 392 L512 408 Q490 440 449 434 Q391 431 359 398Z'],
+  'upper-chest':['M433 294 Q485 288 512 308 L512 339 Q428 326 347 366 Q378 325 433 294Z'],
+  'middle-chest':['M347 366 Q430 326 512 339 L512 395 Q439 412 350 404Z'],
+  'lower-chest':['M350 404 Q440 412 512 395 L512 408 Q490 444 447 441 Q380 443 350 404Z'],
   rhomboids:['M450 336 L500 310 L500 448 L462 417Z'],
   'teres-minor':['M360 347 Q386 356 414 384 L395 400 L353 376Z'],
   'teres-major':['M353 379 L394 400 L447 405 L451 423 Q405 440 369 421Z'],
@@ -39,7 +39,7 @@ const select=id=>emit('update:modelValue',id);
 <template>
   <div class="muscle-map">
     <div class="spread map-heading"><b>想練哪裡？</b><div class="row face-switch" aria-label="人體方向"><button :class="{on:side==='front'}" :aria-pressed="side==='front'" @click="side='front'">正面</button><button :class="{on:side==='back'}" :aria-pressed="side==='back'" @click="side='back'">背面</button></div></div>
-    <p class="small muted map-hint">點選肌肉，紅色標示目前選擇的訓練部位。</p>
+    <p class="small muted map-hint">點選肌肉，杏橘色標示目前選擇的訓練部位。</p>
     <svg class="body-map" viewBox="0 0 1024 1536" aria-label="可選擇訓練部位的人體示意圖">
       <defs><mask :id="`${uid}-silhouette`" mask-type="alpha"><image :href="imageUrl" width="1024" height="1536" /></mask></defs>
       <image :href="imageUrl" width="1024" height="1536" class="anatomy-plate" />
@@ -59,9 +59,9 @@ const select=id=>emit('update:modelValue',id);
 <style scoped>
 .map-heading {gap:.5rem;}.map-hint {margin:.5rem 0 .4rem;line-height:1.6;}.face-switch {gap:.3rem;}.face-switch button {padding:.3rem .7rem;font-size:.8rem;min-height:36px;}
 .on {background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:650;}
-.body-map {display:block;width:100%;height:460px;margin:.2rem auto;background:radial-gradient(ellipse at 50% 40%,#fff,#f4f3ed);border:1px solid #e1dfd6;border-radius:18px;}
-.anatomy-plate {pointer-events:none;}.muscle {cursor:pointer;outline:none;}.muscle path {fill:#d95336;fill-opacity:0;stroke:#923c2a;stroke-opacity:0;stroke-width:3;transition:fill-opacity .15s;pointer-events:all;}.muscle.selected path {fill-opacity:.42;stroke-opacity:.6;}.muscle.subdued path {fill-opacity:.1;stroke-opacity:0;}.muscle:hover path,.muscle:focus-visible path {fill-opacity:.25;stroke-opacity:1;}.muscle.selected:hover path {fill-opacity:.48;}.muscle:focus-visible path {stroke-width:7;}.focus-highlight {fill:#d95336;fill-opacity:.5;stroke:#923c2a;stroke-width:3;pointer-events:none;}
-.map-legend {display:flex;align-items:center;justify-content:center;gap:.4rem;margin:.5rem 0 .8rem;font-size:.8rem;font-weight:650;}.map-legend i {width:9px;height:9px;background:#d95336;border-radius:50%;}.map-legend span {color:var(--muted);font-size:.7rem;font-weight:400;}
+.body-map {display:block;width:100%;height:460px;margin:.2rem auto;background:radial-gradient(ellipse at 50% 40%,#fffdf7,#fff0d6);border:1px solid #ead5b3;border-radius:18px;}
+.anatomy-plate {pointer-events:none;}.muscle {cursor:pointer;outline:none;}.muscle path {fill:#cf7948;fill-opacity:0;stroke:#885335;stroke-opacity:0;stroke-width:3;transition:fill-opacity .15s;pointer-events:all;}.muscle.selected path {fill-opacity:.36;stroke-opacity:.6;}.muscle.subdued path {fill-opacity:.1;stroke-opacity:0;}.muscle:hover path,.muscle:focus-visible path {fill-opacity:.25;stroke-opacity:1;}.muscle.selected:hover path {fill-opacity:.42;}.muscle:focus-visible path {stroke-width:7;}.focus-highlight {fill:#cf7948;fill-opacity:.42;stroke:#885335;stroke-width:3;pointer-events:none;}
+.map-legend {display:flex;align-items:center;justify-content:center;gap:.4rem;margin:.5rem 0 .8rem;font-size:.8rem;font-weight:650;}.map-legend i {width:9px;height:9px;background:#cf7948;border-radius:50%;}.map-legend span {color:var(--muted);font-size:.7rem;font-weight:400;}
 .muscle-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem;}.muscle-options button {min-height:42px;font-size:.8rem;padding:.4rem .3rem;}.map-note {margin:.6rem 0 0;line-height:1.6;}
 @media(max-width:360px){.body-map {height:420px;}}
 @media(prefers-reduced-motion:reduce){.muscle path {transition:none;}}
