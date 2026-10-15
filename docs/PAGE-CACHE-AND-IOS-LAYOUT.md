@@ -32,3 +32,5 @@
 小屋的心情／飽足度與代幣規則改為敘述式長文，預設單行摘要加省略號，點「展開」才顯示完整內容，可再收起；代幣金額繼續讀取共用規則，沒有改變實際獎勵。
 
 收到實機截圖後核對 [WebKit 301994](https://bugs.webkit.org/show_bug.cgi?id=301994)，已有相符的 iOS 主畫面系統空白回報，部分情況是網頁無法繪製的系統區域。因此不把 screen.height 強塞進較小的實際 WebView，以免導覽列被裁掉；改將 apple-mobile-web-app-status-bar-style 從 black-translucent 調成 default，採標準狀態列配置。此迴避方式仍需 iPhone 實機確認；若系統保留舊安裝中繼資料，單純 CSS 更新未必能解除系統保留區域。
+
+再次針對 iOS 主畫面 App 調整：導覽列改以 fixed bottom:0 直接錨定瀏覽器佈局視窗底部，不再依賴 --app-height 的 flex 容器底緣；內容區預留導覽列高度及安全區，鍵盤打開時隱藏底列，收起後恢復。只在 iOS＋已安裝模式啟用，桌機與一般 Safari 保持原版。仍不強塞 screen.height，因此若下方為 WebKit 本身不可繪製區，CSS 無法保證補滿該系統區域，需實機確認。

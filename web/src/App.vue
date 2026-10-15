@@ -238,6 +238,17 @@ onMounted(async () => {
   padding-left: var(--safe-left);
   padding-right: var(--safe-right);
 }
+:global(html.ios-installed .tabbar) {
+  position:fixed;
+  bottom:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(100%,820px);
+  z-index:20;
+}
+:global(html.ios-installed .content) { padding-bottom:calc(5rem + var(--safe-bottom)); }
+:global(html.ios-installed.app-keyboard .tabbar) { display:none; }
+:global(html.ios-installed.app-keyboard .content) { padding-bottom:.75rem; }
 .tab {
   display: flex;
   flex-direction: column;

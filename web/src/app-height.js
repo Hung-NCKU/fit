@@ -2,11 +2,17 @@
 export function installAppHeight(win=window,doc=document){
  let frame,timers=[];
  function sync(){
+  const nav=win.navigator;
+  const ios=/iPad|iPhone|iPod/.test(nav?.userAgent || '') || nav?.platform==='MacIntel' && nav?.maxTouchPoints>1;
+  const standalone=nav?.standalone===true || win.matchMedia?.('(display-mode: standalone)').matches;
+  doc.documentElement.classList?.toggle('ios-installed',!!(ios && standalone));
   const viewport=win.visualViewport;
   if(viewport?.scale && Math.abs(viewport.scale-1)>.02)return;
   const editing=doc.activeElement?.matches?.('input,textarea,[contenteditable="true"]');
   const fullHeight=win.innerHeight;
-  const height=editing && viewport?.height<fullHeight*.8 ? viewport.height : fullHeight;
+  const keyboard=!!(editing && viewport?.height<fullHeight*.8);
+  doc.documentElement.classList?.toggle('app-keyboard',keyboard);
+  const height=keyboard ? viewport.height : fullHeight;
   if(Number.isFinite(height) && height>0)doc.documentElement.style.setProperty('--app-height',`${Math.round(height)}px`);
  }
  function settle(){
