@@ -6,6 +6,7 @@ import { session } from '../auth.js';
 import { useRoute } from 'vue-router';
 import UserTabs from '../components/UserTabs.vue';
 import WorkoutExplorer from '../components/WorkoutExplorer.vue';
+import NutritionCalculator from '../components/NutritionCalculator.vue';
 import CardioRecorder from '../components/CardioRecorder.vue';
 import { workoutLabel, workoutEnergyLabel } from '../workout-metrics.js';
 import catalog from '../../../shared/workout-catalog.json';
@@ -90,6 +91,7 @@ watch(() => route.query.new, v => { if (v === '1') { cancel(); showForm.value = 
     </div>
 
     <UserTabs v-model="viewing" />
+    <NutritionCalculator v-if="isMine" />
 
     <div v-if="error" class="error">{{ error }}</div>
     <div v-if="isMine && !showForm" class="row training-modes" aria-label="訓練種類"><button :class="{active:trainingMode==='strength'}" :aria-pressed="trainingMode==='strength'" @click="trainingMode='strength'">肌力訓練</button><button :class="{active:trainingMode==='cardio'}" :aria-pressed="trainingMode==='cardio'" @click="trainingMode='cardio'">有氧運動</button></div>

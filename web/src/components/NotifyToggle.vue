@@ -14,7 +14,13 @@ const show = ref(false);
 
 const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
 const standalone = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || navigator.platform==='MacIntel' && navigator.maxTouchPoints>1;
+const permission=ref(window.Notification?.permission || 'unsupported');
+async function registration() {
+  let timeout;
+  try {return await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(new Error('通知服務未就緒，請關閉 App 後重新開啟再試')),12000);})]);}
+  finally {clearTimeout(timeout);}
+}
 
 const hoursText = computed(() => cfg.value.hours.map(h => `${h}:00`).join('、'));
 
@@ -23,7 +29,8 @@ async function refresh() {
     cfg.value = await api.pushConfig();
     const reg = await navigator.serviceWorker?.getRegistration();
     const sub = await reg?.pushManager.getSubscription();
-    on.value = Boolean(sub) && Notification.permission === 'granted';
+    permission.value=window.Notification?.permission || 'unsupported';
+    on.value = Boolean(sub) && permission.value === 'granted';
   } catch { /* 沒拿到設定就當成關閉 */ }
 }
 
@@ -39,13 +46,15 @@ async function enable() {
   msg.value = '';
   try {
     const perm = await Notification.requestPermission();
+    permission.value=perm;
     if (perm !== 'granted') {
       msg.value = perm === 'denied'
-        ? '通知被封鎖了。要到瀏覽器的網站設定裡把通知改成「允許」才行。'
+        ? isIOS ? '通知已被拒絕。請到 iPhone「設定 → 通知 → 健身養寵」開啟允許通知，再回來重試。' : '通知被封鎖了，請到瀏覽器的網站設定允許通知。'
         : '沒有允許通知。';
       return;
     }
-    const reg = await navigator.serviceWorker.ready;
+    const reg = await registration();
+    msg.value='正在連線通知服務…';
     let sub = await reg.pushManager.getSubscription();
     if (!sub) {
       sub = await reg.pushManager.subscribe({
@@ -68,7 +77,7 @@ async function disable() {
   busy.value = true;
   msg.value = '';
   try {
-    const reg = await navigator.serviceWorker.ready;
+    const reg = await registration();
     const sub = await reg.pushManager.getSubscription();
     if (sub) {
       await api.pushUnsubscribe(sub.endpoint);
@@ -88,10 +97,13 @@ async function test() {
   busy.value = true;
   msg.value = '';
   try {
-    const r = await api.pushTest();
+    const reg=await registration(),sub=await reg.pushManager.getSubscription();
+    if(!sub) {on.value=false;msg.value='這台裝置沒有訂閱，請重新開啟提醒。';return;}
+    await api.pushSubscribe(sub.toJSON());
+    const r = await api.pushTest(sub.endpoint);
     msg.value = r.sent
-      ? `已送出測試通知（目前 ${r.eaten} kcal，這個時間建議 ${r.expected} kcal）`
-      : '沒有送出——這台裝置還沒訂閱，或訂閱已失效。';
+      ? '推播服務已接受這台裝置的測試通知。請查看鎖定畫面／通知中心；這不代表手機已顯示。'
+      : r.errors?.length ? `推播遭拒：${r.errors.map(e=>e.status+' '+e.code).join('、')}。請保留此訊息供排查。` : '這台裝置的訂閱已失效，請關閉提醒再重新開啟。';
   } catch (e) {
     msg.value = `測試失敗：${e.message}`;
   } finally {
@@ -99,6 +111,12 @@ async function test() {
   }
 }
 
+async function testDisplay() {
+  busy.value=true;msg.value='';
+  try {const reg=await registration();await reg.showNotification('健身養寵・手機顯示測試',{body:'看到這則代表手機顯示通知正常，再測試伺服器推播。',icon:'/icon-192.png',tag:'fit-local-test'});msg.value='已請手機顯示本機通知，請查看通知中心。若沒有，請檢查設定中的允許通知、專注模式與通知摘要。';}
+  catch(e) {msg.value='手機顯示測試失敗：'+e.message;}
+  finally {busy.value=false;}
+}
 onMounted(refresh);
 </script>
 
@@ -119,20 +137,24 @@ onMounted(refresh);
       目前這個帳號有 <b>{{ cfg.devices }}</b> 台裝置開啟。
     </p>
 
-    <p v-if="!supported" class="small warn">這個瀏覽器不支援推播通知。</p>
+    <p v-if="isIOS && !standalone" class="small warn">請從主畫面開啟健身養寵，才能啟用 iPhone 通知。</p>
+    <p v-else-if="!supported" class="small warn">這個瀏覽器不支援推播通知。</p>
     <p v-else-if="isIOS && !standalone" class="small warn">
       iPhone 要先用 Safari 的「分享 → 加入主畫面」把 App 裝起來，從主畫面開啟後才收得到通知。
     </p>
 
-    <div class="row" style="margin-top:.7rem">
-      <button v-if="!on" class="primary" :disabled="busy || !supported" @click="enable">開啟提醒</button>
+    <div class="row wrap" style="margin-top:.7rem">
+      <button v-if="!on" class="primary" :disabled="busy || !supported || isIOS && !standalone" @click="enable">開啟提醒</button>
       <template v-else>
+        <button :disabled="busy" @click="testDisplay">測試手機顯示</button>
         <button :disabled="busy" @click="test">立刻測試一次</button>
+        <button :disabled="busy" @click="enable">重新連線</button>
         <button class="ghost" :disabled="busy" @click="disable">關閉</button>
       </template>
     </div>
 
-    <p v-if="msg" class="small note">{{ msg }}</p>
+    <p class="small muted">通知權限：{{ permission==='granted' ? '已允許' : permission==='denied' ? '已拒絕' : permission==='default' ? '尚未授權' : '目前環境不支援' }} · {{ standalone ? '主畫面 App' : '瀏覽器' }}</p>
+    <p v-if="msg" class="small note" role="status">{{ msg }}</p>
     <p class="small muted foot">電腦上的服務沒有執行的時候不會有通知。</p>
   </div>
 </template>

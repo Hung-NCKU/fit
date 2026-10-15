@@ -56,6 +56,7 @@ export const api = {
   logout: () => request('/logout', { method: 'POST' }),
 
   getProfile: (user) => request('/profile' + qs({ user })),
+  saveNutritionTargets: body=>request('/profile/nutrition-targets',{method:'PUT',body}),
   saveProfile: (body) => request('/profile', { method: 'PUT', body }),
 
   users: () => request('/users'),
@@ -69,6 +70,7 @@ export const api = {
   deleteGuest: (id) => request(`/guests/${id}`, { method: 'DELETE' }),
 
   listMeals: (p) => request('/meals' + qs(p)),
+  mealPage: (date,user) => request('/meals/page'+qs({date,user})),
   mealDates: (user) => request('/meals/dates' + qs({ user })),
   addMeal: (body) => request('/meals', { method: 'POST', body }),
   updateMeal: (id, body) => request(`/meals/${id}`, { method: 'PATCH', body }),
@@ -111,7 +113,7 @@ export const api = {
   pushConfig: () => request('/push/config'),
   pushSubscribe: (subscription) => request('/push/subscribe', { method: 'POST', body: { subscription } }),
   pushUnsubscribe: (endpoint) => request('/push/unsubscribe', { method: 'POST', body: { endpoint } }),
-  pushTest: () => request('/push/test', { method: 'POST', body: {} }),
+  pushTest: endpoint => request('/push/test', { method: 'POST', body: {endpoint} }),
   clearChat: () => request('/chat/history', { method: 'DELETE' }),
 };
 

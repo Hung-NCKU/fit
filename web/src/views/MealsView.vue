@@ -63,18 +63,6 @@ function step(dir) {
   if (next) { date.value = next.date; loadDay(); }
 }
 
-async function loadDates() {
-  try {
-    dates.value = await api.mealDates(viewing.value);
-    // 預設停在最近一筆有紀錄的日子，不要開在空白的今天
-    if (dates.value.length && !dates.value.some(d => d.date === date.value)) {
-      date.value = dates.value[0].date;
-    }
-  } catch (e) {
-    error.value = e.message;
-  }
-}
-
 async function loadDay() {
   const mine = ++reqId;
   error.value = '';
@@ -93,8 +81,10 @@ async function loadDay() {
 
 /** 新增或刪除會改變某天的筆數，日期清單也要跟著重算 */
 async function load() {
-  await loadDates();
-  await loadDay();
+  const mine=++reqId;loading.value=true;error.value='';
+  try {const data=await api.mealPage(date.value,viewing.value);if(mine!==reqId)return;dates.value=data.dates;date.value=data.date;rows.value=data.rows;}
+  catch(e) {if(mine===reqId)error.value=e.message;}
+  finally {if(mine===reqId)loading.value=false;}
 }
 
 // 先清空再載入：不要讓上一個人的紀錄掛在畫面上等新資料

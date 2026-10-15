@@ -10,7 +10,7 @@ export const publicKey = () => process.env.VAPID_PUBLIC_KEY || '';
 
 if (pushEnabled()) {
   webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT || 'mailto:fit@localhost',
+    process.env.VAPID_SUBJECT || 'https://github.com/Hung-NCKU/fit',
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY,
   );
@@ -42,10 +42,11 @@ export const countSubscriptions = (userId) =>
 
 /* ---------------- 發送 ---------------- */
 
-export async function sendToUser(userId, payload) {
+export async function sendToUser(userId, payload, {endpoint} = {}) {
   if (!pushEnabled()) return { sent: 0, removed: 0, reason: '沒有設定 VAPID 金鑰' };
-  const subs = listSubscriptions(userId);
-  let sent = 0, removed = 0;
+  const subs = listSubscriptions(userId).filter(s=>!endpoint || s.endpoint===endpoint);
+  let sent = 0, removed = 0, failed = 0;
+  const errors=[];
 
   for (const s of subs) {
     try {
@@ -56,16 +57,20 @@ export async function sendToUser(userId, payload) {
       );
       sent++;
     } catch (err) {
+      failed++;
+      let reason;try {reason=JSON.parse(err.body || '{}').reason;}catch{}
+      const code=typeof reason==='string' && /^[a-zA-Z0-9_]{1,60}$/.test(reason) ? reason : 'PushServiceError';
+      errors.push({status:err.statusCode || 0,code});
       // 404/410＝這個訂閱已經失效（App 被移除、瀏覽器資料被清掉），直接刪掉不要再試
       if (err.statusCode === 404 || err.statusCode === 410) {
         removeSubscription(userId, s.endpoint);
         removed++;
       } else {
-        console.warn(`[push] ${userId} 發送失敗 ${err.statusCode || ''}: ${err.message}`);
+        console.warn(`[push] ${userId} 發送失敗 ${err.statusCode || ''}: ${code}`);
       }
     }
   }
-  return { sent, removed };
+  return {sent,removed,failed,errors,matched:subs.length};
 }
 
 /* ---------------- 熱量進度判斷 ---------------- */

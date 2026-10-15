@@ -227,6 +227,8 @@ CREATE TABLE IF NOT EXISTS pet_reward_ledger (
   // 腰圍是脂肪的代理指標：體重在漲而腰圍沒漲，就是增肌而不是增脂。
   // 可為空，只想記體重的人不被迫填。
   addColumn('weights', 'waist_cm', 'REAL');
+  addColumn('profile','body_fat_pct','REAL');
+  addColumn('profile','goal_body_fat_pct','REAL');
   addColumn('workouts', 'set_details', "TEXT NOT NULL DEFAULT '[]'");
   addColumn('workouts', 'calories_kcal', 'REAL');
   addColumn('workouts', 'calorie_meta', "TEXT NOT NULL DEFAULT '{}'");

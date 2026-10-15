@@ -1,4 +1,5 @@
-import { destroyDb, getProfile, updateProfile } from '../db.js';
+import {nutritionTargets} from '../../../shared/nutrition-targets.js';
+import { getDb, destroyDb, getProfile, updateProfile } from '../db.js';
 import { quotaStatus } from '../gemini.js';
 import { rewardMealSaved, rewardWorkoutSaved } from '../pet.js';
 import { lastBackup } from '../autobackup.js';
@@ -134,6 +135,17 @@ export default async function apiRoutes(app) {
 
   app.get('/profile', async (req) => getProfile(viewUser(req)));
 
+  app.put('/profile/nutrition-targets', async req=>{
+    readOnlyGuard(req);
+    const result=nutritionTargets(req.body || {}),db=getDb(req.userId);
+    const {body_fat_pct,goal_body_fat_pct,...profile}=result.profile;
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      updateProfile(req.userId,{...profile,target_kcal:result.target_kcal,target_protein_g:result.target_protein_g,target_carb_g:result.target_carb_g,target_fat_g:result.target_fat_g},{recalc:false});
+      db.prepare('UPDATE profile SET body_fat_pct=?,goal_body_fat_pct=? WHERE id=1').run(body_fat_pct,goal_body_fat_pct);
+      db.exec('COMMIT');return {profile:getProfile(req.userId),calculation:result};
+    }catch(error){db.exec('ROLLBACK');throw error;}
+  });
   app.put('/profile', async (req) => {
     readOnlyGuard(req);
     const { recalc, ...patch } = req.body || {};
@@ -143,6 +155,12 @@ export default async function apiRoutes(app) {
   /* ---- 飲食 ---- */
 
   app.get('/meals', async (req) => listMeals(viewUser(req), req.query));
+  app.get('/meals/page', async req=>{
+    const user=viewUser(req),dates=listMealDates(user);
+    const requested=req.query?.date || today();
+    const date=dates.length && !dates.some(d=>d.date===requested) ? dates[0].date : requested;
+    return {dates,date,rows:listMeals(user,{date})};
+  });
   app.get('/meals/dates', async (req) => listMealDates(viewUser(req)));
   app.post('/meals', async (req, reply) => {
     readOnlyGuard(req);

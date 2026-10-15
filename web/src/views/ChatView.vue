@@ -138,9 +138,9 @@ function scrollDown() {
 
 async function load() {
   try {
-    const [history, health] = await Promise.all([api.chatHistory(), api.health(), refreshModels()]);
+    const [history,health,plan] = await Promise.all([api.chatHistory(),api.health(),api.coachPlan(),refreshModels()]);
     messages.value = history;
-    coachPlan.value=await api.coachPlan();
+    coachPlan.value=plan;
     geminiReady.value = health.gemini;
     scrollDown();
     let savedId; try { savedId = sessionStorage.getItem(receiptKey()); } catch {}

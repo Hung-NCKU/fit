@@ -30,10 +30,12 @@ export default async function pushRoutes(app) {
   // 「立刻測試一次」：用現在的時間點算一次並推播，不用等到 12 點
   app.post('/push/test', async (req, reply) => {
     if (!pushEnabled()) return reply.code(503).send({ error: '伺服器沒有設定推播金鑰' });
+    const endpoint=req.body?.endpoint;
+    if(typeof endpoint!=='string' || !endpoint) return reply.code(400).send({error:'請重新開啟 App 更新後，再測試這台裝置的通知'});
     const hour = Number(req.body?.hour ?? new Date().getHours());
     const p = checkProgress(req.userId, hour);
     const msg = buildMessage('', p);
-    const result = await sendToUser(req.userId, { ...msg, url: '/today', hour });
+    const result = await sendToUser(req.userId, { ...msg, url: '/today', hour },{endpoint});
     return { ...result, status: p.status, eaten: p.eaten, expected: p.expected, target: p.target, preview: msg };
   });
 }

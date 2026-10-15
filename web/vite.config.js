@@ -1,9 +1,11 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import {gzipSync,brotliCompressSync,constants} from 'node:zlib';
+function compressedAssets() {return {name:'compressed-assets',apply:'build',generateBundle(_,bundle){for(const asset of Object.values(bundle)){if(!/\.(js|css|html)$/.test(asset.fileName))continue;const source=Buffer.from(asset.type==='chunk'?asset.code:asset.source);if(source.length<1024)continue;this.emitFile({type:'asset',fileName:asset.fileName+'.gz',source:gzipSync(source)});this.emitFile({type:'asset',fileName:asset.fileName+'.br',source:brotliCompressSync(source,{params:{[constants.BROTLI_PARAM_QUALITY]:5}})});}}};}
 import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(),compressedAssets()],
   server: {
     port: 5173,
     host: true,
