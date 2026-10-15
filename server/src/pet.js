@@ -8,7 +8,7 @@
  * 動物使用專屬動畫，裝飾可購買後拖移布置；多隻寵物共用環境與錢包。
  */
 import { getDb } from './db.js';
-import { dailySummary, today, daysAgo } from './records.js';
+import { dailySummary, today, daysAgo, listWorkouts } from './records.js';
 import { ALL_WEAR } from './pet-wardrobe.js';
 import { ALL_OUTFITS, outfitsFor, legacyOutfitFor, outfitEquipment, outfitOwnership } from './pet-outfits.js';
 import { readFileSync } from 'node:fs';
@@ -225,6 +225,7 @@ export function replacePet(userId, species, name, confirmName) {
   db.exec('DELETE FROM pet_selection');
   db.exec('DELETE FROM pet_room_decor');
   db.exec('DELETE FROM pet_room_positions');
+  db.exec('DELETE FROM pet_care_interactions');
   db.exec('DELETE FROM pet_reward_ledger');
   db.exec('DELETE FROM pet_items');
   db.exec('DELETE FROM pet');
@@ -344,6 +345,30 @@ export function settleCoins(userId) {
   } catch (err) { db.exec('ROLLBACK'); throw err; }
 }
 
+export function exerciseRewardProgress(userId,date=today()) {
+  const rows=listWorkouts(userId,{date});
+  const strengthSets=rows.filter(w=>w.category!=='cardio').reduce((sum,w)=>sum+(w.set_details.length ? w.set_details.filter(s=>s.reps>0 || s.duration_s>=10).length : w.reps>0 ? Math.max(0,Number(w.sets)||0) : 0),0);
+  const cardioMinutes=rows.filter(w=>w.category==='cardio').reduce((sum,w)=>sum+Math.max(0,Number(w.duration_min)||0),0);
+  const db=getDb(userId);
+  const strengthPaid=!!db.prepare('SELECT 1 FROM pet_reward_ledger WHERE reward_key=?').get('strength:'+date);
+  const cardioPaid=!!db.prepare('SELECT 1 FROM pet_reward_ledger WHERE reward_key=?').get('cardio:'+date);
+  return {strengthSets,cardioMinutes,strengthPaid,cardioPaid};
+}
+export function rewardWorkoutSaved(userId,date=today()) {
+  if(date!==today() || !getPet(userId)) return 0;
+  const db=getDb(userId);db.exec('BEGIN IMMEDIATE');
+  try {
+    const p=exerciseRewardProgress(userId,date);let earned=0;
+    for(const [key,ready,amount,reason] of [['strength',p.strengthSets>=3,8,'肌力累積完成 3 組'],['cardio',p.cardioMinutes>=15,6,'有氧累積完成 15 分鐘']]) {
+      if(!ready)continue;
+      const row=db.prepare('INSERT OR IGNORE INTO pet_reward_ledger(reward_key,date,reason,amount) VALUES (?,?,?,?)').run(key+':'+date,date,reason,amount);
+      if(row.changes)earned+=amount;
+    }
+    if(earned)db.prepare('UPDATE pet SET coins=coins+? WHERE id=1').run(earned);
+    db.exec('COMMIT');return earned;
+  }catch(err){db.exec('ROLLBACK');throw err;}
+}
+
 export function rewardOverview(userId) {
   if (!getPet(userId)) return null;
   const db = getDb(userId), date = today();
@@ -361,7 +386,9 @@ export function rewardOverview(userId) {
     WHERE NOT EXISTS (SELECT 1 FROM pet_reward_ledger WHERE reward_key='kcal:' || b.date)
     ORDER BY date DESC, created_at DESC LIMIT 30
   `).all();
-  return { date, instantEarned: meals * 2 + (kcal ? 8 : 0), instantRemaining: Math.max(0, 3 - meals) * 2 + (kcal ? 0 : 8),
+  const exercise=exerciseRewardProgress(userId,date);
+  const exerciseEarned=(exercise.strengthPaid?8:0)+(exercise.cardioPaid?6:0);
+  return { date,exercise,exerciseEarned,instantEarned: meals * 2 + (kcal ? 8 : 0)+exerciseEarned, instantRemaining: Math.max(0, 3 - meals) * 2 + (kcal ? 0 : 8)+(exercise.strengthPaid?0:8)+(exercise.cardioPaid?0:6),
     proteinPending: proteinPending ? 8 : 0, meals, kcal, entries };
 }
 

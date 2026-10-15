@@ -6,7 +6,7 @@ import OutfitFrames from './OutfitFrames.vue';
 import { pickNext } from '../pet-fsm.js';
 import { roamingBounds, roamingTarget, roamingDuration, roamingFacing } from '../pet-roaming.js';
 const props = defineProps({ pet: Object, state: Object, sceneHeight: Number, sceneWidth:Number, roomKey:String, paused:Boolean, index: Number, count: Number, selected: Boolean, interactive: Boolean, wearing: Array, preview: Boolean, decorations:Array, celebration:Object });
-const emit=defineEmits(['select','move']);
+const emit=defineEmits(['select','move','interact']);
 const current = ref(null);
 const initialPosition=()=>props.pet.position || {x:props.count===1?50:14+props.index*72/(props.count-1),y:88};
 const position=ref({...initialPosition()});
@@ -27,7 +27,7 @@ function say(text, celebrate=false) {
 watch(()=>props.celebration, value=>{
   if (!value || !props.selected) return;
   journey=null; moving.value=false; nextTrip=performance.now()+5000;
-  say(({meal:'記下這一餐了！謝謝你帶我一起成長 🐾',workout:'訓練記好了！今天也辛苦了 ✨',weight:'留下今天的體態紀錄了，我陪你慢慢來！'})[value.kind] || '今天也一起留下紀錄了！',true);
+  say(({meal:'記下這一餐了！謝謝你帶我一起成長 🐾',workout:'你運動，我也一起玩了！今天好開心 ✨',interaction:'陪我玩，我好開心！🐾',weight:'留下今天的體態紀錄了，我陪你慢慢來！'})[value.kind] || '今天也一起留下紀錄了！',true);
 }, { immediate: true });
 const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
 function roam(now) {
@@ -65,7 +65,7 @@ onUnmounted(() => {clearTimeout(timer);clearTimeout(landingTimer);clearTimeout(s
 const clothes = computed(() => props.wearing || props.pet.worn || []);
 const outfit=computed(()=>clothes.value.find(item=>item.slot==='outfit'));
 // The complete outfit is baked into each character pose; no garment overlays.
-const pose = computed(() => clothes.value.length || props.preview ? 'idle' : moving.value ? 'walk' : current.value?.pose === 'walk' ? 'idle' : current.value?.pose || 'idle');
+const pose = computed(() => clothes.value.length || props.preview ? 'idle' : joyful.value ? 'play' : moving.value ? 'walk' : current.value?.pose === 'walk' ? 'idle' : current.value?.pose || 'idle');
 watch(()=>props.roomKey,()=>{journey=null;position.value={...initialPosition()};});
 watch(()=>props.pet.position,p=>{if(p && !lifted.value && !journey) position.value={...p};});
 function lift(event) {
@@ -90,7 +90,7 @@ function drop(event,cancelled=false) {
   lifted.value=false;pointerDrag=null;suppressClick=moved;nextTrip=performance.now()+8000;
   landing.value=true;clearTimeout(landingTimer);landingTimer=setTimeout(()=>{landing.value=false;},260);
 }
-function clickPet() {if(suppressClick) {suppressClick=false;return;}say('我在這裡陪你！今天想做什麼呢？');emit('select',props.pet.petKey);}
+function clickPet() {if(suppressClick) {suppressClick=false;return;}say('我在這裡陪你！今天想做什麼呢？');emit(!props.paused && !props.preview ? 'interact' : 'select',props.pet.petKey);}
 const actorSize = computed(() => props.preview ? props.sceneHeight * .65 : props.sceneHeight * (props.pet.behavior?.size || .3) * 1.25 * Math.min(1, Math.max(.55, Math.sqrt(4 / props.count))));
 const style = computed(() => ({
   left: `clamp(${actorSize.value / 2 + 8}px, ${position.value.x}%, calc(100% - ${actorSize.value / 2 + 8}px))`,

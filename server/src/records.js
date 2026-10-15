@@ -1,5 +1,6 @@
+import {workoutEnergy} from './workout-energy.js';
 import { getDb, getProfile, GOAL_LABEL } from './db.js';
-import { normalizeSets, decodeWorkout, workoutVolumeSql } from './workout-sets.js';
+import { normalizeSets, decodeWorkout, workoutVolumeSql, normalizeCardio } from './workout-sets.js';
 import { createHash } from 'node:crypto';
 
 export const today = () => new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD (本地時區)
@@ -69,25 +70,28 @@ export const deleteMeal = (userId, id) =>
 
 export function addWorkout(userId, input, source = 'manual') {
   const details=input.set_details === undefined ? [] : normalizeSets(input.set_details);
+  input=normalizeCardio(input,details);
   const values=[str(input.date,today()),str(input.exercise,'未命名'),str(input.category,'other'),details.length || num(input.sets),
     details.length ? details[0].reps : num(input.reps),details.length ? details[0].weight_kg : num(input.weight_kg),
-    details.length ? details.reduce((sum,s)=>sum+s.duration_s,0)/60 : num(input.duration_min),num(input.rpe),source,str(input.note),JSON.stringify(details)];
+    details.length ? details.some(s=>s.duration_s>0) ? details.reduce((sum,s)=>sum+s.duration_s,0)/60 : num(input.duration_min) : num(input.duration_min),num(input.rpe),source,str(input.note),JSON.stringify(details)];
   const parsedDate=new Date(values[0]+'T00:00:00Z');
   if(details.length && (!/^\d{4}-\d{2}-\d{2}$/.test(values[0]) || Number.isNaN(parsedDate.valueOf()) || parsedDate.toISOString().slice(0,10)!==values[0] || !values[1].trim() || values[1].length>120)) throw Object.assign(new Error('日期或動作名稱無效'),{status:400});
+  const energy=workoutEnergy({...input,set_details:details,duration_min:values[6]},getProfile(userId).weight_kg);
   const id=input.requestId;
   if(id!==undefined && (typeof id!=='string' || !/^[a-zA-Z0-9-]{16,80}$/.test(id))) throw Object.assign(new Error('儲存識別碼無效'),{status:400});
-  const hash=createHash('sha256').update(JSON.stringify(values)).digest('hex');
+  const hash=createHash('sha256').update(JSON.stringify([...values,input.calories_kcal ?? null,input.met ?? null])).digest('hex');
   const db=getDb(userId);
   const existing=id && db.prepare('SELECT * FROM workout_save_requests WHERE request_id=?').get(id);
   if(existing) {
-    if(existing.payload_hash!==hash) throw Object.assign(new Error('同一筆儲存請求不可更換內容'),{status:409});
+    const legacyHash=input.calories_kcal==null && input.met==null ? createHash('sha256').update(JSON.stringify(values)).digest('hex') : null;
+    if(existing.payload_hash!==hash && existing.payload_hash!==legacyHash) throw Object.assign(new Error('同一筆儲存請求不可更換內容'),{status:409});
     const row=getWorkout(userId,existing.workout_id);
     if(!row) throw Object.assign(new Error('這份紀錄已被刪除，不會重新新增'),{status:409});
     return row;
   }
   if(id) db.exec('BEGIN IMMEDIATE');
   try {
-    const r=db.prepare(`INSERT INTO workouts (date,exercise,category,sets,reps,weight_kg,duration_min,rpe,source,note,set_details) VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(...values);
+    const r=db.prepare(`INSERT INTO workouts (date,exercise,category,sets,reps,weight_kg,duration_min,rpe,source,note,set_details,calories_kcal,calorie_meta) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(...values,energy.calories_kcal,JSON.stringify(energy.calorie_meta));
     const rowId=Number(r.lastInsertRowid);
     if(id) {db.prepare('INSERT INTO workout_save_requests VALUES (?,?,?)').run(id,hash,rowId);db.exec('COMMIT');}
     return getWorkout(userId,rowId);
@@ -107,15 +111,17 @@ export function listWorkouts(userId, { from, to, date, limit = 500 } = {}) {
 export function updateWorkout(userId, id, patch) {
   const cur = getWorkout(userId, id);
   if (!cur) return null;
-  const w = { ...cur, ...patch };
+  let w = { ...cur, ...patch };
   const changesAggregate=['sets','reps','weight_kg','duration_min'].some(key=>patch[key]!==undefined && Number(patch[key])!==Number(cur[key]));
   const details=patch.set_details!==undefined ? Array.isArray(patch.set_details) && !patch.set_details.length ? [] : normalizeSets(patch.set_details) : changesAggregate ? [] : cur.set_details;
-  if(details.length) {w.sets=details.length;w.reps=details[0].reps;w.weight_kg=details[0].weight_kg;w.duration_min=details.reduce((sum,s)=>sum+s.duration_s,0)/60;}
+  w=normalizeCardio(w,details);
+  if(details.length) {w.sets=details.length;w.reps=details[0].reps;w.weight_kg=details[0].weight_kg;w.duration_min=details.some(s=>s.duration_s>0) ? details.reduce((sum,s)=>sum+s.duration_s,0)/60 : num(w.duration_min);}
+  const energy=workoutEnergy({...w,set_details:details,calories_kcal:patch.calories_kcal,met:patch.met},getProfile(userId).weight_kg,cur);
   getDb(userId).prepare(`
-    UPDATE workouts SET date=?, exercise=?, category=?, sets=?, reps=?, weight_kg=?, duration_min=?, rpe=?, note=?, set_details=?
+    UPDATE workouts SET date=?, exercise=?, category=?, sets=?, reps=?, weight_kg=?, duration_min=?, rpe=?, note=?, set_details=?,calories_kcal=?,calorie_meta=?
     WHERE id=?
   `).run(str(w.date), str(w.exercise), str(w.category), num(w.sets), num(w.reps),
-         num(w.weight_kg), num(w.duration_min), num(w.rpe), str(w.note), JSON.stringify(details), id);
+         num(w.weight_kg), num(w.duration_min), num(w.rpe), str(w.note), JSON.stringify(details),energy.calories_kcal,JSON.stringify(energy.calorie_meta), id);
   return getWorkout(userId, id);
 }
 
@@ -182,8 +188,9 @@ export function dailySummary(userId, date = today()) {
     FROM meals WHERE date = ?
   `).get(date);
   const w = db.prepare(`
-    SELECT COUNT(*) items, COALESCE(SUM(${workoutVolumeSql}),0) volume_kg,
-           COALESCE(SUM(duration_min),0) duration_min
+    SELECT COUNT(*) items, COALESCE(SUM(calories_kcal),0) calories_kcal, SUM(CASE WHEN calories_kcal IS NULL THEN 1 ELSE 0 END) calories_missing, COALESCE(SUM(${workoutVolumeSql}),0) volume_kg,
+           COALESCE(SUM(duration_min),0) duration_min,
+           COALESCE(SUM(CASE WHEN category='cardio' THEN duration_min ELSE 0 END),0) cardio_min
     FROM workouts WHERE date = ?
   `).get(date);
   const p = getProfile(userId);
@@ -209,7 +216,7 @@ export function rangeSummary(userId, from, to) {
     FROM meals WHERE date BETWEEN ? AND ? GROUP BY date ORDER BY date
   `).all(from, to);
   const training = db.prepare(`
-    SELECT date, COUNT(*) items, SUM(${workoutVolumeSql}) volume_kg, SUM(duration_min) duration_min
+    SELECT date, COUNT(*) items, COALESCE(SUM(calories_kcal),0) calories_kcal, SUM(CASE WHEN calories_kcal IS NULL THEN 1 ELSE 0 END) calories_missing, SUM(${workoutVolumeSql}) volume_kg, SUM(duration_min) duration_min, SUM(CASE WHEN category='cardio' THEN duration_min ELSE 0 END) cardio_min
     FROM workouts WHERE date BETWEEN ? AND ? GROUP BY date ORDER BY date
   `).all(from, to);
   const weights = db.prepare(`
@@ -238,7 +245,7 @@ export function recentContext(userId, days = 7) {
 
   lines.push(`近 ${days} 天訓練：`);
   lines.push(training.length
-    ? training.map(r => `  ${r.date}: ${r.items} 項，總訓練量 ${Math.round(r.volume_kg || 0)}kg，${Math.round(r.duration_min || 0)} 分鐘`).join('\n')
+    ? training.map(r => `  ${r.date}: ${r.items} 項，已記消耗熱量 ${Math.round(r.calories_kcal || 0)}kcal（${r.calories_missing || 0}筆待補時間／熱量），有氧 ${Math.round(r.cardio_min || 0)} 分鐘，總計時 ${Math.round(r.duration_min || 0)} 分鐘`).join('\n')
     : '  （無紀錄）');
 
   // 附上編號，LLM 才能用 edit_meal / delete_meal 指到正確的那一筆
@@ -254,7 +261,7 @@ export function recentContext(userId, days = 7) {
   const todayW = listWorkouts(userId, { date: to });
   if (todayW.length) {
     lines.push('今天的訓練明細：');
-    lines.push(todayW.map(w => `  ${w.exercise} `+(w.set_details.length ? w.set_details.map((s,i)=>`第${i+1}組 ${s.duration_s ? `${s.duration_s}秒` : `${s.weight_kg}kg×${s.reps}下`}`).join('、') : `${w.sets}x${w.reps} @${w.weight_kg}kg`)).join('\n'));
+    lines.push(todayW.map(w => `  ${w.exercise} `+(w.category==='cardio' ? `有氧 ${w.duration_min}分鐘` : w.set_details.length ? w.set_details.map((s,i)=>`第${i+1}組 ${s.duration_s ? `${s.duration_s}秒` : `${s.weight_kg}kg×${s.reps}下`}`).join('、') : `${w.sets}x${w.reps} @${w.weight_kg}kg`)).join('\n'));
   }
 
   if (weights.length) lines.push(`體重紀錄：${weights.map(w => `${w.date} ${w.weight_kg}kg`).join('、')}`);

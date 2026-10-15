@@ -101,6 +101,7 @@ export const api = {
   replacePet: (species, name, confirm) =>
     request('/pet/replace', { method: 'POST', body: { species, name, confirm } }),
   purchasePet: (species, name, requestId) => request('/pet/purchase', { method: 'POST', body: { species, name, requestId } }),
+  interactPet: petKey => request('/pet/interact',{method:'POST',body:{petKey}}),
   selectPet: (petKey) => request('/pet/select', { method: 'POST', body: { petKey } }),
   renamePet: (petKey, name) => request('/pet/name', { method: 'PATCH', body: { petKey, name } }),
   buyItem: (item, petKey) => request('/pet/buy', { method: 'POST', body: { item, petKey } }),

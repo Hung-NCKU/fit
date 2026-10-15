@@ -1,3 +1,4 @@
+import {workoutEnergy} from './workout-energy.js';
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync, readdirSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -171,6 +172,10 @@ CREATE TABLE IF NOT EXISTS pet_room_positions (
 -- 換寵物會把上一隻連同代幣與買過的東西全部清掉。開發期間這件事發生過四次，
 -- 每次都只能靠手動改資料庫救回來，而且當天的備份不見得涵蓋得到。
 -- 換掉之前先把舊的那隻整隻存進這裡，就不會再有「無法復原」這回事。
+CREATE TABLE IF NOT EXISTS pet_care_interactions (
+  pet_key TEXT NOT NULL,date TEXT NOT NULL,count INTEGER NOT NULL DEFAULT 0,last_at INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY(pet_key,date)
+);
 CREATE TABLE IF NOT EXISTS pet_history (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   species     TEXT NOT NULL,
@@ -223,6 +228,8 @@ CREATE TABLE IF NOT EXISTS pet_reward_ledger (
   // 可為空，只想記體重的人不被迫填。
   addColumn('weights', 'waist_cm', 'REAL');
   addColumn('workouts', 'set_details', "TEXT NOT NULL DEFAULT '[]'");
+  addColumn('workouts', 'calories_kcal', 'REAL');
+  addColumn('workouts', 'calorie_meta', "TEXT NOT NULL DEFAULT '{}'");
 
   // 餐點縮圖（JPEG）。清單裡的小圖本來直接載原始照片，平均 300KB；
   // 縮成約 15KB 後第一次要求時算一次，之後存這裡重複使用。
@@ -285,6 +292,13 @@ export function getDb(userId) {
   const db = new DatabaseSync(dbPath(userId));
   createSchema(db);
   seedProfile(db, user);
+  const profileWeight=db.prepare('SELECT weight_kg FROM profile WHERE id=1').get().weight_kg;
+  for(const row of db.prepare('SELECT * FROM workouts WHERE calories_kcal IS NULL').all()) {
+    try {
+      const energy=workoutEnergy({...row,set_details:JSON.parse(row.set_details || '[]'),calories_kcal:undefined},profileWeight);
+      if(energy.calories_kcal!==null) db.prepare('UPDATE workouts SET calories_kcal=?,calorie_meta=? WHERE id=? AND calories_kcal IS NULL').run(energy.calories_kcal,JSON.stringify(energy.calorie_meta),row.id);
+    } catch { /* Invalid legacy values stay unestimated; keep the original record. */ }
+  }
   migratePhotosFromDisk(db);
   connections.set(userId, db);
   return db;

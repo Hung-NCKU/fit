@@ -1,6 +1,6 @@
 import { destroyDb, getProfile, updateProfile } from '../db.js';
 import { quotaStatus } from '../gemini.js';
-import { rewardMealSaved } from '../pet.js';
+import { rewardMealSaved, rewardWorkoutSaved } from '../pet.js';
 import { lastBackup } from '../autobackup.js';
 import { addGuest, getUser, isTempGuest, promote, removeGuest, USERS } from '../users.js';
 import {
@@ -167,11 +167,14 @@ export default async function apiRoutes(app) {
   app.get('/workouts', async (req) => listWorkouts(viewUser(req), req.query));
   app.post('/workouts', async (req, reply) => {
     readOnlyGuard(req);
-    return reply.code(201).send(addWorkout(req.userId, req.body));
+    const row=addWorkout(req.userId, req.body);
+    rewardWorkoutSaved(req.userId,row.date);
+    return reply.code(201).send(row);
   });
   app.patch('/workouts/:id', async (req, reply) => {
     readOnlyGuard(req);
     const row = updateWorkout(req.userId, Number(req.params.id), req.body);
+    if(row)rewardWorkoutSaved(req.userId,row.date);
     return row || reply.code(404).send({ error: '找不到紀錄' });
   });
   app.delete('/workouts/:id', async (req, reply) => {

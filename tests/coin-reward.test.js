@@ -66,10 +66,10 @@ it('明細分開顯示立即入帳、剩餘額度與蛋白質待結算，刪除�
   const targets=records.dailySummary('eli').targets;
   const m=records.addMeal('eli',{name:'達標餐',kcal:targets.kcal,protein_g:targets.protein_g});
   reward(m);
-  expect(pet.rewardOverview('eli')).toMatchObject({instantEarned:10,instantRemaining:4,proteinPending:8,meals:1,kcal:true});
+  expect(pet.rewardOverview('eli')).toMatchObject({instantEarned:10,instantRemaining:18,proteinPending:8,meals:1,kcal:true});
   expect(pet.rewardOverview('eli').entries).toHaveLength(2);
   records.deleteMeal('eli',m.id);
-  expect(pet.rewardOverview('eli')).toMatchObject({instantEarned:10,instantRemaining:4,proteinPending:0});
+  expect(pet.rewardOverview('eli')).toMatchObject({instantEarned:10,instantRemaining:18,proteinPending:0});
 });
 it('舊憑證只顯示明細，不補發；結算明細與餘額同時提交', () => {
   const sql=db.getDb('eli');

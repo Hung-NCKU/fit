@@ -100,7 +100,8 @@
         "槓鈴在胸上彈跳。",
         "手腕後折或臀部離椅。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=rT7DgCr-3pg"
+      "sourceUrl": "https://www.youtube.com/watch?v=rT7DgCr-3pg",
+      "home": false
     },
     {
       "id": "push-up",
@@ -129,7 +130,8 @@
         "塌腰或臀部翹高。",
         "手肘完全向兩旁張開。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=0pkjOk0EiAk"
+      "sourceUrl": "https://www.youtube.com/watch?v=0pkjOk0EiAk",
+      "home": true
     },
     {
       "id": "shoulder-press",
@@ -155,7 +157,8 @@
         "後仰挺腰借力。",
         "頂端撞啞鈴或聳肩夾頸。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=qEwKCR5JCog"
+      "sourceUrl": "https://www.youtube.com/watch?v=qEwKCR5JCog",
+      "home": true
     },
     {
       "id": "lateral-raise",
@@ -180,7 +183,8 @@
         "重量太重而甩動。",
         "聳肩、手腕過度折彎。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=3VcKaXpzqRo"
+      "sourceUrl": "https://www.youtube.com/watch?v=3VcKaXpzqRo",
+      "home": true
     },
     {
       "id": "lat-pulldown",
@@ -209,7 +213,8 @@
         "把槓拉到頸後。",
         "大幅後仰、靠體重拉下。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=CAwf7n6Luuc"
+      "sourceUrl": "https://www.youtube.com/watch?v=CAwf7n6Luuc",
+      "home": false
     },
     {
       "id": "cable-row",
@@ -239,7 +244,8 @@
         "過度挺腰，把重量甩回來。",
         "聳肩或把肩胛硬夾到不舒服。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=GZbfZ033f74"
+      "sourceUrl": "https://www.youtube.com/watch?v=GZbfZ033f74",
+      "home": false
     },
     {
       "id": "barbell-curl",
@@ -264,7 +270,8 @@
         "挺腰甩起槓鈴。",
         "手腕後折或肩膀前後甩動。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=QZEqB6wUPxQ"
+      "sourceUrl": "https://www.youtube.com/watch?v=QZEqB6wUPxQ",
+      "home": false
     },
     {
       "id": "dumbbell-curl",
@@ -289,7 +296,8 @@
         "用腰背擺盪。",
         "手肘過度向前抬。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=sAq_ocpRh_I"
+      "sourceUrl": "https://www.youtube.com/watch?v=sAq_ocpRh_I",
+      "home": true
     },
     {
       "id": "tricep-pushdown",
@@ -314,7 +322,8 @@
         "靠軀幹壓重量。",
         "手肘向前後移動太多。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=2-LAMcpzODU"
+      "sourceUrl": "https://www.youtube.com/watch?v=2-LAMcpzODU",
+      "home": false
     },
     {
       "id": "plank",
@@ -339,7 +348,8 @@
         "塌腰或抬臀。",
         "憋氣硬撐到姿勢崩潰。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=fqzUlmyTpJk"
+      "sourceUrl": "https://www.youtube.com/watch?v=fqzUlmyTpJk",
+      "home": true
     },
     {
       "id": "barbell-squat",
@@ -365,7 +375,8 @@
         "膝蓋內夾或腳跟離地。",
         "為下蹲深度失去腰背穩定。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=SW_C1A-rejs"
+      "sourceUrl": "https://www.youtube.com/watch?v=SW_C1A-rejs",
+      "home": false
     },
     {
       "id": "goblet-squat",
@@ -391,7 +402,8 @@
         "腳跟離地。",
         "胸口下垂或膝蓋內夾。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=MeIiIdhvXT4"
+      "sourceUrl": "https://www.youtube.com/watch?v=MeIiIdhvXT4",
+      "home": true
     },
     {
       "id": "romanian-deadlift",
@@ -420,7 +432,8 @@
         "反覆彎腰代替髖部後推。",
         "站直後再往後折腰。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=JCXUYuzwNrM"
+      "sourceUrl": "https://www.youtube.com/watch?v=JCXUYuzwNrM",
+      "home": false
     },
     {
       "id": "glute-bridge",
@@ -446,7 +459,8 @@
         "用腰部過度後仰撐高度。",
         "膝蓋內夾或腳跟離地。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=8bbE64NuDTU"
+      "sourceUrl": "https://www.youtube.com/watch?v=8bbE64NuDTU",
+      "home": true
     },
     {
       "id": "calf-raise",
@@ -471,7 +485,8 @@
         "用彈跳取代肌肉出力。",
         "腳踝明顯往內外倒。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=ORT4oJ_R8Qs"
+      "sourceUrl": "https://www.youtube.com/watch?v=ORT4oJ_R8Qs",
+      "home": true
     },
     {
       "id": "incline-dumbbell-press",
@@ -500,7 +515,8 @@
         "椅背太直變成肩推。",
         "為了下得更低而讓肩膀向前滑。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=8iPEnn-ltC8"
+      "sourceUrl": "https://www.youtube.com/watch?v=8iPEnn-ltC8",
+      "home": false
     },
     {
       "id": "dumbbell-bench",
@@ -529,7 +545,8 @@
         "頂端用啞鈴互撞。",
         "臀部抬起或手腕向後折。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=VmB1G1K7v94"
+      "sourceUrl": "https://www.youtube.com/watch?v=VmB1G1K7v94",
+      "home": false
     },
     {
       "id": "flat-dumbbell-fly",
@@ -558,7 +575,8 @@
         "打開過深、把胸肩硬拉到底。",
         "一直彎伸手肘，變成臥推。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=eozdVDA78K0"
+      "sourceUrl": "https://www.youtube.com/watch?v=eozdVDA78K0",
+      "home": false
     },
     {
       "id": "incline-dumbbell-fly",
@@ -587,7 +605,8 @@
         "為追求伸展讓手臂落到身體後方太多。",
         "聳肩或把椅背調得過高。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=8nrLh4GpS7w"
+      "sourceUrl": "https://www.youtube.com/watch?v=8nrLh4GpS7w",
+      "home": false
     },
     {
       "id": "cable-crossover",
@@ -616,7 +635,8 @@
         "靠身體前後擺盪拉重量。",
         "手肘不停彎曲，變成推舉。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=taI4XduLpTk"
+      "sourceUrl": "https://www.youtube.com/watch?v=taI4XduLpTk",
+      "home": false
     },
     {
       "id": "high-cable-fly",
@@ -645,7 +665,8 @@
         "直接把手向下壓，變成三頭下壓。",
         "腰背大幅前後擺動。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=Iwe6AmxVf7o"
+      "sourceUrl": "https://www.youtube.com/watch?v=Iwe6AmxVf7o",
+      "home": false
     },
     {
       "id": "low-cable-fly",
@@ -674,7 +695,8 @@
         "舉到頭頂、變成肩前平舉。",
         "重量太重而用腰部後仰借力。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=M1N804yWA-8"
+      "sourceUrl": "https://www.youtube.com/watch?v=M1N804yWA-8",
+      "home": false
     },
     {
       "id": "barbell-row",
@@ -706,7 +728,8 @@
         "每一下都用挺腰甩起槓鈴。",
         "為拉得更高而過度聳肩。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=vT2GjY_Umpw"
+      "sourceUrl": "https://www.youtube.com/watch?v=vT2GjY_Umpw",
+      "home": false
     },
     {
       "id": "single-arm-row",
@@ -736,7 +759,8 @@
         "轉動整個身體把重量扭起來。",
         "啞鈴往肩膀拉，手肘大幅外開。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=pYcpY20QaE8"
+      "sourceUrl": "https://www.youtube.com/watch?v=pYcpY20QaE8",
+      "home": true
     },
     {
       "id": "dumbbell-row",
@@ -767,7 +791,8 @@
         "把俯身划船做成站姿聳肩。",
         "放下時失去控制、圓背。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=6TSP1TRMUzs"
+      "sourceUrl": "https://www.youtube.com/watch?v=6TSP1TRMUzs",
+      "home": true
     },
     {
       "id": "face-pull",
@@ -795,7 +820,8 @@
         "腰部後仰，把重量整個甩起。",
         "聳肩夾頸或讓繩索撞到臉。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=rep-qVOkqgk"
+      "sourceUrl": "https://www.youtube.com/watch?v=rep-qVOkqgk",
+      "home": false
     },
     {
       "id": "dumbbell-external-rotation",
@@ -823,7 +849,8 @@
         "把上臂整個抬起來代替肩外旋。",
         "用大重量或猛轉到關節極限。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=gOwur9N0cM0"
+      "sourceUrl": "https://www.youtube.com/watch?v=gOwur9N0cM0",
+      "home": false
     },
     {
       "id": "assisted-pull-up",
@@ -852,7 +879,8 @@
         "用擺盪或踢腿代替拉起。",
         "聳肩夾頸、下放時突然掉落。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=bAEua0zu_74"
+      "sourceUrl": "https://www.youtube.com/watch?v=bAEua0zu_74",
+      "home": false
     },
     {
       "id": "incline-barbell-bench",
@@ -881,7 +909,8 @@
         "椅背過高、聳肩推舉。",
         "槓鈴反彈或臀部離椅。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=SrqOu55lrYU"
+      "sourceUrl": "https://www.youtube.com/watch?v=SrqOu55lrYU",
+      "home": false
     },
     {
       "id": "decline-barbell-bench",
@@ -910,7 +939,8 @@
         "沒有固定身體就開始下斜推舉。",
         "為了加重而縮短動作或彈胸。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=LfyQBUKR8SE"
+      "sourceUrl": "https://www.youtube.com/watch?v=LfyQBUKR8SE",
+      "home": false
     },
     {
       "id": "pec-deck",
@@ -939,7 +969,8 @@
         "椅高不合而聳肩。",
         "機器拉得過開，重量片回程撞擊。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=Z57CtFmRMxA"
+      "sourceUrl": "https://www.youtube.com/watch?v=Z57CtFmRMxA",
+      "home": false
     },
     {
       "id": "pull-up",
@@ -969,7 +1000,8 @@
         "擺盪踢腿借力。",
         "為越過單槓而用下巴往前伸。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=eGo4IYlbE5g"
+      "sourceUrl": "https://www.youtube.com/watch?v=eGo4IYlbE5g",
+      "home": false
     },
     {
       "id": "leg-press",
@@ -995,7 +1027,8 @@
         "下放太深使腰臀捲起。",
         "膝蓋內夾或頂端猛鎖膝。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=IZxyjW7MPJQ"
+      "sourceUrl": "https://www.youtube.com/watch?v=IZxyjW7MPJQ",
+      "home": false
     },
     {
       "id": "leg-extension",
@@ -1020,7 +1053,8 @@
         "用臀部彈跳甩起重量。",
         "轉軸沒有對準膝部。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=YyvSfVjQeL0"
+      "sourceUrl": "https://www.youtube.com/watch?v=YyvSfVjQeL0",
+      "home": false
     },
     {
       "id": "lying-leg-curl",
@@ -1045,7 +1079,8 @@
         "抬臀或挺腰借力。",
         "用慣性甩起後放任重量落下。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=1Tq3QdYUuHs"
+      "sourceUrl": "https://www.youtube.com/watch?v=1Tq3QdYUuHs",
+      "home": false
     },
     {
       "id": "bodyweight-lunge",
@@ -1071,7 +1106,8 @@
         "雙腳站成一條線，失去平衡。",
         "膝蓋內夾或急速撞地。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=QOVaHwm-Q6U"
+      "sourceUrl": "https://www.youtube.com/watch?v=QOVaHwm-Q6U",
+      "home": true
     },
     {
       "id": "bulgarian-split-squat",
@@ -1097,7 +1133,8 @@
         "後椅太高導致骨盆扭轉。",
         "前腳太近而失去平衡。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=2C-uNgKwPLE"
+      "sourceUrl": "https://www.youtube.com/watch?v=2C-uNgKwPLE",
+      "home": false
     },
     {
       "id": "hammer-curl",
@@ -1122,7 +1159,8 @@
         "腰背後仰甩重量。",
         "手肘一直向前跑、手腕折彎。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=zC3nLlEvin4"
+      "sourceUrl": "https://www.youtube.com/watch?v=zC3nLlEvin4",
+      "home": true
     },
     {
       "id": "tricep-kickback",
@@ -1147,7 +1185,8 @@
         "用整隻手臂來回擺。",
         "重量太重而挺腰或聳肩。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=6SS6K3lAwZ8"
+      "sourceUrl": "https://www.youtube.com/watch?v=6SS6K3lAwZ8",
+      "home": true
     },
     {
       "id": "crunch",
@@ -1172,7 +1211,8 @@
         "用雙手拉扯脖子。",
         "起身過高變成整個坐起。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=Xyd_fa5zoEU"
+      "sourceUrl": "https://www.youtube.com/watch?v=Xyd_fa5zoEU",
+      "home": true
     },
     {
       "id": "hanging-leg-raise",
@@ -1197,7 +1237,8 @@
         "用前後擺盪甩腿。",
         "只抬大腿、腰部一直過度前拱。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=Pr1ieGZ5atk"
+      "sourceUrl": "https://www.youtube.com/watch?v=Pr1ieGZ5atk",
+      "home": false
     },
     {
       "id": "hip-thrust",
@@ -1223,7 +1264,8 @@
         "頂端過度挺腰。",
         "椅子滑動或槓鈴沒有保護墊。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=SEdqd1n0cvg"
+      "sourceUrl": "https://www.youtube.com/watch?v=SEdqd1n0cvg",
+      "home": false
     },
     {
       "id": "front-squat",
@@ -1250,7 +1292,446 @@
         "手肘下垂導致槓鈴滑落。",
         "腳跟離地或膝蓋內夾。"
       ],
-      "sourceUrl": "https://www.youtube.com/watch?v=tlfahNdNPPI"
+      "sourceUrl": "https://www.youtube.com/watch?v=tlfahNdNPPI",
+      "home": false
+    },
+    {
+      "id": "decline-dumbbell-bench",
+      "name": "下斜啞鈴臥推",
+      "english": "Decline dumbbell bench press",
+      "muscles": [
+        "chest",
+        "triceps",
+        "shoulders"
+      ],
+      "equipment": "啞鈴",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "CfSaE0vjcC8",
+      "videoTitle": "Dumbbell Decline Press - Cutler Nutrition",
+      "channel": "Cutler Nutrition",
+      "focuses": [
+        "lower-chest"
+      ],
+      "steps": [
+        "使用能固定腿部的低下斜椅，先以輕重量確認站穩與上下椅方式。",
+        "肩胛貼穩椅背，啞鈴慢慢降到下胸兩側，前臂大致垂直。",
+        "推回胸口上方，保持控制；結束時請同伴協助收回重量。"
+      ],
+      "mistakes": [
+        "椅子不穩或沒有固定身體就開始下斜推舉。",
+        "下放太深使肩膀向前滑，或用啞鈴互撞。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=CfSaE0vjcC8",
+      "home": false
+    },
+    {
+      "id": "home-incline-push-up",
+      "name": "扶高伏地挺身",
+      "english": "Incline push-up",
+      "muscles": [
+        "chest",
+        "triceps",
+        "shoulders"
+      ],
+      "equipment": "穩固桌面",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "bXsbK9UPu3c",
+      "videoTitle": "How to Do an Incline Push-Up | Chest Workout",
+      "channel": "Howcast",
+      "focuses": [
+        "middle-chest",
+        "lower-chest"
+      ],
+      "steps": [
+        "雙手扶在不會移動的穩固桌緣，腳往後站。",
+        "收緊腹部，讓身體維持一直線向桌緣靠近。",
+        "在可控制的幅度推回；桌面越高通常越容易。"
+      ],
+      "mistakes": [
+        "使用會滑動或翻倒的家具。",
+        "塌腰或只把頭往前伸。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=bXsbK9UPu3c",
+      "home": true
+    },
+    {
+      "id": "home-band-upper-fly",
+      "name": "彈力帶低位夾胸",
+      "english": "Low-to-high band fly",
+      "muscles": [
+        "chest",
+        "shoulders"
+      ],
+      "equipment": "彈力帶＋固定錨點",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "c3jd5dk6sOw",
+      "videoTitle": "13 Resistance Band Chest Exercises and what Part of the Chest they Target - Attached",
+      "channel": "Fit Gent",
+      "focuses": [
+        "upper-chest",
+        "chest-fly"
+      ],
+      "steps": [
+        "以合適的低位錨點固定彈力帶，先確認不會脫落。",
+        "手肘微彎，從身體兩側下方往前上方合攏。",
+        "保持軀幹穩定，慢慢回到舒適範圍。"
+      ],
+      "mistakes": [
+        "為了拉高而聳肩或後仰。",
+        "使用未固定牢靠的門把當錨點。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=c3jd5dk6sOw",
+      "home": true,
+      "videoStart": 281
+    },
+    {
+      "id": "home-band-fly",
+      "name": "彈力帶水平夾胸",
+      "english": "Band chest fly",
+      "muscles": [
+        "chest",
+        "shoulders"
+      ],
+      "equipment": "彈力帶＋固定錨點",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "c3jd5dk6sOw",
+      "videoTitle": "13 Resistance Band Chest Exercises and what Part of the Chest they Target - Attached",
+      "channel": "Fit Gent",
+      "focuses": [
+        "middle-chest",
+        "chest-fly"
+      ],
+      "steps": [
+        "將彈力帶固定在胸口高度的合適錨點。",
+        "手肘保留小角度，向胸前畫弧合攏。",
+        "控制回程，不讓肩膀被拉到過度後方。"
+      ],
+      "mistakes": [
+        "用彎曲手肘取代肩部內收。",
+        "彈力帶磨損或錨點鬆動仍繼續使用。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=c3jd5dk6sOw",
+      "home": true,
+      "videoStart": 79
+    },
+    {
+      "id": "home-band-lower-fly",
+      "name": "彈力帶高位夾胸",
+      "english": "High-to-low band fly",
+      "muscles": [
+        "chest",
+        "shoulders"
+      ],
+      "equipment": "彈力帶＋固定錨點",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "c3jd5dk6sOw",
+      "videoTitle": "13 Resistance Band Chest Exercises and what Part of the Chest they Target - Attached",
+      "channel": "Fit Gent",
+      "focuses": [
+        "lower-chest",
+        "chest-fly"
+      ],
+      "steps": [
+        "將彈力帶固定於適合承重的高位錨點。",
+        "站穩，手肘微彎，沿前下方弧線合攏。",
+        "停一下後控制張力回程，身體不要晃動。"
+      ],
+      "mistakes": [
+        "靠身體前倒把帶子壓下去。",
+        "手臂回程拉到疼痛範圍。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=c3jd5dk6sOw",
+      "home": true,
+      "videoStart": 374
+    },
+    {
+      "id": "home-pike-push-up",
+      "name": "派克伏地挺身",
+      "english": "Pike push-up",
+      "muscles": [
+        "shoulders",
+        "triceps"
+      ],
+      "equipment": "徒手",
+      "category": "shoulders",
+      "mode": "reps",
+      "videoId": "lIZ_C4VJnmc",
+      "videoTitle": "How to Master the Pike Pushup (Tutorial + Progressions)",
+      "channel": "Chris Calisthenics",
+      "focuses": [],
+      "steps": [
+        "雙手撐地，抬高臀部形成倒 V，膝蓋可微彎。",
+        "手肘控制彎曲，頭往雙手前方的地面靠近。",
+        "推地回起點；先用小幅度，維持控制。"
+      ],
+      "mistakes": [
+        "直接用頭承重。",
+        "塌腰或硬追求深度。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=lIZ_C4VJnmc",
+      "home": true
+    },
+    {
+      "id": "home-band-row",
+      "name": "彈力帶俯身划船",
+      "english": "Band bent-over row",
+      "muscles": [
+        "back",
+        "biceps"
+      ],
+      "equipment": "彈力帶",
+      "category": "back",
+      "mode": "reps",
+      "videoId": "U7JfIZO8xJM",
+      "videoTitle": "Beginner’s Guide to Resistance Band Rows | Build a Strong Back Anywhere 💪",
+      "channel": "Hit My Macros",
+      "focuses": [
+        "rhomboids",
+        "teres-major",
+        "lower-lats"
+      ],
+      "steps": [
+        "雙腳穩穩踩住彈力帶中段，握好兩端。",
+        "膝蓋微彎、髖部往後，背部維持穩定。",
+        "手肘往後拉到軀幹旁，控制放回。"
+      ],
+      "mistakes": [
+        "靠挺腰甩動帶子。",
+        "踩不牢或使用磨損的帶子。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=U7JfIZO8xJM",
+      "home": true
+    },
+    {
+      "id": "home-band-pulldown",
+      "name": "彈力帶高位下拉",
+      "english": "Band lat pulldown",
+      "muscles": [
+        "back",
+        "biceps"
+      ],
+      "equipment": "彈力帶＋固定錨點",
+      "category": "back",
+      "mode": "reps",
+      "videoId": "V5QLYAk_G24",
+      "videoTitle": "Resistance Band Lat Pulldown | Exercise Demo (Form and Technique)",
+      "channel": "JayTaylor",
+      "focuses": [
+        "upper-lats",
+        "teres-major"
+      ],
+      "steps": [
+        "將帶子固定在牢靠的高位錨點，跪姿或坐姿面向帶子。",
+        "穩定軀幹，手肘往身體兩側下拉。",
+        "慢慢伸回手臂，維持肩部可控制的幅度。"
+      ],
+      "mistakes": [
+        "用腰部後仰製造幅度。",
+        "錨點不穩或回彈路徑對著臉。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=V5QLYAk_G24",
+      "home": true
+    },
+    {
+      "id": "home-band-straight-pulldown",
+      "name": "彈力帶直臂下拉",
+      "english": "Band straight-arm pulldown",
+      "muscles": [
+        "back"
+      ],
+      "equipment": "彈力帶＋固定錨點",
+      "category": "back",
+      "mode": "reps",
+      "videoId": "suDvuvet9zU",
+      "videoTitle": "Banded Straight Arm Lat Pulldown",
+      "channel": "Clench Fitness",
+      "focuses": [
+        "lower-lats",
+        "teres-major"
+      ],
+      "steps": [
+        "高位固定帶子，站穩並稍微髖鉸鏈。",
+        "手肘維持微彎，將手臂從前上方向大腿拉近。",
+        "慢慢回程，不以腰部晃動代替肩伸展。"
+      ],
+      "mistakes": [
+        "反覆彎肘變成三頭伸展。",
+        "過度挺腰或聳肩。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=suDvuvet9zU",
+      "home": true
+    },
+    {
+      "id": "home-band-external-rotation",
+      "name": "彈力帶肩外旋",
+      "english": "Band external rotation",
+      "muscles": [
+        "back",
+        "shoulders"
+      ],
+      "equipment": "彈力帶＋固定錨點",
+      "category": "back",
+      "mode": "reps",
+      "videoId": "19p6nWFHaRI",
+      "videoTitle": "Band External Rotation",
+      "channel": "Bret Contreras Glute Guy",
+      "focuses": [
+        "teres-minor"
+      ],
+      "steps": [
+        "將輕阻力帶固定於手肘高度，上臂貼身。",
+        "手肘彎約直角，軀幹不動，前臂向外旋轉。",
+        "小幅度慢慢回程，左右分開記錄。"
+      ],
+      "mistakes": [
+        "手肘離身或旋轉身體。",
+        "把輕量控制動作做成大重量拉扯。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=19p6nWFHaRI",
+      "home": true
+    },
+    {
+      "id": "home-band-curl",
+      "name": "彈力帶二頭彎舉",
+      "english": "Band bicep curl",
+      "muscles": [
+        "biceps"
+      ],
+      "equipment": "彈力帶",
+      "category": "arms",
+      "mode": "reps",
+      "videoId": "3g-1J2KkX_8",
+      "videoTitle": "Band Bicep Curl",
+      "channel": "FitnessBlender",
+      "focuses": [],
+      "steps": [
+        "雙腳踩穩帶子中段，掌心朝上握住兩端。",
+        "手肘留在身體旁，彎肘將手靠近肩膀。",
+        "慢慢下降，依控制能力調整帶子長度。"
+      ],
+      "mistakes": [
+        "用腰部甩起手臂。",
+        "手腕過度彎折。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=3g-1J2KkX_8",
+      "home": true
+    },
+    {
+      "id": "home-diamond-push-up",
+      "name": "窄距伏地挺身",
+      "english": "Diamond push-up",
+      "muscles": [
+        "triceps",
+        "chest"
+      ],
+      "equipment": "徒手",
+      "category": "arms",
+      "mode": "reps",
+      "videoId": "aSbr7A49zYM",
+      "videoTitle": "Diamond Push Ups Tutorial - Richtige Ausführung | Liegstütz Varianten",
+      "channel": "Björn K.",
+      "focuses": [],
+      "steps": [
+        "雙手比一般伏地挺身靠近，可微分開以維持手腕舒適。",
+        "身體保持一直線，手肘朝後彎曲。",
+        "穩定推回；太難可改跪姿或扶高。"
+      ],
+      "mistakes": [
+        "強迫雙手拼成菱形而讓手腕痛。",
+        "塌腰或手肘過度張開。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=aSbr7A49zYM",
+      "home": true,
+      "videoLanguage": "德文教學"
+    },
+    {
+      "id": "home-bodyweight-squat",
+      "name": "徒手深蹲",
+      "english": "Bodyweight squat",
+      "muscles": [
+        "quads",
+        "glutes"
+      ],
+      "equipment": "徒手",
+      "category": "legs",
+      "mode": "reps",
+      "videoId": "nVsWUtN7NXI",
+      "videoTitle": "Bodyweight Squat Tutorial",
+      "channel": "Tom Morrison",
+      "focuses": [],
+      "steps": [
+        "雙腳以舒適寬度站穩，腳掌貼地。",
+        "髖膝一起彎曲，膝蓋朝腳尖方向移動。",
+        "蹲到能控制的深度後站回，不必強求最低。"
+      ],
+      "mistakes": [
+        "腳跟抬起或重心跑到腳掌邊緣。",
+        "為追求深度而失去軀幹控制。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=nVsWUtN7NXI",
+      "home": true
+    },
+    {
+      "id": "home-hamstring-walkout",
+      "name": "臀橋腿後走步",
+      "english": "Hamstring walkout",
+      "muscles": [
+        "hamstrings",
+        "glutes"
+      ],
+      "equipment": "徒手",
+      "category": "legs",
+      "mode": "reps",
+      "videoId": "jQ9BcglfyVo",
+      "videoTitle": "Hamstring Walkout",
+      "channel": "OPEX Fitness",
+      "focuses": [],
+      "steps": [
+        "仰躺屈膝，腳跟踩地並抬起臀部。",
+        "維持骨盆穩定，腳跟小步往外走。",
+        "在能控制的位置走回，往外再回來算一次。"
+      ],
+      "mistakes": [
+        "走太遠導致腰部下沉。",
+        "用急促跨大步取代控制。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=jQ9BcglfyVo",
+      "home": true
+    },
+    {
+      "id": "home-bird-dog",
+      "name": "鳥狗式",
+      "english": "Bird dog",
+      "muscles": [
+        "core",
+        "back",
+        "glutes"
+      ],
+      "equipment": "徒手",
+      "category": "core",
+      "mode": "reps",
+      "videoId": "GSuicJneDQU",
+      "videoTitle": "How Bird Dogs Can Help Your Deadlift",
+      "channel": "Squat University",
+      "focuses": [
+        "spinal-erectors"
+      ],
+      "steps": [
+        "四足跪姿，手在肩下、膝在髖下。",
+        "腹部維持穩定，對側手腳慢慢伸長。",
+        "停住後收回再換側；每側完成各算一次。"
+      ],
+      "mistakes": [
+        "把腿抬太高而過度挺腰。",
+        "軀幹旋轉或重心左右甩動。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=GSuicJneDQU",
+      "home": true
     }
   ],
   "focuses": [

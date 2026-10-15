@@ -1,6 +1,6 @@
 import { getCoachPlan } from './coach-plan.js';
 import { getDb, getProfile, updateProfile, GOAL_LABEL } from './db.js';
-import { rewardMealSaved } from './pet.js';
+import { rewardMealSaved, rewardWorkoutSaved } from './pet.js';
 import { generateContent, partsToText, partsToCalls } from './gemini.js';
 import {
   addMeal, getMeal, updateMeal, deleteMeal,
@@ -46,7 +46,8 @@ export const toolDeclarations = [
         sets: { type: I, description: '組數' },
         reps: { type: I, description: '每組次數' },
         weight_kg: { type: N, description: '每下負重（公斤），徒手填 0' },
-        duration_min: { type: N, description: '時間（分鐘），重訓可填 0' },
+        duration_min: { type: N, description: '此項運動實際時間（分鐘），用於熱量估算；未知留空，不從次數推測，也不要把同一整場時長重複填在每個動作' },
+        calories_kcal: {type:N,description:'使用者明確提供的手錶或器材消耗熱量 kcal；未知留空，不編造'},
         rpe: { type: N, description: '自覺強度 1-10' },
         note: { type: S, description: '備註' },
       },
@@ -198,7 +199,9 @@ function runTool(userId, name, args = {}, photo = '') {
       };
     }
     case 'log_workout':
-      return { ok: true, saved: addWorkout(userId, args, 'ai') };
+      const workout=addWorkout(userId,args,'ai');
+      rewardWorkoutSaved(userId,workout.date);
+      return {ok:true,saved:workout};
     case 'log_weight':
       return { ok: true, saved: addWeight(userId, args) };
     case 'edit_meal': {

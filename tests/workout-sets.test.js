@@ -21,7 +21,7 @@ beforeAll(async()=>{
 beforeEach(()=>db.exec('DELETE FROM workouts;DELETE FROM workout_save_requests'));
 afterAll(async()=>{await app.close();vi.unstubAllEnvs();vi.useRealTimers();});
 it('細分部位與影片都有對應，教學與來源完整',()=>{
-  expect(catalog.muscles).toHaveLength(10);expect(catalog.exercises).toHaveLength(43);
+  expect(catalog.muscles).toHaveLength(10);expect(catalog.exercises).toHaveLength(58);
   expect(new Set(catalog.exercises.map(e=>e.id)).size).toBe(catalog.exercises.length);
   for(const region of catalog.muscles)expect(catalog.exercises.some(e=>e.muscles.includes(region.id))).toBe(true);
   for(const focus of catalog.focuses) {expect(catalog.muscles.some(m=>m.id===focus.parent)).toBe(true);expect(catalog.exercises.some(e=>e.focuses.includes(focus.id))).toBe(true);}
@@ -89,4 +89,10 @@ it('舊資料庫升級補上明細欄位，保留既有重量、組數與紀錄 
   const row=records.listWorkouts('martina')[0];
   expect(row).toMatchObject({id:1,exercise:'舊深蹲',sets:3,reps:8,weight_kg:20,set_details:[]});
   expect(records.dailySummary('martina','2026-10-15').workout.volume_kg).toBe(480);
+});
+
+it('居家選項涵蓋所有肌群與細分胸背，每個動作有直接影片與教學',()=>{
+  for(const muscle of catalog.muscles)expect(catalog.exercises.some(e=>e.home && e.muscles[0]===muscle.id)).toBe(true);
+  for(const focus of catalog.focuses)expect(catalog.exercises.some(e=>e.home && e.focuses.includes(focus.id))).toBe(true);
+  for(const e of catalog.exercises.filter(e=>e.home)){expect(e.videoId).toMatch(/^[\w-]{11}$/);expect(e.steps).toHaveLength(3);expect(e.equipment).not.toMatch(/槓鈴|器械|滑輪/);}
 });

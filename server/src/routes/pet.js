@@ -3,8 +3,9 @@ import {
   settleCoins, petState, buyItem, equipItem, unequipSlot, speciesOf, replacePet,
   listPets, purchasePet, selectPet, renamePet, PET_PRICE, itemOf,
   roomDecor, arrangeDecor, restoreRoom, rewardOverview,
-  petRoomPosition, movePet,
+  petRoomPosition, movePet, rewardWorkoutSaved,
 } from '../pet.js';
+import {petCare,interactPet} from '../pet-care.js';
 import { behaviorOf } from '../pet-behavior.js';
 import { getUser } from '../users.js';
 
@@ -32,6 +33,7 @@ export default async function petRoutes(app) {
     // 只有自己進來才結算代幣，看別人不該觸發對方的結算
     const settled = mine ? settleCoins(u) : { earned: 0, days: 0 };
 
+    if(mine)rewardWorkoutSaved(u);
     const pet = getPet(u);
     if (!pet) return { pet: null, species: SPECIES, mine };
 
@@ -41,6 +43,7 @@ export default async function petRoutes(app) {
       species: SPECIES,
       pet: { ...pet, speciesName: speciesOf(pet.species).name, tint: speciesOf(pet.species).tint },
       state: petState(u),
+      care: petCare(u,pet.petKey),
       // 生活習性（來源：pet/動物特性.txt），前端的行為狀態機吃這份
       behavior: behaviorOf(pet.species),
       roster: listPets(u).map(p => ({
@@ -87,6 +90,7 @@ export default async function petRoutes(app) {
     writeGuard(req);
     return reply.code(201).send(purchasePet(req.userId, req.body?.species, req.body?.name, req.body?.requestId));
   });
+  app.post('/pet/interact', async req => {writeGuard(req);return interactPet(req.userId,req.body?.petKey);});
   app.post('/pet/select', async (req) => {
     writeGuard(req);
     return selectPet(req.userId, req.body?.petKey);

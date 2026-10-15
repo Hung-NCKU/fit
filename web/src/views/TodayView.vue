@@ -6,7 +6,7 @@ import TrendChart from '../components/TrendChart.vue';
 import Ring from '../components/Ring.vue';
 import UserTabs from '../components/UserTabs.vue';
 import { useRoute } from 'vue-router';
-import { workoutLabel } from '../workout-metrics.js';
+import { workoutLabel, workoutEnergyLabel } from '../workout-metrics.js';
 
 const C = {
   kcal: 'var(--accent)',
@@ -81,7 +81,8 @@ function series(rows, key) {
 }
 
 const kcalSeries = computed(() => series(range.value?.days || [], 'kcal'));
-const volumeSeries = computed(() => series(range.value?.training || [], 'volume_kg'));
+const volumeSeries = computed(() => series(range.value?.training || [], 'calories_kcal'));
+const cardioSeries = computed(() => series(range.value?.training || [], 'cardio_min'));
 const weightSeries = computed(() => {
   const rows = range.value?.weights || [];
   return rows.map(r => ({ label: r.date.slice(5).replace('-', '/'), value: Number(r.weight_kg) }));
@@ -343,8 +344,8 @@ onMounted(() => {
       <div class="spread" style="margin-bottom:.5rem">
         <h3 style="margin:0">今天的訓練</h3>
         <span class="small muted" v-if="summary">
-          總量 {{ Math.round(summary.workout.volume_kg) }} kg
-          <template v-if="summary.workout.duration_min"> · {{ Math.round(summary.workout.duration_min) }} 分鐘</template>
+          <template v-if="summary.workout.items>summary.workout.calories_missing">消耗約 {{ Math.round(summary.workout.calories_kcal) }} kcal</template><template v-if="summary.workout.calories_missing"> · {{ summary.workout.calories_missing }} 筆尚未估算</template><template v-if="summary.workout.cardio_min"> · 有氧 {{ Math.round(summary.workout.cardio_min*10)/10 }} 分鐘</template>
+          <template v-if="summary.workout.duration_min"> · 總時間 {{ Math.round(summary.workout.duration_min*10)/10 }} 分鐘</template>
         </span>
       </div>
       <table v-if="workouts.length">
@@ -352,7 +353,7 @@ onMounted(() => {
           <tr v-for="w in workouts" :key="w.id">
             <td>{{ w.exercise }} <span class="badge">{{ CATEGORIES[w.category] || '其他' }}</span></td>
             <td class="num muted">
-              {{ workoutLabel(w) }}
+              {{ workoutLabel(w) }}<br /><small>{{ workoutEnergyLabel(w) }}</small>
             </td>
           </tr>
         </tbody>
@@ -387,8 +388,9 @@ onMounted(() => {
       <TrendChart title="近 14 天熱量攝取" :points="kcalSeries" type="bar"
                   :color="C.kcal" unit=" kcal" :target="summary?.targets.kcal || 0" target-label="目標" />
 
-      <TrendChart title="近 14 天訓練總量" :points="volumeSeries" type="bar"
-                  :color="C.volume" unit=" kg" />
+      <TrendChart title="近 14 天累計消耗熱量（估算）" :points="volumeSeries" type="bar"
+                  :color="C.volume" unit=" kcal" />
+      <TrendChart v-if="cardioSeries.some(p=>p.value>0)" title="近 14 天有氧時間" :points="cardioSeries" type="bar" :color="C.protein" unit=" 分鐘" />
 
     </div>
   </div>

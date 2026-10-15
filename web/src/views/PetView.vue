@@ -26,6 +26,21 @@ const shopSearch = ref('');
 const shopOwned = ref('all');
 const roomUndo = ref([]);
 const celebration = ref(null);
+const interacting=ref(false),careMessage=ref('');
+async function playWithPet(key) {
+  if(!mine.value || interacting.value || busy.value)return;
+  const user=viewing.value,version=reqId;
+  interacting.value=true;careMessage.value='';
+  try {
+    if(key!==pet.value.petKey)await api.selectPet(key);
+    const result=await api.interactPet(key);
+    const fresh=await api.pet(user);
+    if(viewing.value!==user || reqId!==version)return;
+    data.value=fresh;careMessage.value=result.message;
+    celebration.value={kind:'interaction',at:Date.now()};
+  } catch(e) {if(viewing.value===user && reqId===version)careMessage.value=e.message;}
+  finally {interacting.value=false;}
+}
 function receiveFeedback() { if (mine.value) celebration.value = consumeFeedback(); }
 onMounted(() => { receiveFeedback(); window.addEventListener('fit-record-saved', receiveFeedback); });
 onUnmounted(() => window.removeEventListener('fit-record-saved', receiveFeedback));
@@ -342,7 +357,7 @@ function confirmRename() {
             :room-key="equipped.bg" @move="movePet"
             :selected="member.petKey === pet.petKey" :interactive="mine && !busy && !arranging"
             :preview="tab === 'shop' && member.petKey === pet.petKey"
-            :wearing="member.petKey === pet.petKey ? worn : undefined" @select="choosePet" />
+            :wearing="member.petKey === pet.petKey ? worn : undefined" @select="choosePet" @interact="playWithPet" />
         </div>
 
         <div class="row wrap family">
@@ -352,6 +367,13 @@ function confirmRename() {
         <p class="small muted">共 {{ roster.length }} 隻寵物，共用代幣與環境；目前替「{{ pet.name }}」挑選穿搭。{{ mine ? '點住寵物可拎起拖移，放開後保存位置。' : '' }}</p>
         <p class="says">{{ state.says }}</p>
 
+        <div v-if="data.care && tab==='home'" class="pet-care stack">
+          <label>今日心情 <b>{{ data.care.mood }} / 100</b><progress :value="data.care.mood" max="100" aria-label="今日心情"></progress></label>
+          <label>今日飽足度（越高越不餓） <b>{{ data.care.fullness }} / 100</b><progress :value="data.care.fullness" max="100" aria-label="今日飽足度"></progress></label>
+          <p class="small muted">運動就是陪寵物玩耍；記錄飲食能提高飽足度，達到每日熱量目標就會全滿。點一下寵物心情 +2，每 30 秒一次，每天最多 10 次。</p>
+          <button v-if="mine" :disabled="interacting || busy" @click="playWithPet(pet.petKey)">陪牠玩</button>
+          <p v-if="careMessage" class="small" role="status">{{ careMessage }}</p>
+        </div>
         <div class="row wrap stats small">
           <span><span class="muted">近 7 天熱量 </span><b>{{ state.kcalPct }}%</b></span>
           <span><span class="muted">蛋白質 </span><b>{{ state.proteinPct }}%</b></span>
@@ -435,10 +457,12 @@ function confirmRename() {
           今日新增有效飲食每筆立即 +2，每天最多三筆（+6）；修改、刪除及補登過去日期不發新增獎勵。
           今日熱量首次落在目標 ±10% 立即 +8，每天一次；修改也可觸發這份達標獎勵。
           蛋白質達目標九成 +8，隔天開啟自己的寵物頁時自動結算，每天一次。
+          今日肌力累積 3 組 +8、有氧累積 15 分鐘 +6，各每天一次；連同飲食最多 36 枚。
         </p>
       </div>
       <div v-if="mine && data.rewards && tab === 'home'" class="card stack rewards">
         <h3 style="margin:0">今天的代幣</h3>
+        <div v-if="data.rewards.exercise" class="small">肌力 {{ data.rewards.exercise.strengthSets }}/3 組 · {{ data.rewards.exercise.strengthPaid ? '已入帳 +8' : '累積 3 組 +8' }}；有氧 {{ Math.round(data.rewards.exercise.cardioMinutes*10)/10 }}/15 分鐘 · {{ data.rewards.exercise.cardioPaid ? '已入帳 +6' : '累積 15 分鐘 +6' }}</div>
         <div class="row wrap"><b>已入帳 +{{ data.rewards.instantEarned }}</b><span>今天還可立即獲得 {{ data.rewards.instantRemaining }} 枚</span></div>
         <div class="small">新增飲食 {{ data.rewards.meals }}/3 筆 · {{ data.rewards.kcal ? '熱量獎勵已入帳 +8' : '首次熱量達標可得 +8' }}</div>
         <div class="small">{{ data.rewards.proteinPending ? '蛋白質今日已達標：+8 待隔天結算' : '蛋白質達目標九成可得 +8，隔天結算' }}</div>
@@ -610,6 +634,9 @@ function confirmRename() {
 }
 .says { margin: .8rem 0 .2rem; }
 .doing { margin: 0 0 .5rem; }
+.pet-care { padding:1rem; background:var(--bg); border-radius:16px; }
+.pet-care label { display:grid;grid-template-columns:1fr auto;gap:.4rem; }
+.pet-care progress { grid-column:1/-1;width:100%;accent-color:var(--accent); }
 .stats { gap: 1rem; }
 .stats b { font-variant-numeric: tabular-nums; }
 

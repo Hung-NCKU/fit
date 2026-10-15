@@ -1,14 +1,15 @@
 <script setup>
 import { confirmAction } from '../confirm.js';
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
-import { api, todayStr, CATEGORIES } from '../api.js';
+import { api, CATEGORIES } from '../api.js';
 import { session } from '../auth.js';
 import { useRoute } from 'vue-router';
 import UserTabs from '../components/UserTabs.vue';
 import WorkoutExplorer from '../components/WorkoutExplorer.vue';
-import { workoutVolume, workoutLabel } from '../workout-metrics.js';
+import CardioRecorder from '../components/CardioRecorder.vue';
+import { workoutLabel, workoutEnergyLabel } from '../workout-metrics.js';
 import catalog from '../../../shared/workout-catalog.json';
-const explorer=ref(null);
+const explorer=ref(null),customExplorer=ref(null),cardioRecorder=ref(null),trainingMode=ref('strength');
 
 const rows = ref([]);
 const error = ref('');
@@ -16,15 +17,6 @@ const viewing = ref(session.user);                       // 正在看誰的紀�
 const isMine = computed(() => viewing.value === session.user);
 const showForm = ref(false);
 const route = useRoute();
-const saving = ref(false);
-
-const blank = () => ({
-  date: todayStr(), exercise: '', category: 'legs',
-  sets: 3, reps: 10, weight_kg: 0, duration_min: 0, rpe: 7, note: '',
-});
-const form = ref(blank());
-const editingId = ref(null);
-
 const loading = ref(false);
 // 切換使用者時可能有兩個請求同時在飛，而它們不保證按順序回來。
 // 先發的後到的話，畫面會停在上一個人的資料上（手機特別明顯，延遲高）。
@@ -49,31 +41,12 @@ async function load() {
 // 先清空再載入：不要讓上一個人的紀錄挂在畫面上等新資料
 watch(viewing, () => { rows.value = []; cancel(); load(); });
 
-async function save() {
-  if (!form.value.exercise.trim()) return;
-  saving.value = true;
-  error.value = '';
-  try {
-    if (editingId.value) await api.updateWorkout(editingId.value, form.value);
-    else await api.addWorkout(form.value);
-    form.value = blank();
-    editingId.value = null;
-    showForm.value = false;
-    await load();
-  } catch (e) {
-    error.value = e.message;
-  } finally {
-    saving.value = false;
-  }
-}
-
 async function edit(w) {
+  if(w.category==='cardio') {trainingMode.value='cardio';showForm.value=false;await nextTick();await cardioRecorder.value?.startEdit(w);return;}
   if(w.set_details?.length && catalog.exercises.some(e=>e.name===w.exercise)) {
-    showForm.value=false;await nextTick();await explorer.value?.startEdit(w);return;
+    trainingMode.value='strength';showForm.value=false;await nextTick();await explorer.value?.startEdit(w);return;
   }
-  form.value = { ...w };
-  editingId.value = w.id;
-  showForm.value = true;
+  showForm.value=true;await nextTick();await customExplorer.value?.startEdit(w);
 }
 
 async function remove(w) {
@@ -83,8 +56,6 @@ async function remove(w) {
 }
 
 function cancel() {
-  form.value = blank();
-  editingId.value = null;
   showForm.value = false;
 }
 
@@ -98,8 +69,10 @@ const grouped = computed(() => {
   return [...map.entries()].map(([date, items]) => ({
     date,
     items,
-    volume: Math.round(items.reduce((a, w) => a + workoutVolume(w), 0)),
-    minutes: Math.round(items.reduce((a, w) => a + w.duration_min, 0)),
+    calories:Math.round(items.reduce((a,w)=>a+Number(w.calories_kcal || 0),0)),
+    missing:items.filter(w=>w.calories_kcal===null || w.calories_kcal===undefined).length,
+    minutes: Math.round(items.reduce((a,w)=>a+Number(w.duration_min || 0),0)*10)/10,
+    cardioMinutes:Math.round(items.filter(w=>w.category==='cardio').reduce((a,w)=>a+Number(w.duration_min || 0),0)*10)/10,
   }));
 });
 
@@ -119,33 +92,11 @@ watch(() => route.query.new, v => { if (v === '1') { cancel(); showForm.value = 
     <UserTabs v-model="viewing" />
 
     <div v-if="error" class="error">{{ error }}</div>
-    <WorkoutExplorer v-if="isMine && !showForm" ref="explorer" @saved="load" />
+    <div v-if="isMine && !showForm" class="row training-modes" aria-label="訓練種類"><button :class="{active:trainingMode==='strength'}" :aria-pressed="trainingMode==='strength'" @click="trainingMode='strength'">肌力訓練</button><button :class="{active:trainingMode==='cardio'}" :aria-pressed="trainingMode==='cardio'" @click="trainingMode='cardio'">有氧運動</button></div>
+    <WorkoutExplorer v-if="isMine && !showForm" v-show="trainingMode==='strength'" ref="explorer" @saved="load" />
+    <CardioRecorder v-if="isMine && !showForm" v-show="trainingMode==='cardio'" ref="cardioRecorder" @saved="load" />
 
-    <div v-if="showForm && isMine" class="card">
-      <div class="grid form">
-        <div><label>日期</label><input v-model="form.date" type="date" /></div>
-        <div><label>部位</label>
-          <select v-model="form.category">
-            <option v-for="(zh, k) in CATEGORIES" :key="k" :value="k">{{ zh }}</option>
-          </select>
-        </div>
-        <div class="span2"><label>動作</label>
-          <input v-model="form.exercise" placeholder="例如：槓鈴深蹲" @keyup.enter="save" />
-        </div>
-        <div><label>組數</label><input v-model.number="form.sets" type="number" min="0" /></div>
-        <div><label>次數</label><input v-model.number="form.reps" type="number" min="0" /></div>
-        <div><label>重量 (kg)</label><input v-model.number="form.weight_kg" type="number" min="0" step="0.5" /></div>
-        <div><label>時間 (分)</label><input v-model.number="form.duration_min" type="number" min="0" /></div>
-        <div><label>RPE 1-10</label><input v-model.number="form.rpe" type="number" min="0" max="10" step="0.5" /></div>
-        <div class="span2"><label>備註</label><input v-model="form.note" placeholder="體感、狀況…" /></div>
-      </div>
-      <div class="row" style="margin-top:.8rem; justify-content:flex-end">
-        <button class="ghost" @click="cancel">取消</button>
-        <button class="primary" :disabled="saving || !form.exercise.trim()" @click="save">
-          {{ editingId ? '更新' : '儲存' }}
-        </button>
-      </div>
-    </div>
+    <WorkoutExplorer v-if="showForm && isMine" ref="customExplorer" custom-only @close="cancel" @saved="cancel();load()" />
 
     <div v-if="loading" class="card empty">載入中…</div>
     <div v-else-if="!grouped.length" class="card empty">
@@ -153,11 +104,12 @@ watch(() => route.query.new, v => { if (v === '1') { cancel(); showForm.value = 
       <template v-else>對方還沒有訓練紀錄。</template>
     </div>
 
+    <p v-if="grouped.length" class="small muted volume-help">訓練以累計消耗熱量（kcal）呈現。肌力未填時間時採每組平均 3 分鐘與一般強度估算；有氧依種類與總時間估算，不需記錄休息秒數。</p>
     <div v-for="g in grouped" :key="g.date" class="card">
       <div class="spread" style="margin-bottom:.4rem">
         <h3 style="margin:0">{{ g.date }}</h3>
         <span class="small muted">
-          {{ g.items.length }} 項 · 總量 {{ g.volume }} kg<template v-if="g.minutes"> · {{ g.minutes }} 分</template>
+          {{ g.items.length }} 項<template v-if="g.missing<g.items.length"> · 消耗約 {{ g.calories }} kcal</template><template v-if="g.missing"> · {{ g.missing }} 筆尚未估算</template><template v-if="g.minutes"> · 總時間 {{ g.minutes }} 分</template><template v-if="g.cardioMinutes">（有氧 {{ g.cardioMinutes }} 分）</template>
         </span>
       </div>
       <div class="workout-logs">
@@ -172,10 +124,10 @@ watch(() => route.query.new, v => { if (v === '1') { cancel(); showForm.value = 
             <div class="row wrap small">
               <span class="badge">{{ CATEGORIES[w.category] || '其他' }}</span>
               <span v-if="w.source === 'ai'" class="badge ai">AI</span>
-              <span>{{ workoutLabel(w) }}</span>
+              <span>{{ workoutLabel(w) }}</span><span class="badge">{{ workoutEnergyLabel(w) }}</span>
             </div>
             <details v-if="w.set_details?.length" class="small set-history">
-              <summary>查看每組 · 總量 {{ Math.round(workoutVolume(w)*10)/10 }} kg</summary>
+              <summary>{{ w.category==='cardio' ? '查看有氧時間' : '查看每組' }}</summary>
               <div v-for="(set,index) in w.set_details" :key="index" class="saved-set"><span>第 {{ index+1 }} 組</span><b>{{ set.duration_s ? `${set.duration_s} 秒` : `${set.weight_kg} kg × ${set.reps} 下` }}</b><span class="muted">{{ set.rpe ? `RPE ${set.rpe}` : '—' }}</span></div>
             </details>
             <p v-if="w.note" class="small muted log-note">{{ w.note }}</p>
@@ -193,4 +145,6 @@ watch(() => route.query.new, v => { if (v === '1') { cancel(); showForm.value = 
   .form { grid-template-columns: repeat(2, 1fr); }
   .span2 { grid-column: span 2; }
 }
+
+.training-modes {margin-bottom:.8rem;}.training-modes button {flex:1;min-height:44px;}.training-modes .active {background:var(--accent);border-color:var(--accent);color:white;}.volume-help {line-height:1.7;}
 </style>
