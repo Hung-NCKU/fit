@@ -11,7 +11,7 @@ import { recordFeedback } from '../pet-feedback.js';
 const chatCacheKey=['chat',session.user,new Date().toLocaleDateString('sv-SE')];
 onUnmounted(()=>{if(!bookmarkBrowsing.value)patchCachedPage(chatCacheKey,previous=>[messages.value,{...previous[1],gemini:geminiReady.value},coachPlan.value]);});
 const messages = ref([]);
-const bookmarkOpen=ref(true),bookmarkItems=ref([]),bookmarkFetched=ref(false),bookmarkLoading=ref(false),bookmarkMore=ref(false),bookmarkBefore=ref(null),bookmarkBrowsing=ref(false),bookmarkError=ref(''),focusedBookmark=ref(null);
+const bookmarkOpen=ref(false),bookmarkItems=ref([]),bookmarkFetched=ref(false),bookmarkLoading=ref(false),bookmarkMore=ref(false),bookmarkBefore=ref(null),bookmarkBrowsing=ref(false),bookmarkError=ref(''),focusedBookmark=ref(null);
 let bookmarkSequence=0,bookmarkTimer;
 const bookmarks=computed(()=>{
  const map=new Map(bookmarkItems.value.map(item=>[String(item.id),item]));
@@ -24,7 +24,7 @@ async function loadBookmarks(more=false){
  catch(e){if(!disposed)bookmarkError.value=e.message;}finally{bookmarkLoading.value=false;}
 }
 watch(bookmarkOpen,value=>{if(value && !bookmarkFetched.value)loadBookmarks();});
-onMounted(()=>loadBookmarks());
+
 async function jumpToQuestion(item){
  const sequence=++bookmarkSequence;bookmarkBrowsing.value=true;bookmarkError.value='';
  try {

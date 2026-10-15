@@ -187,7 +187,7 @@ const decorations = computed(() => {
 const selectedDecor = computed(() => (data.value?.decorations || []).find(i=>i.id===decorSelected.value));
 const storedDecor = computed(() => (data.value?.shop || []).filter(i=>i.slot==='decor' && owned.value.has(i.id) && !(data.value?.decorations || []).some(p=>p.id===i.id)));
 const isUsed = item => item.slot === 'decor' ? (data.value?.decorations || []).some(i=>i.id===item.id) : equipped.value[item.slot]===item.id;
-const snapshot = () => (data.value?.decorations || []).map(i=>({id:i.id,x:i.x,y:i.y,scale:i.scale,locked:!!i.locked,layer:i.layer || 0}));
+const snapshot = () => (data.value?.decorations || []).map(i=>({id:i.id,x:i.x,y:i.y,scale:i.scale,locked:!!i.locked,layer:i.layer || 0,rotation:i.rotation ?? 0}));
 const moveDecor = ({id,position}) => act(async()=>{
   const before=snapshot();
   try {
@@ -198,7 +198,7 @@ const moveDecor = ({id,position}) => act(async()=>{
 },'arrange');
 const editDecor = patch => {
   const item=selectedDecor.value;
-  if(item) moveDecor({id:item.id,position:{x:item.x,y:item.y,scale:item.scale,locked:!!item.locked,layer:item.layer || 0,...patch}});
+  if(item) moveDecor({id:item.id,position:{x:item.x,y:item.y,scale:item.scale,locked:!!item.locked,layer:item.layer || 0,rotation:item.rotation ?? 0,...patch}});
 };
 const undoRoom = () => act(async()=>{
   const last=roomUndo.value.at(-1);
@@ -207,10 +207,10 @@ const undoRoom = () => act(async()=>{
   catch(e) {roomUndo.value=[];throw e;}
 },'undo');
 async function resetRoom() {
-  if(!await confirmAction('將這個環境的裝飾移回預設位置並解鎖？已購買的商品會保留，也可以撤銷這次重設。')) return;
+  if(!await confirmAction('將這個環境的裝飾移回預設位置、重設大小與角度並解鎖？已購買的商品會保留，也可以撤銷這次重設。')) return;
   act(async()=>{
     const before=snapshot();
-    const items=before.map((i,n)=>({...i,x:15+n%6*14,y:72+Math.floor(n/6)%3*8,scale:1,layer:0,locked:false}));
+    const items=before.map((i,n)=>({...i,x:15+n%6*14,y:72+Math.floor(n/6)%3*8,scale:1,layer:0,rotation:0,locked:false}));
     const after=await api.restoreRoom(items,before);
     roomUndo.value=[...roomUndo.value.slice(-19),{before,after}];
   },'reset');
@@ -218,6 +218,12 @@ async function resetRoom() {
 const resizeDecor = event => {
   const item=selectedDecor.value;
   if (item) editDecor({scale:Number(event.target.value)});
+};
+const rotateDecor = delta => {
+  const item=selectedDecor.value;
+  if(!item || item.locked || busy.value)return;
+  const rotation=(((item.rotation || 0)+delta+180)%360+360)%360-180;
+  editDecor({rotation});
 };
 const movePet = ({petKey,position})=>act(async()=>{
   try {await api.movePet(petKey,position);}
@@ -366,7 +372,7 @@ function confirmRename() {
         <!-- 場景與分頁共用固定尺寸，切換商城不重排布置。 -->
         <div ref="sceneEl" class="scene" :style="{ '--tint': pet.tint || '#f6efdf', '--floor-lift': sceneHeight * .12 + 'px' }">
           <img class="scene-bg" :src="sceneImg" :alt="bg?.name || '小房間'" />
-          <RoomDecor :items="decorations" :editable="mine && arranging && !busy" :selected="decorSelected" @select="decorSelected=$event" @move="moveDecor" />
+          <RoomDecor :scene-height="sceneHeight" :scene-width="sceneWidth" :items="decorations" :editable="mine && arranging && !busy" :selected="decorSelected" @select="decorSelected=$event" @move="moveDecor" />
           <PetActor v-for="(member, index) in roster" :key="member.petKey"
             :decorations="decorations" :celebration="celebration" :reminder="reminder"
             :pet="member" :index="index" :count="roster.length" :state="state" :scene-height="sceneHeight"
@@ -448,6 +454,12 @@ function confirmRename() {
             <b>{{ selectedDecor.name }}</b>
             <button :disabled="busy" @click="editDecor({locked:!selectedDecor.locked})">{{ selectedDecor.locked ? '🔒 已鎖定，點此解鎖' : '鎖定這件裝飾' }}</button>
             <label>裝飾大小<input type="range" min="0.6" max="1.5" step="0.1" :value="selectedDecor.scale" :disabled="busy || !!selectedDecor.locked" @change="resizeDecor" /></label>
+            <div class="row wrap">
+              <button :disabled="busy || !!selectedDecor.locked" @click="rotateDecor(-15)">向左旋轉 15°</button>
+              <button :disabled="busy || !!selectedDecor.locked" @click="rotateDecor(15)">向右旋轉 15°</button>
+              <button :disabled="busy || !!selectedDecor.locked || !selectedDecor.rotation" @click="editDecor({rotation:0})">重設角度</button>
+              <span class="small muted">角度 {{ selectedDecor.rotation || 0 }}°</span>
+            </div>
             <div class="row wrap">
               <button :disabled="busy || !!selectedDecor.locked || selectedDecor.layer >= 5" @click="editDecor({layer:(selectedDecor.layer || 0)+1})">移到前一層</button>
               <button :disabled="busy || !!selectedDecor.locked || selectedDecor.layer <= -5" @click="editDecor({layer:(selectedDecor.layer || 0)-1})">移到後一層</button>

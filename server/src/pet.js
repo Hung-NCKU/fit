@@ -544,8 +544,8 @@ export function unequipSlot(userId, slot, petKey = null) {
 export function roomDecor(userId) {
   const pet = mainPet(userId);
   if (!pet) return [];
-  return getDb(userId).prepare('SELECT item_id, x, y, scale, locked, layer FROM pet_room_decor WHERE scene = ?').all(pet.equipped.bg || 'bg_room')
-    .map(row => ({ ...itemOf(row.item_id), x: row.x, y: row.y, scale: row.scale, locked: row.locked, layer: row.layer })).filter(item => item.id);
+  return getDb(userId).prepare('SELECT item_id, x, y, scale, locked, layer, rotation FROM pet_room_decor WHERE scene = ?').all(pet.equipped.bg || 'bg_room')
+    .map(row => ({ ...itemOf(row.item_id), x: row.x, y: row.y, scale: row.scale, locked: row.locked, layer: row.layer, rotation: row.rotation })).filter(item => item.id);
 }
 
 export function petRoomPosition(userId,key) {
@@ -561,7 +561,7 @@ export function movePet(userId,key,position) {
   return {x,y};
 }
 
-const roomSnapshot = items => JSON.stringify(items.map(i=>({id:i.id,x:i.x,y:i.y,scale:i.scale,locked:!!i.locked,layer:i.layer || 0})).sort((a,b)=>a.id.localeCompare(b.id)));
+const roomSnapshot = items => JSON.stringify(items.map(i=>({id:i.id,x:i.x,y:i.y,scale:i.scale,locked:!!i.locked,layer:i.layer || 0,rotation:i.rotation ?? 0})).sort((a,b)=>a.id.localeCompare(b.id)));
 function checkRoomVersion(userId, expected) {
   if (expected && roomSnapshot(expected) !== roomSnapshot(roomDecor(userId))) throw Object.assign(new Error('小屋已在另一個畫面更新，請重新載入後再編輯'),{status:409});
 }
@@ -574,7 +574,7 @@ export function restoreRoom(userId, items, expected) {
   try {
     checkRoomVersion(userId,expected);
     db.prepare('DELETE FROM pet_room_decor WHERE scene=?').run(scene);
-    for (const item of items) arrangeDecor(userId,item.id,{x:item.x,y:item.y,scale:item.scale,locked:!!item.locked,layer:item.layer || 0});
+    for (const item of items) arrangeDecor(userId,item.id,{x:item.x,y:item.y,scale:item.scale,locked:!!item.locked,layer:item.layer || 0,rotation:item.rotation ?? 0});
     db.exec('COMMIT');
     return roomDecor(userId);
   } catch(err) {db.exec('ROLLBACK');throw err;}
@@ -590,16 +590,18 @@ export function arrangeDecor(userId, itemId, position, expected) {
     db.prepare('DELETE FROM pet_room_decor WHERE scene = ? AND item_id = ?').run(scene, itemId);
   } else {
     const { x, y, scale } = position || {};
-    const prior = db.prepare('SELECT locked,layer FROM pet_room_decor WHERE scene=? AND item_id=?').get(scene,itemId);
+    const prior = db.prepare('SELECT locked,layer,rotation FROM pet_room_decor WHERE scene=? AND item_id=?').get(scene,itemId);
     const locked = position.locked ?? !!prior?.locked;
     const layer = position.layer ?? prior?.layer ?? 0;
+    const rotation = position.rotation ?? prior?.rotation ?? 0;
+    if(!Number.isFinite(rotation) || rotation < -180 || rotation > 180) throw Object.assign(new Error('旋轉角度必須介於 -180 到 180 度'),{status:400});
     if (typeof locked !== 'boolean' || !Number.isInteger(layer) || layer < -5 || layer > 5) throw Object.assign(new Error('裝飾鎖定或層級無效'), { status: 400 });
     if (![x,y,scale].every(Number.isFinite) || x < 5 || x > 95 || y < 30 || y > 95 || scale < .6 || scale > 1.5) throw Object.assign(new Error('裝飾位置或大小超出範圍'), { status: 400 });
     if (prior?.locked && position.locked !== false) {
       const old = db.prepare('SELECT x,y,scale FROM pet_room_decor WHERE scene=? AND item_id=?').get(scene,itemId);
-      if (x !== old.x || y !== old.y || scale !== old.scale || layer !== prior.layer) throw Object.assign(new Error('請先解鎖裝飾再移動'), { status: 409 });
+      if (x !== old.x || y !== old.y || scale !== old.scale || layer !== prior.layer || rotation !== prior.rotation) throw Object.assign(new Error('請先解鎖裝飾再移動'), { status: 409 });
     }
-    db.prepare('INSERT INTO pet_room_decor(scene,item_id,x,y,scale,locked,layer) VALUES (?,?,?,?,?,?,?) ON CONFLICT(scene,item_id) DO UPDATE SET x=excluded.x,y=excluded.y,scale=excluded.scale,locked=excluded.locked,layer=excluded.layer').run(scene,itemId,x,y,scale,locked ? 1 : 0,layer);
+    db.prepare('INSERT INTO pet_room_decor(scene,item_id,x,y,scale,locked,layer,rotation) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(scene,item_id) DO UPDATE SET x=excluded.x,y=excluded.y,scale=excluded.scale,locked=excluded.locked,layer=excluded.layer,rotation=excluded.rotation').run(scene,itemId,x,y,scale,locked ? 1 : 0,layer,rotation);
   }
   return roomDecor(userId);
 }

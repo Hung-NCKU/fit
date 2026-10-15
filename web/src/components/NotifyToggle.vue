@@ -65,7 +65,7 @@ async function enable() {
     const r = await api.pushSubscribe(sub.toJSON());
     cfg.value.devices = r.devices;
     on.value = true;
-    msg.value = `已開啟，${hoursText.value} 會提醒你熱量進度。`;
+    msg.value = `已開啟，${hoursText.value} 會提醒你熱量進度，台灣時間 08:00 與 00:00 另有教練訊息通知。`;
   } catch (e) {
     msg.value = `開啟失敗：${e.message}`;
   } finally {
@@ -128,11 +128,12 @@ onMounted(refresh);
 
   <div v-if="show" class="sheet">
     <div class="spread">
-      <strong>熱量進度提醒</strong>
+      <strong>教練與飲食提醒</strong>
       <button class="icon" @click="show = false">✕</button>
     </div>
 
     <p class="small muted">
+      台灣時間每天 <b>08:00</b> 通知今日教練安排，<b>00:00</b> 通知前一天回顧，點通知可開啟教練對話。<br />
       每天 <b>{{ hoursText }}</b> 檢查一次今天吃了多少，落後或超標就推播到手機。
       目前這個帳號有 <b>{{ cfg.devices }}</b> 台裝置開啟。
     </p>

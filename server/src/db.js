@@ -205,6 +205,15 @@ CREATE TABLE IF NOT EXISTS chat_requests (
   error TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
+CREATE TABLE IF NOT EXISTS coach_push_deliveries (
+  kind TEXT NOT NULL,
+  delivery_key TEXT NOT NULL,
+  endpoint TEXT NOT NULL,
+  status TEXT NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 1,
+  last_attempt INTEGER NOT NULL,
+  PRIMARY KEY(kind,delivery_key,endpoint)
+);
 CREATE TABLE IF NOT EXISTS pet_reward_ledger (
   reward_key TEXT PRIMARY KEY,
   date TEXT NOT NULL,
@@ -238,6 +247,7 @@ CREATE TABLE IF NOT EXISTS pet_reward_ledger (
   addColumn('photos', 'thumb', 'BLOB');
   addColumn('pet_room_decor', 'locked', 'INTEGER NOT NULL DEFAULT 0');
   addColumn('pet_room_decor', 'layer', 'INTEGER NOT NULL DEFAULT 0');
+  addColumn('pet_room_decor', 'rotation', 'REAL NOT NULL DEFAULT 0');
 }
 
 /* ---------------- 營養目標 ---------------- */

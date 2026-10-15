@@ -1,0 +1,566 @@
+{
+  "lib-2-room-01": {
+    "name": "床墊",
+    "widthInPetLengths": 1.65
+  },
+  "lib-2-room-02": {
+    "name": "飯碗",
+    "widthInPetLengths": 0.38
+  },
+  "lib-2-room-03": {
+    "name": "地毯",
+    "widthInPetLengths": 2.3
+  },
+  "lib-2-room-04": {
+    "name": "書架",
+    "widthInPetLengths": 1.55
+  },
+  "lib-2-room-05": {
+    "name": "盆栽",
+    "widthInPetLengths": 0.65
+  },
+  "lib-2-room-06": {
+    "name": "毛線球",
+    "widthInPetLengths": 0.22
+  },
+  "lib-2-room-07": {
+    "name": "抓抓板",
+    "widthInPetLengths": 0.85
+  },
+  "lib-2-room-08": {
+    "name": "小桌子",
+    "widthInPetLengths": 1.65
+  },
+  "lib-2-room-09": {
+    "name": "玩具箱",
+    "widthInPetLengths": 0.75
+  },
+  "lib-2-room-10": {
+    "name": "壁畫",
+    "widthInPetLengths": 1.1
+  },
+  "lib-2-yard-01": {
+    "name": "花圃",
+    "widthInPetLengths": 1.7
+  },
+  "lib-2-yard-02": {
+    "name": "木椅",
+    "widthInPetLengths": 2.1
+  },
+  "lib-2-yard-03": {
+    "name": "小帳篷",
+    "widthInPetLengths": 2.2
+  },
+  "lib-2-yard-04": {
+    "name": "水盆",
+    "widthInPetLengths": 1.65
+  },
+  "lib-2-yard-05": {
+    "name": "樹樁",
+    "widthInPetLengths": 0.85
+  },
+  "lib-2-yard-06": {
+    "name": "鞦韆",
+    "widthInPetLengths": 2.3
+  },
+  "lib-2-yard-07": {
+    "name": "石子路",
+    "widthInPetLengths": 2.5
+  },
+  "lib-2-yard-08": {
+    "name": "菜圃盆栽",
+    "widthInPetLengths": 1.7
+  },
+  "lib-2-yard-09": {
+    "name": "圍欄",
+    "widthInPetLengths": 2.7
+  },
+  "lib-2-yard-10": {
+    "name": "風車裝飾",
+    "widthInPetLengths": 1.1
+  },
+  "lib-2-beach-01": {
+    "name": "沙堡",
+    "widthInPetLengths": 1.15
+  },
+  "lib-2-beach-02": {
+    "name": "遮陽傘",
+    "widthInPetLengths": 2.4
+  },
+  "lib-2-beach-03": {
+    "name": "躺椅",
+    "widthInPetLengths": 1.9
+  },
+  "lib-2-beach-04": {
+    "name": "救生圈",
+    "widthInPetLengths": 0.85
+  },
+  "lib-2-beach-05": {
+    "name": "貝殼",
+    "widthInPetLengths": 0.22
+  },
+  "lib-2-beach-06": {
+    "name": "冰飲攤",
+    "widthInPetLengths": 2.5
+  },
+  "lib-2-beach-07": {
+    "name": "漂流木",
+    "widthInPetLengths": 1.25
+  },
+  "lib-2-beach-08": {
+    "name": "海星",
+    "widthInPetLengths": 0.22
+  },
+  "lib-2-beach-09": {
+    "name": "小船",
+    "widthInPetLengths": 2.3
+  },
+  "lib-2-beach-10": {
+    "name": "旗子",
+    "widthInPetLengths": 1.15
+  },
+  "lib-2-space-01": {
+    "name": "太空床",
+    "widthInPetLengths": 1.8
+  },
+  "lib-2-space-02": {
+    "name": "控制台",
+    "widthInPetLengths": 1.9
+  },
+  "lib-2-space-03": {
+    "name": "星球吊飾",
+    "widthInPetLengths": 0.9
+  },
+  "lib-2-space-04": {
+    "name": "盆栽",
+    "widthInPetLengths": 0.65
+  },
+  "lib-2-space-05": {
+    "name": "小機器人",
+    "widthInPetLengths": 0.65
+  },
+  "lib-2-space-06": {
+    "name": "漂浮球",
+    "widthInPetLengths": 0.38
+  },
+  "lib-2-space-07": {
+    "name": "星星燈",
+    "widthInPetLengths": 0.65
+  },
+  "lib-2-space-08": {
+    "name": "食物盒",
+    "widthInPetLengths": 0.48
+  },
+  "lib-2-space-09": {
+    "name": "觀景窗",
+    "widthInPetLengths": 1.45
+  },
+  "lib-2-space-10": {
+    "name": "太空海報",
+    "widthInPetLengths": 1.1
+  },
+  "lib-2-gym-01": {
+    "name": "跑步機",
+    "widthInPetLengths": 2.3
+  },
+  "lib-2-gym-02": {
+    "name": "啞鈴",
+    "widthInPetLengths": 0.65
+  },
+  "lib-2-gym-03": {
+    "name": "瑜珈墊",
+    "widthInPetLengths": 2.2
+  },
+  "lib-2-gym-04": {
+    "name": "沙包",
+    "widthInPetLengths": 0.8
+  },
+  "lib-2-gym-05": {
+    "name": "獎盃架",
+    "widthInPetLengths": 1.55
+  },
+  "lib-2-gym-06": {
+    "name": "計時器",
+    "widthInPetLengths": 0.38
+  },
+  "lib-2-gym-07": {
+    "name": "水壺",
+    "widthInPetLengths": 0.32
+  },
+  "lib-2-gym-08": {
+    "name": "毛巾架",
+    "widthInPetLengths": 1.25
+  },
+  "lib-2-gym-09": {
+    "name": "運動地墊",
+    "widthInPetLengths": 2.2
+  },
+  "lib-2-toy-01": {
+    "name": "毛線球",
+    "widthInPetLengths": 0.22
+  },
+  "lib-2-toy-02": {
+    "name": "逗貓棒",
+    "widthInPetLengths": 1
+  },
+  "lib-2-toy-03": {
+    "name": "小魚乾玩具",
+    "widthInPetLengths": 0.4
+  },
+  "lib-2-toy-04": {
+    "name": "滾球",
+    "widthInPetLengths": 0.26
+  },
+  "lib-2-toy-05": {
+    "name": "木積木",
+    "widthInPetLengths": 0.5
+  },
+  "lib-2-toy-06": {
+    "name": "小球門",
+    "widthInPetLengths": 1.6
+  },
+  "lib-2-toy-07": {
+    "name": "隧道",
+    "widthInPetLengths": 1.7
+  },
+  "lib-2-toy-08": {
+    "name": "小鼓",
+    "widthInPetLengths": 0.55
+  },
+  "lib-2-toy-09": {
+    "name": "泡泡機",
+    "widthInPetLengths": 0.65
+  },
+  "lib-2-toy-10": {
+    "name": "飛盤",
+    "widthInPetLengths": 0.5
+  },
+  "lib-2-food-01": {
+    "name": "小魚乾盤",
+    "widthInPetLengths": 0.45
+  },
+  "lib-2-food-02": {
+    "name": "胡蘿蔔盤",
+    "widthInPetLengths": 0.5
+  },
+  "lib-2-food-03": {
+    "name": "草料盆",
+    "widthInPetLengths": 0.55
+  },
+  "lib-2-food-04": {
+    "name": "種子碗",
+    "widthInPetLengths": 0.35
+  },
+  "lib-2-food-05": {
+    "name": "水碗",
+    "widthInPetLengths": 0.38
+  },
+  "lib-2-food-06": {
+    "name": "點心罐",
+    "widthInPetLengths": 0.4
+  },
+  "lib-2-plant-01": {
+    "name": "多肉植物",
+    "widthInPetLengths": 0.38
+  },
+  "lib-2-plant-02": {
+    "name": "小花盆",
+    "widthInPetLengths": 0.5
+  },
+  "lib-2-plant-03": {
+    "name": "仙人掌",
+    "widthInPetLengths": 0.45
+  },
+  "lib-2-plant-04": {
+    "name": "小樹苗",
+    "widthInPetLengths": 0.65
+  },
+  "lib-2-plant-05": {
+    "name": "草叢",
+    "widthInPetLengths": 0.85
+  },
+  "lib-2-plant-06": {
+    "name": "吊盆植物",
+    "widthInPetLengths": 0.65
+  },
+  "lib-2-trophy-01": {
+    "name": "獎盃",
+    "widthInPetLengths": 0.55
+  },
+  "lib-2-trophy-02": {
+    "name": "獎牌",
+    "widthInPetLengths": 0.22
+  },
+  "lib-2-trophy-03": {
+    "name": "相框",
+    "widthInPetLengths": 0.55
+  },
+  "lib-2-trophy-04": {
+    "name": "證書",
+    "widthInPetLengths": 0.75
+  },
+  "lib-2-trophy-05": {
+    "name": "展示櫃",
+    "widthInPetLengths": 1.65
+  },
+  "lib-2-fest-01": {
+    "name": "聖誕樹",
+    "widthInPetLengths": 1.65
+  },
+  "lib-2-fest-02": {
+    "name": "南瓜燈",
+    "widthInPetLengths": 1
+  },
+  "lib-2-fest-03": {
+    "name": "春聯",
+    "widthInPetLengths": 0.65
+  },
+  "lib-2-fest-04": {
+    "name": "燈籠",
+    "widthInPetLengths": 0.65
+  },
+  "lib-2-fest-05": {
+    "name": "生日蛋糕",
+    "widthInPetLengths": 0.65
+  },
+  "lib-3-room-01": {
+    "name": "小床",
+    "widthInPetLengths": 1.65
+  },
+  "lib-3-room-02": {
+    "name": "飯碗",
+    "widthInPetLengths": 0.38
+  },
+  "lib-3-room-03": {
+    "name": "水碗",
+    "widthInPetLengths": 0.38
+  },
+  "lib-3-room-04": {
+    "name": "地毯",
+    "widthInPetLengths": 2.3
+  },
+  "lib-3-room-05": {
+    "name": "書架",
+    "widthInPetLengths": 1.55
+  },
+  "lib-3-room-06": {
+    "name": "抓抓板",
+    "widthInPetLengths": 0.85
+  },
+  "lib-3-room-07": {
+    "name": "盆栽",
+    "widthInPetLengths": 0.65
+  },
+  "lib-3-room-08": {
+    "name": "玩具箱",
+    "widthInPetLengths": 0.75
+  },
+  "lib-3-room-09": {
+    "name": "毛線球",
+    "widthInPetLengths": 0.22
+  },
+  "lib-3-room-10": {
+    "name": "小魚乾",
+    "widthInPetLengths": 0.28
+  },
+  "lib-3-room-11": {
+    "name": "小夜燈",
+    "widthInPetLengths": 0.4
+  },
+  "lib-3-room-12": {
+    "name": "獎盃",
+    "widthInPetLengths": 0.55
+  },
+  "lib-3-yard-01": {
+    "name": "花圃",
+    "widthInPetLengths": 1.7
+  },
+  "lib-3-yard-02": {
+    "name": "木椅",
+    "widthInPetLengths": 2.1
+  },
+  "lib-3-yard-03": {
+    "name": "小帳篷",
+    "widthInPetLengths": 2.2
+  },
+  "lib-3-yard-04": {
+    "name": "水盆",
+    "widthInPetLengths": 1.65
+  },
+  "lib-3-yard-05": {
+    "name": "樹樁",
+    "widthInPetLengths": 0.85
+  },
+  "lib-3-yard-06": {
+    "name": "鞦韆",
+    "widthInPetLengths": 2.3
+  },
+  "lib-3-yard-07": {
+    "name": "菜圃盆栽",
+    "widthInPetLengths": 1.7
+  },
+  "lib-3-yard-08": {
+    "name": "石燈",
+    "widthInPetLengths": 0.85
+  },
+  "lib-3-yard-09": {
+    "name": "蝴蝶裝飾",
+    "widthInPetLengths": 0.55
+  },
+  "lib-3-yard-10": {
+    "name": "小橋",
+    "widthInPetLengths": 2.6
+  },
+  "lib-3-yard-11": {
+    "name": "木柵欄",
+    "widthInPetLengths": 2.7
+  },
+  "lib-3-yard-12": {
+    "name": "風車",
+    "widthInPetLengths": 1.1
+  },
+  "lib-3-beach-01": {
+    "name": "遮陽傘",
+    "widthInPetLengths": 2.4
+  },
+  "lib-3-beach-02": {
+    "name": "躺椅",
+    "widthInPetLengths": 1.9
+  },
+  "lib-3-beach-03": {
+    "name": "沙堡",
+    "widthInPetLengths": 1.15
+  },
+  "lib-3-beach-04": {
+    "name": "救生圈",
+    "widthInPetLengths": 0.85
+  },
+  "lib-3-beach-05": {
+    "name": "冰飲攤",
+    "widthInPetLengths": 2.5
+  },
+  "lib-3-beach-06": {
+    "name": "貝殼",
+    "widthInPetLengths": 0.22
+  },
+  "lib-3-beach-07": {
+    "name": "海星",
+    "widthInPetLengths": 0.22
+  },
+  "lib-3-beach-08": {
+    "name": "小船",
+    "widthInPetLengths": 2.3
+  },
+  "lib-3-beach-09": {
+    "name": "漂流木",
+    "widthInPetLengths": 1.25
+  },
+  "lib-3-beach-10": {
+    "name": "椰子樹",
+    "widthInPetLengths": 1.9
+  },
+  "lib-3-beach-11": {
+    "name": "沙灘球",
+    "widthInPetLengths": 0.65
+  },
+  "lib-3-beach-12": {
+    "name": "貝殼盆栽",
+    "widthInPetLengths": 0.65
+  },
+  "lib-3-space-01": {
+    "name": "太空床",
+    "widthInPetLengths": 1.8
+  },
+  "lib-3-space-02": {
+    "name": "控制台",
+    "widthInPetLengths": 1.9
+  },
+  "lib-3-space-03": {
+    "name": "漂浮球",
+    "widthInPetLengths": 0.38
+  },
+  "lib-3-space-04": {
+    "name": "小機器人",
+    "widthInPetLengths": 0.65
+  },
+  "lib-3-space-05": {
+    "name": "星球盆栽",
+    "widthInPetLengths": 0.65
+  },
+  "lib-3-space-06": {
+    "name": "星星燈",
+    "widthInPetLengths": 0.65
+  },
+  "lib-3-space-07": {
+    "name": "觀景窗",
+    "widthInPetLengths": 1.45
+  },
+  "lib-3-space-08": {
+    "name": "太空食物盒",
+    "widthInPetLengths": 0.48
+  },
+  "lib-3-space-09": {
+    "name": "隕石裝飾",
+    "widthInPetLengths": 0.65
+  },
+  "lib-3-space-10": {
+    "name": "宇宙海報",
+    "widthInPetLengths": 1.1
+  },
+  "lib-3-space-11": {
+    "name": "地毯",
+    "widthInPetLengths": 2.3
+  },
+  "lib-3-space-12": {
+    "name": "太空獎盃",
+    "widthInPetLengths": 0.55
+  },
+  "lib-3-gym-01": {
+    "name": "跑步機",
+    "widthInPetLengths": 2.3
+  },
+  "lib-3-gym-02": {
+    "name": "啞鈴",
+    "widthInPetLengths": 0.65
+  },
+  "lib-3-gym-03": {
+    "name": "瑜伽墊",
+    "widthInPetLengths": 1.6
+  },
+  "lib-3-gym-04": {
+    "name": "跳箱",
+    "widthInPetLengths": 1
+  },
+  "lib-3-gym-05": {
+    "name": "水壺",
+    "widthInPetLengths": 0.32
+  },
+  "lib-3-gym-06": {
+    "name": "毛巾架",
+    "widthInPetLengths": 1.25
+  },
+  "lib-3-gym-07": {
+    "name": "計時器",
+    "widthInPetLengths": 0.38
+  },
+  "lib-3-gym-08": {
+    "name": "運動球",
+    "widthInPetLengths": 1.1
+  },
+  "lib-3-gym-09": {
+    "name": "沙包",
+    "widthInPetLengths": 0.85
+  },
+  "lib-3-gym-10": {
+    "name": "單槓",
+    "widthInPetLengths": 2.2
+  },
+  "lib-3-gym-11": {
+    "name": "獎盃架",
+    "widthInPetLengths": 1.55
+  },
+  "lib-3-gym-12": {
+    "name": "植物",
+    "widthInPetLengths": 0.65
+  }
+}

@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch, onUnmounted } from 'vue';
 import PetFrames from './PetFrames.vue';
+import {petActorSize} from '../room-scale.js';
 import PetPickup from './PetPickup.vue';
 import OutfitFrames from './OutfitFrames.vue';
 import { pickNext } from '../pet-fsm.js';
@@ -91,7 +92,7 @@ function drop(event,cancelled=false) {
   landing.value=true;clearTimeout(landingTimer);landingTimer=setTimeout(()=>{landing.value=false;},260);
 }
 function clickPet() {if(suppressClick) {suppressClick=false;return;}say('我在這裡陪你！今天想做什麼呢？');emit(!props.paused && !props.preview ? 'interact' : 'select',props.pet.petKey);}
-const actorSize = computed(() => props.preview ? props.sceneHeight * .65 : props.sceneHeight * (props.pet.behavior?.size || .3) * 1.25 * Math.min(1, Math.max(.55, Math.sqrt(4 / props.count))));
+const actorSize = computed(() => petActorSize(props.sceneHeight,props.pet.behavior?.size || .3));
 const style = computed(() => ({
   left: `clamp(${actorSize.value / 2 + 8}px, ${position.value.x}%, calc(100% - ${actorSize.value / 2 + 8}px))`,
   bottom: `${props.sceneHeight * (1-position.value.y/100)}px`,

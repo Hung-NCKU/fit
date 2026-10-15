@@ -97,3 +97,16 @@ it('整屋還原拒絕未購買物件、非法層級與過期版本，失敗原�
   expect(()=>pet.restoreRoom('eli',before,before)).toThrow('另一個畫面');
   expect(pet.roomDecor('eli')[0].x).toBe(30);
 });
+
+it('rotation persists through moves and undo; locked and stale edits are rejected',()=>{
+ pet.buyItem('eli',item.id);const before=pet.roomDecor('eli');
+ pet.arrangeDecor('eli',item.id,{x:40,y:80,scale:1,rotation:45},before);
+ const rotated=pet.roomDecor('eli');expect(rotated[0].rotation).toBe(45);
+ pet.arrangeDecor('eli',item.id,{x:42,y:80,scale:1});expect(pet.roomDecor('eli')[0].rotation).toBe(45);
+ pet.restoreRoom('eli',before,pet.roomDecor('eli'));expect(pet.roomDecor('eli')[0].rotation).toBe(0);
+ pet.restoreRoom('eli',rotated,pet.roomDecor('eli'));expect(pet.roomDecor('eli')[0].rotation).toBe(45);
+ expect(()=>pet.arrangeDecor('eli',item.id,{x:40,y:80,scale:1,rotation:90},before)).toThrow('另一個畫面');
+ pet.arrangeDecor('eli',item.id,{x:40,y:80,scale:1,locked:true});
+ expect(()=>pet.arrangeDecor('eli',item.id,{x:40,y:80,scale:1,rotation:90})).toThrow('解鎖');
+ for(const rotation of [181,-181,'45',NaN,Infinity])expect(()=>pet.arrangeDecor('eli',item.id,{x:40,y:80,scale:1,rotation})).toThrow();
+});
