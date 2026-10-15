@@ -49,7 +49,7 @@ async function playWithPet(key) {
 function receiveFeedback() { if (mine.value) celebration.value = consumeFeedback(); }
 onMounted(() => { receiveFeedback(); window.addEventListener('fit-record-saved', receiveFeedback); });
 onUnmounted(() => window.removeEventListener('fit-record-saved', receiveFeedback));
-watch(tab, () => { arranging.value = false; });
+watch(tab, () => { arranging.value = false; trying.value = null; });
 const picked = ref('');
 const petName = ref('');
 
@@ -192,6 +192,7 @@ const moveDecor = ({id,position}) => act(async()=>{
   const before=snapshot();
   try {
     const after=await api.arrangeDecor(id,position,before);
+    data.value={...data.value,decorations:after};
     roomUndo.value=[...roomUndo.value.slice(-19),{before,after}];
   } catch(e) { roomUndo.value=[]; await load(); throw e; }
 },'arrange');
@@ -347,7 +348,7 @@ function confirmRename() {
 
     <!-- 已經有寵物 -->
     <template v-else-if="pet">
-      <div class="card scene-card" :class="{ 'shop-preview': tab === 'shop' }">
+      <div v-if="tab === 'home'" class="card scene-card">
         <div class="spread scene-heading" style="margin-bottom:.6rem">
           <div class="pet-title">
             <b>{{ pet.name || pet.speciesName }}</b>
@@ -360,7 +361,9 @@ function confirmRename() {
           </span>
         </div>
 
-        <!-- 場景：背景、寵物、裝備疊出來，動作由 pet-fsm.js 的狀態機決定 -->
+      </div>
+      <div class="card scene-dock" :class="{ 'shop-preview': tab === 'shop' }">
+        <!-- 場景與分頁共用固定尺寸，切換商城不重排布置。 -->
         <div ref="sceneEl" class="scene" :style="{ '--tint': pet.tint || '#f6efdf', '--floor-lift': sceneHeight * .12 + 'px' }">
           <img class="scene-bg" :src="sceneImg" :alt="bg?.name || '小房間'" />
           <RoomDecor :items="decorations" :editable="mine && arranging && !busy" :selected="decorSelected" @select="decorSelected=$event" @move="moveDecor" />
@@ -374,6 +377,13 @@ function confirmRename() {
             :wearing="member.petKey === pet.petKey ? worn : undefined" @select="choosePet" @interact="playWithPet" />
         </div>
 
+      <div v-if="mine && !changing" class="row seg scene-tabs">
+        <button :disabled="!!busy" :class="{ on: tab === 'home' }" @click="tab = 'home'">牠的窩</button>
+        <button :disabled="!!busy" :class="{ on: tab === 'shop' }" @click="tab = 'shop'">商城</button>
+      </div>
+        <span v-if="busy === 'arrange'" class="small muted room-saving" role="status">正在保存布置…</span>
+      </div>
+      <div v-if="tab === 'home'" class="card scene-details">
         <div class="row wrap family">
           <button v-for="member in roster" :key="member.petKey" :class="{ on: member.petKey === pet.petKey }"
             :disabled="!mine || busy" @click="choosePet(member.petKey)">{{ member.name }} · {{ member.speciesName }}</button>
@@ -422,10 +432,7 @@ function confirmRename() {
         </button>
       </div>
 
-      <div v-if="mine && !changing" class="row seg">
-        <button :class="{ on: tab === 'home' }" @click="tab = 'home'">牠的窩</button>
-        <button :class="{ on: tab === 'shop' }" @click="tab = 'shop'">商城</button>
-      </div>
+
 
       <!-- 牠的窩：目前穿戴的東西 -->
       <div v-if="tab === 'home'" class="card stack">
@@ -612,12 +619,15 @@ function confirmRename() {
 .pet-title { min-width:0; overflow-wrap:anywhere; }
 .scene-actions { margin-left:auto; }
 .family button { max-width:100%; white-space:normal; overflow-wrap:anywhere; }
-.scene-card.shop-preview { position:sticky; top:0; z-index:6; padding:0; box-shadow:var(--shadow-popover); }
-.shop-preview .scene { min-height:130px; max-height:clamp(130px, 26vh, 240px); }
+.scene-dock { position:sticky; top:0; z-index:6; padding:0; overflow:hidden; box-shadow:var(--shadow-popover); width:100%; min-width:0; }
+.scene-tabs { padding:.4rem; margin:0; background:var(--surface); }
+.scene-tabs button { flex:1; }
+.room-saving { display:block; padding:0 .6rem .4rem; }
+.scene-dock .scene { min-height:130px; max-height:clamp(130px, 26vh, 240px); }
 .shop-preview .scene-heading, .shop-preview .family,
 .shop-preview .says, .shop-preview .stats, .shop-preview > p.small,
 .shop-preview :deep(.name) { display:none; }
-@media(max-height:600px) { .shop-preview .scene { min-height:100px; max-height:120px; } }
+@media(max-height:600px) { .scene-dock .scene { min-height:100px; max-height:120px; } }
 .scene-card .says { color: var(--text); }
 /* 插畫本身是米白底的，疊在深色上一定像貼紙。
    索性讓整個場景用同一組暖色，變成一扇「看進牠世界」的窗。 */
