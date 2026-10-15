@@ -49,6 +49,7 @@ const qs = (params) => {
 
 export const api = {
   health: () => request('/health'),
+  coachPlan: () => request('/chat/plan'),
 
   session: () => request('/session'),
   login: (password) => request('/login', { method: 'POST', body: { password } }),

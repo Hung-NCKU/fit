@@ -1,32 +1,1329 @@
 {
   "verifiedOn": "2026-10-15",
   "muscles": [
-    {"id":"chest","name":"胸部","detail":"胸大肌","category":"chest","side":"front"},
-    {"id":"shoulders","name":"肩膀","detail":"三角肌","category":"shoulders","side":"front"},
-    {"id":"biceps","name":"二頭肌","detail":"上臂前側","category":"arms","side":"front"},
-    {"id":"core","name":"核心","detail":"腹部","category":"core","side":"front"},
-    {"id":"quads","name":"大腿前側","detail":"股四頭肌","category":"legs","side":"front"},
-    {"id":"back","name":"背部","detail":"背闊肌與上背","category":"back","side":"back"},
-    {"id":"triceps","name":"三頭肌","detail":"上臂後側","category":"arms","side":"back"},
-    {"id":"glutes","name":"臀部","detail":"臀肌","category":"legs","side":"back"},
-    {"id":"hamstrings","name":"大腿後側","detail":"腿後肌群","category":"legs","side":"back"},
-    {"id":"calves","name":"小腿","detail":"小腿後側","category":"legs","side":"back"}
+    {
+      "id": "chest",
+      "name": "胸部",
+      "detail": "胸大肌",
+      "category": "chest",
+      "side": "front"
+    },
+    {
+      "id": "shoulders",
+      "name": "肩膀",
+      "detail": "三角肌",
+      "category": "shoulders",
+      "side": "front"
+    },
+    {
+      "id": "biceps",
+      "name": "二頭肌",
+      "detail": "上臂前側",
+      "category": "arms",
+      "side": "front"
+    },
+    {
+      "id": "core",
+      "name": "核心",
+      "detail": "腹部",
+      "category": "core",
+      "side": "front"
+    },
+    {
+      "id": "quads",
+      "name": "大腿前側",
+      "detail": "股四頭肌",
+      "category": "legs",
+      "side": "front"
+    },
+    {
+      "id": "back",
+      "name": "背部",
+      "detail": "背闊肌與上背",
+      "category": "back",
+      "side": "back"
+    },
+    {
+      "id": "triceps",
+      "name": "三頭肌",
+      "detail": "上臂後側",
+      "category": "arms",
+      "side": "back"
+    },
+    {
+      "id": "glutes",
+      "name": "臀部",
+      "detail": "臀肌",
+      "category": "legs",
+      "side": "back"
+    },
+    {
+      "id": "hamstrings",
+      "name": "大腿後側",
+      "detail": "腿後肌群",
+      "category": "legs",
+      "side": "back"
+    },
+    {
+      "id": "calves",
+      "name": "小腿",
+      "detail": "小腿後側",
+      "category": "legs",
+      "side": "back"
+    }
   ],
   "exercises": [
-    {"id":"barbell-bench","name":"槓鈴臥推","english":"Barbell bench press","muscles":["chest","triceps","shoulders"],"equipment":"槓鈴","category":"chest","mode":"reps","videoId":"rT7DgCr-3pg","videoTitle":"How To: Barbell Bench Press","channel":"ScottHermanFitness"},
-    {"id":"push-up","name":"伏地挺身","english":"Push-up","muscles":["chest","triceps","core"],"equipment":"徒手","category":"chest","mode":"reps","videoId":"0pkjOk0EiAk","videoTitle":"The Push-Up","channel":"CrossFit"},
-    {"id":"shoulder-press","name":"啞鈴肩推","english":"Dumbbell shoulder press","muscles":["shoulders","triceps"],"equipment":"啞鈴","category":"shoulders","mode":"reps","videoId":"qEwKCR5JCog","videoTitle":"How To: Dumbbell Shoulder Press","channel":"ScottHermanFitness"},
-    {"id":"lateral-raise","name":"啞鈴側平舉","english":"Dumbbell lateral raise","muscles":["shoulders"],"equipment":"啞鈴","category":"shoulders","mode":"reps","videoId":"3VcKaXpzqRo","videoTitle":"How To: Dumbbell Side Lateral Raise","channel":"ScottHermanFitness"},
-    {"id":"lat-pulldown","name":"滑輪下拉","english":"Lat pulldown","muscles":["back","biceps"],"equipment":"滑輪","category":"back","mode":"reps","videoId":"CAwf7n6Luuc","videoTitle":"How To: Lat Pulldown | 3 GOLDEN RULES","channel":"ScottHermanFitness"},
-    {"id":"cable-row","name":"坐姿滑輪划船","english":"Seated cable row","muscles":["back","biceps"],"equipment":"滑輪","category":"back","mode":"reps","videoId":"GZbfZ033f74","videoTitle":"How To: Seated Low Row (LF Cable)","channel":"ScottHermanFitness"},
-    {"id":"barbell-curl","name":"槓鈴二頭彎舉","english":"Barbell bicep curl","muscles":["biceps"],"equipment":"槓鈴","category":"arms","mode":"reps","videoId":"QZEqB6wUPxQ","videoTitle":"How To: Barbell Bicep Curl | 3 GOLDEN RULES","channel":"ScottHermanFitness"},
-    {"id":"dumbbell-curl","name":"交替啞鈴彎舉","english":"Alternating dumbbell curl","muscles":["biceps"],"equipment":"啞鈴","category":"arms","mode":"reps","videoId":"sAq_ocpRh_I","videoTitle":"How To: Alternating Dumbbell Curl","channel":"ScottHermanFitness"},
-    {"id":"tricep-pushdown","name":"滑輪三頭下壓","english":"Tricep pushdown","muscles":["triceps"],"equipment":"滑輪","category":"arms","mode":"reps","videoId":"2-LAMcpzODU","videoTitle":"How To: Tricep Pushdown (Life Fitness Cable)","channel":"ScottHermanFitness"},
-    {"id":"plank","name":"棒式","english":"Plank","muscles":["core"],"equipment":"徒手","category":"core","mode":"time","videoId":"fqzUlmyTpJk","videoTitle":"How To: Plank | 3 GOLDEN RULES! (MADE BETTER!)","channel":"ScottHermanFitness"},
-    {"id":"barbell-squat","name":"槓鈴深蹲","english":"Barbell back squat","muscles":["quads","glutes"],"equipment":"槓鈴","category":"legs","mode":"reps","videoId":"SW_C1A-rejs","videoTitle":"How To: Deep Barbell Back Squat","channel":"ScottHermanFitness"},
-    {"id":"goblet-squat","name":"高腳杯深蹲","english":"Goblet squat","muscles":["quads","glutes"],"equipment":"啞鈴","category":"legs","mode":"reps","videoId":"MeIiIdhvXT4","videoTitle":"How To: Goblet Squat","channel":"ScottHermanFitness"},
-    {"id":"romanian-deadlift","name":"羅馬尼亞硬舉","english":"Romanian deadlift","muscles":["hamstrings","glutes","back"],"equipment":"槓鈴","category":"legs","mode":"reps","videoId":"JCXUYuzwNrM","videoTitle":"How To: Romanian Deadlift (Barbell)","channel":"ScottHermanFitness"},
-    {"id":"glute-bridge","name":"臀橋","english":"Glute bridge","muscles":["glutes","hamstrings"],"equipment":"徒手","category":"legs","mode":"reps","videoId":"8bbE64NuDTU","videoTitle":"How To: Glute Bridge","channel":"ScottHermanFitness"},
-    {"id":"calf-raise","name":"單腳提踵","english":"Single-leg calf raise","muscles":["calves"],"equipment":"徒手","category":"legs","mode":"reps","videoId":"ORT4oJ_R8Qs","videoTitle":"How To: Single-Leg Calf Raise","channel":"ScottHermanFitness"}
+    {
+      "id": "barbell-bench",
+      "name": "槓鈴臥推",
+      "english": "Barbell bench press",
+      "muscles": [
+        "chest",
+        "triceps",
+        "shoulders"
+      ],
+      "equipment": "槓鈴",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "rT7DgCr-3pg",
+      "videoTitle": "How To: Barbell Bench Press",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "middle-chest"
+      ],
+      "steps": [
+        "雙腳踩穩、肩胛貼椅，手腕在手肘上方。",
+        "槓鈴控制下降到胸部附近，前臂大致垂直。",
+        "沿穩定路徑推回，保留可控制的速度。"
+      ],
+      "mistakes": [
+        "槓鈴在胸上彈跳。",
+        "手腕後折或臀部離椅。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=rT7DgCr-3pg"
+    },
+    {
+      "id": "push-up",
+      "name": "伏地挺身",
+      "english": "Push-up",
+      "muscles": [
+        "chest",
+        "triceps",
+        "core"
+      ],
+      "equipment": "徒手",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "0pkjOk0EiAk",
+      "videoTitle": "The Push-Up",
+      "channel": "CrossFit",
+      "focuses": [
+        "middle-chest"
+      ],
+      "steps": [
+        "雙手略寬於肩，頭、軀幹與腿形成一直線。",
+        "彎手肘讓胸口靠近地面，腹部保持張力。",
+        "推地回到起點；太難可先雙手扶高台。"
+      ],
+      "mistakes": [
+        "塌腰或臀部翹高。",
+        "手肘完全向兩旁張開。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=0pkjOk0EiAk"
+    },
+    {
+      "id": "shoulder-press",
+      "name": "啞鈴肩推",
+      "english": "Dumbbell shoulder press",
+      "muscles": [
+        "shoulders",
+        "triceps"
+      ],
+      "equipment": "啞鈴",
+      "category": "shoulders",
+      "mode": "reps",
+      "videoId": "qEwKCR5JCog",
+      "videoTitle": "How To: Dumbbell Shoulder Press",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "坐穩、雙腳踩地，啞鈴在肩膀兩側。",
+        "手肘略在身體前方，向上推至可控制的位置。",
+        "慢慢降回，肋骨與骨盆保持穩定。"
+      ],
+      "mistakes": [
+        "後仰挺腰借力。",
+        "頂端撞啞鈴或聳肩夾頸。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=qEwKCR5JCog"
+    },
+    {
+      "id": "lateral-raise",
+      "name": "啞鈴側平舉",
+      "english": "Dumbbell lateral raise",
+      "muscles": [
+        "shoulders"
+      ],
+      "equipment": "啞鈴",
+      "category": "shoulders",
+      "mode": "reps",
+      "videoId": "3VcKaXpzqRo",
+      "videoTitle": "How To: Dumbbell Side Lateral Raise",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "站穩、手肘微彎，啞鈴在身側。",
+        "雙臂略在身體前方展開，抬到接近肩高。",
+        "慢慢放回，不用身體擺動。"
+      ],
+      "mistakes": [
+        "重量太重而甩動。",
+        "聳肩、手腕過度折彎。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=3VcKaXpzqRo"
+    },
+    {
+      "id": "lat-pulldown",
+      "name": "滑輪下拉",
+      "english": "Lat pulldown",
+      "muscles": [
+        "back",
+        "biceps"
+      ],
+      "equipment": "滑輪",
+      "category": "back",
+      "mode": "reps",
+      "videoId": "CAwf7n6Luuc",
+      "videoTitle": "How To: Lat Pulldown | 3 GOLDEN RULES",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "upper-lats",
+        "teres-major"
+      ],
+      "steps": [
+        "固定大腿、腳底踩穩，握距略寬於肩。",
+        "軀幹輕微後傾，手肘往身側拉，槓到上胸前。",
+        "慢慢伸直手臂回到頭頂，保持身體穩定。"
+      ],
+      "mistakes": [
+        "把槓拉到頸後。",
+        "大幅後仰、靠體重拉下。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=CAwf7n6Luuc"
+    },
+    {
+      "id": "cable-row",
+      "name": "坐姿滑輪划船",
+      "english": "Seated cable row",
+      "muscles": [
+        "back",
+        "biceps"
+      ],
+      "equipment": "滑輪",
+      "category": "back",
+      "mode": "reps",
+      "videoId": "GZbfZ033f74",
+      "videoTitle": "How To: Seated Low Row (LF Cable)",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "rhomboids",
+        "lower-lats",
+        "teres-major"
+      ],
+      "steps": [
+        "膝微彎、坐穩，胸口自然打開，背部維持自然曲線。",
+        "手肘往身後拉，握把到腹部，肩胛自然後收。",
+        "慢慢放回，軀幹不要跟著前後搖。"
+      ],
+      "mistakes": [
+        "過度挺腰，把重量甩回來。",
+        "聳肩或把肩胛硬夾到不舒服。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=GZbfZ033f74"
+    },
+    {
+      "id": "barbell-curl",
+      "name": "槓鈴二頭彎舉",
+      "english": "Barbell bicep curl",
+      "muscles": [
+        "biceps"
+      ],
+      "equipment": "槓鈴",
+      "category": "arms",
+      "mode": "reps",
+      "videoId": "QZEqB6wUPxQ",
+      "videoTitle": "How To: Barbell Bicep Curl | 3 GOLDEN RULES",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "站穩，掌心向前握槓，手肘在身側。",
+        "保持上臂位置，彎肘舉起槓鈴。",
+        "慢慢伸回，不把手肘撞直。"
+      ],
+      "mistakes": [
+        "挺腰甩起槓鈴。",
+        "手腕後折或肩膀前後甩動。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=QZEqB6wUPxQ"
+    },
+    {
+      "id": "dumbbell-curl",
+      "name": "交替啞鈴彎舉",
+      "english": "Alternating dumbbell curl",
+      "muscles": [
+        "biceps"
+      ],
+      "equipment": "啞鈴",
+      "category": "arms",
+      "mode": "reps",
+      "videoId": "sAq_ocpRh_I",
+      "videoTitle": "How To: Alternating Dumbbell Curl",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "站穩，啞鈴自然放在身側。",
+        "一側彎肘並轉掌心向上，上臂維持穩定。",
+        "控制放回再換側。"
+      ],
+      "mistakes": [
+        "用腰背擺盪。",
+        "手肘過度向前抬。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=sAq_ocpRh_I"
+    },
+    {
+      "id": "tricep-pushdown",
+      "name": "滑輪三頭下壓",
+      "english": "Tricep pushdown",
+      "muscles": [
+        "triceps"
+      ],
+      "equipment": "滑輪",
+      "category": "arms",
+      "mode": "reps",
+      "videoId": "2-LAMcpzODU",
+      "videoTitle": "How To: Tricep Pushdown (Life Fitness Cable)",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "滑輪調高，握把在身前，手肘靠近身側。",
+        "固定上臂，伸直手肘把握把向下推。",
+        "緩慢彎回，保持肩部穩定。"
+      ],
+      "mistakes": [
+        "靠軀幹壓重量。",
+        "手肘向前後移動太多。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=2-LAMcpzODU"
+    },
+    {
+      "id": "plank",
+      "name": "棒式",
+      "english": "Plank",
+      "muscles": [
+        "core"
+      ],
+      "equipment": "徒手",
+      "category": "core",
+      "mode": "time",
+      "videoId": "fqzUlmyTpJk",
+      "videoTitle": "How To: Plank | 3 GOLDEN RULES! (MADE BETTER!)",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "前臂撐地，手肘約在肩膀下方。",
+        "腳尖踩地，收腹夾臀，頭到腳維持一直線。",
+        "自然呼吸，維持姿勢到設定秒數。"
+      ],
+      "mistakes": [
+        "塌腰或抬臀。",
+        "憋氣硬撐到姿勢崩潰。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=fqzUlmyTpJk"
+    },
+    {
+      "id": "barbell-squat",
+      "name": "槓鈴深蹲",
+      "english": "Barbell back squat",
+      "muscles": [
+        "quads",
+        "glutes"
+      ],
+      "equipment": "槓鈴",
+      "category": "legs",
+      "mode": "reps",
+      "videoId": "SW_C1A-rejs",
+      "videoTitle": "How To: Deep Barbell Back Squat",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "安全架調好，槓鈴穩放上背，雙腳踩穩。",
+        "髖膝一起彎曲，膝蓋順腳尖方向下蹲。",
+        "保持軀幹穩定，全腳掌推地站起。"
+      ],
+      "mistakes": [
+        "膝蓋內夾或腳跟離地。",
+        "為下蹲深度失去腰背穩定。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=SW_C1A-rejs"
+    },
+    {
+      "id": "goblet-squat",
+      "name": "高腳杯深蹲",
+      "english": "Goblet squat",
+      "muscles": [
+        "quads",
+        "glutes"
+      ],
+      "equipment": "啞鈴",
+      "category": "legs",
+      "mode": "reps",
+      "videoId": "MeIiIdhvXT4",
+      "videoTitle": "How To: Goblet Squat",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "雙手把啞鈴抱在胸前，雙腳略寬於髖。",
+        "髖膝一起彎曲，膝蓋順著腳尖方向。",
+        "下蹲到可控制的深度，再全腳掌推回。"
+      ],
+      "mistakes": [
+        "腳跟離地。",
+        "胸口下垂或膝蓋內夾。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=MeIiIdhvXT4"
+    },
+    {
+      "id": "romanian-deadlift",
+      "name": "羅馬尼亞硬舉",
+      "english": "Romanian deadlift",
+      "muscles": [
+        "hamstrings",
+        "glutes",
+        "back"
+      ],
+      "equipment": "槓鈴",
+      "category": "legs",
+      "mode": "reps",
+      "videoId": "JCXUYuzwNrM",
+      "videoTitle": "How To: Romanian Deadlift (Barbell)",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "spinal-erectors"
+      ],
+      "steps": [
+        "雙腳約髖寬，膝微彎，槓鈴貼近大腿。",
+        "髖部向後推，沿腿前下放，到腿後側有張力的可控制範圍。",
+        "腳底推地、臀部向前回正，脊椎維持穩定。"
+      ],
+      "mistakes": [
+        "反覆彎腰代替髖部後推。",
+        "站直後再往後折腰。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=JCXUYuzwNrM"
+    },
+    {
+      "id": "glute-bridge",
+      "name": "臀橋",
+      "english": "Glute bridge",
+      "muscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "equipment": "徒手",
+      "category": "legs",
+      "mode": "reps",
+      "videoId": "8bbE64NuDTU",
+      "videoTitle": "How To: Glute Bridge",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "仰躺屈膝、腳底踩穩，雙腳約髖寬。",
+        "收腹、用臀部把髖抬起到軀幹與大腿接近一直線。",
+        "緩慢放下，膝蓋方向保持穩定。"
+      ],
+      "mistakes": [
+        "用腰部過度後仰撐高度。",
+        "膝蓋內夾或腳跟離地。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=8bbE64NuDTU"
+    },
+    {
+      "id": "calf-raise",
+      "name": "單腳提踵",
+      "english": "Single-leg calf raise",
+      "muscles": [
+        "calves"
+      ],
+      "equipment": "徒手",
+      "category": "legs",
+      "mode": "reps",
+      "videoId": "ORT4oJ_R8Qs",
+      "videoTitle": "How To: Single-Leg Calf Raise",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "扶穩固支撐物，單腳踩穩，先從平地開始。",
+        "腳掌推地、慢慢抬起腳跟。",
+        "控制降回，完成後換側。"
+      ],
+      "mistakes": [
+        "用彈跳取代肌肉出力。",
+        "腳踝明顯往內外倒。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=ORT4oJ_R8Qs"
+    },
+    {
+      "id": "incline-dumbbell-press",
+      "name": "上斜啞鈴臥推",
+      "english": "Incline dumbbell press",
+      "muscles": [
+        "chest",
+        "shoulders",
+        "triceps"
+      ],
+      "equipment": "啞鈴",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "8iPEnn-ltC8",
+      "videoTitle": "How To: Dumbbell Incline Chest Press",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "upper-chest"
+      ],
+      "steps": [
+        "椅背設低上斜約 15–30 度，雙腳踩穩、肩胛貼靠。",
+        "啞鈴放在胸側，前臂大致垂直，向上推至胸部上方。",
+        "控制下放至肩膀舒適的深度，保持臀部貼椅。"
+      ],
+      "mistakes": [
+        "椅背太直變成肩推。",
+        "為了下得更低而讓肩膀向前滑。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=8iPEnn-ltC8"
+    },
+    {
+      "id": "dumbbell-bench",
+      "name": "平板啞鈴臥推",
+      "english": "Flat dumbbell press",
+      "muscles": [
+        "chest",
+        "triceps",
+        "shoulders"
+      ],
+      "equipment": "啞鈴",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "VmB1G1K7v94",
+      "videoTitle": "How To: Dumbbell Chest Press",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "middle-chest"
+      ],
+      "steps": [
+        "平躺，腳底踩穩，肩胛穩定貼椅。",
+        "啞鈴降到胸側，手腕疊在手肘上方。",
+        "推回胸口上方，緩慢回到起點。"
+      ],
+      "mistakes": [
+        "頂端用啞鈴互撞。",
+        "臀部抬起或手腕向後折。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=VmB1G1K7v94"
+    },
+    {
+      "id": "flat-dumbbell-fly",
+      "name": "平板啞鈴飛鳥",
+      "english": "Flat dumbbell fly",
+      "muscles": [
+        "chest",
+        "shoulders"
+      ],
+      "equipment": "啞鈴",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "eozdVDA78K0",
+      "videoTitle": "How To: Dumbbell Flys On A Flat Bench",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "middle-chest",
+        "chest-fly"
+      ],
+      "steps": [
+        "以輕重量平躺，雙手在胸口上方，手肘保持微彎。",
+        "雙臂向兩側畫弧打開，到肩膀舒適的範圍。",
+        "保持手肘角度，像抱大球一樣合回胸口上方。"
+      ],
+      "mistakes": [
+        "打開過深、把胸肩硬拉到底。",
+        "一直彎伸手肘，變成臥推。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=eozdVDA78K0"
+    },
+    {
+      "id": "incline-dumbbell-fly",
+      "name": "上斜啞鈴飛鳥",
+      "english": "Incline dumbbell fly",
+      "muscles": [
+        "chest",
+        "shoulders"
+      ],
+      "equipment": "啞鈴",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "8nrLh4GpS7w",
+      "videoTitle": "How To:  Dumbbell Flys On An Incline Bench",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "upper-chest",
+        "chest-fly"
+      ],
+      "steps": [
+        "椅背低上斜，輕啞鈴舉至上胸前方。",
+        "手肘微彎並固定，沿兩側展開到可控制的深度。",
+        "以弧線合回上胸前，慢慢重複。"
+      ],
+      "mistakes": [
+        "為追求伸展讓手臂落到身體後方太多。",
+        "聳肩或把椅背調得過高。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=8nrLh4GpS7w"
+    },
+    {
+      "id": "cable-crossover",
+      "name": "滑輪交叉夾胸",
+      "english": "Cable crossover",
+      "muscles": [
+        "chest",
+        "shoulders"
+      ],
+      "equipment": "滑輪",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "taI4XduLpTk",
+      "videoTitle": "How to Do Cable Crossovers",
+      "channel": "LIVESTRONG",
+      "focuses": [
+        "middle-chest",
+        "chest-fly"
+      ],
+      "steps": [
+        "滑輪調在胸部附近的高度，前後腳站穩。",
+        "手肘微彎，雙手沿弧線往胸前合攏。",
+        "回程慢慢打開，保持身體位置與手肘角度。"
+      ],
+      "mistakes": [
+        "靠身體前後擺盪拉重量。",
+        "手肘不停彎曲，變成推舉。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=taI4XduLpTk"
+    },
+    {
+      "id": "high-cable-fly",
+      "name": "高位滑輪夾胸",
+      "english": "High-to-low cable fly",
+      "muscles": [
+        "chest",
+        "shoulders"
+      ],
+      "equipment": "滑輪",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "Iwe6AmxVf7o",
+      "videoTitle": "How To: High Cable Chest Fly",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "lower-chest",
+        "chest-fly"
+      ],
+      "steps": [
+        "把滑輪設在肩膀上方，前後腳站穩、身體稍前傾。",
+        "手肘微彎，雙手往身前下方合攏。",
+        "沿相同弧線慢慢打開，軀幹保持穩定。"
+      ],
+      "mistakes": [
+        "直接把手向下壓，變成三頭下壓。",
+        "腰背大幅前後擺動。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=Iwe6AmxVf7o"
+    },
+    {
+      "id": "low-cable-fly",
+      "name": "低位滑輪夾胸",
+      "english": "Low-to-high cable fly",
+      "muscles": [
+        "chest",
+        "shoulders"
+      ],
+      "equipment": "滑輪",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "M1N804yWA-8",
+      "videoTitle": "How To: Low Cable Chest Fly",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "upper-chest",
+        "chest-fly"
+      ],
+      "steps": [
+        "滑輪放低，前後腳站穩，握把在身側。",
+        "手肘微彎，沿由下往上的弧線合到上胸前方。",
+        "肩膀不聳起，慢慢回到身側。"
+      ],
+      "mistakes": [
+        "舉到頭頂、變成肩前平舉。",
+        "重量太重而用腰部後仰借力。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=M1N804yWA-8"
+    },
+    {
+      "id": "barbell-row",
+      "name": "槓鈴俯身划船",
+      "english": "Bent-over barbell row",
+      "muscles": [
+        "back",
+        "biceps",
+        "core"
+      ],
+      "equipment": "槓鈴",
+      "category": "back",
+      "mode": "reps",
+      "videoId": "vT2GjY_Umpw",
+      "videoTitle": "How To: Bent Over Barbell Row",
+      "channel": "Gabriel Sey",
+      "focuses": [
+        "rhomboids",
+        "teres-major",
+        "lower-lats",
+        "spinal-erectors"
+      ],
+      "steps": [
+        "膝微彎、髖部後推，軀幹俯身並維持背部自然曲線。",
+        "手肘朝後，槓鈴拉向腹部，肩胛自然後收。",
+        "慢慢伸直手臂，髖部與軀幹角度維持穩定。"
+      ],
+      "mistakes": [
+        "每一下都用挺腰甩起槓鈴。",
+        "為拉得更高而過度聳肩。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=vT2GjY_Umpw"
+    },
+    {
+      "id": "single-arm-row",
+      "name": "單臂啞鈴划船",
+      "english": "Single-arm dumbbell row",
+      "muscles": [
+        "back",
+        "biceps"
+      ],
+      "equipment": "啞鈴",
+      "category": "back",
+      "mode": "reps",
+      "videoId": "pYcpY20QaE8",
+      "videoTitle": "How To: Dumbbell Bent-Over Row (Single-Arm)",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "lower-lats",
+        "teres-major",
+        "rhomboids"
+      ],
+      "steps": [
+        "一手支撐穩固椅面，軀幹穩定，另一手持啞鈴下垂。",
+        "手肘朝髖部拉，啞鈴到腰側，避免身體旋轉。",
+        "手臂慢慢放回，肩胛自然移動，換側完成。"
+      ],
+      "mistakes": [
+        "轉動整個身體把重量扭起來。",
+        "啞鈴往肩膀拉，手肘大幅外開。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=pYcpY20QaE8"
+    },
+    {
+      "id": "dumbbell-row",
+      "name": "雙臂啞鈴俯身划船",
+      "english": "Dumbbell bent-over row",
+      "muscles": [
+        "back",
+        "biceps",
+        "core"
+      ],
+      "equipment": "啞鈴",
+      "category": "back",
+      "mode": "reps",
+      "videoId": "6TSP1TRMUzs",
+      "videoTitle": "How To:  Dumbbell Bent-Over Row",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "rhomboids",
+        "teres-major",
+        "lower-lats"
+      ],
+      "steps": [
+        "髖部後推、膝微彎，雙手啞鈴在肩膀下方。",
+        "手肘向後拉到身側，肩胛自然往中間移動。",
+        "慢慢放下，保持軀幹角度與腹部穩定。"
+      ],
+      "mistakes": [
+        "把俯身划船做成站姿聳肩。",
+        "放下時失去控制、圓背。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=6TSP1TRMUzs"
+    },
+    {
+      "id": "face-pull",
+      "name": "繩索面拉",
+      "english": "Rope face pull",
+      "muscles": [
+        "back",
+        "shoulders"
+      ],
+      "equipment": "滑輪",
+      "category": "back",
+      "mode": "reps",
+      "videoId": "rep-qVOkqgk",
+      "videoTitle": "How To: Face Pull",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "rhomboids"
+      ],
+      "steps": [
+        "滑輪調在臉部附近高度，握繩兩端，站穩。",
+        "手肘向外，繩索朝臉部拉，雙手分到臉側。",
+        "控制肩胛後收後慢慢放回，使用輕重量。"
+      ],
+      "mistakes": [
+        "腰部後仰，把重量整個甩起。",
+        "聳肩夾頸或讓繩索撞到臉。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=rep-qVOkqgk"
+    },
+    {
+      "id": "dumbbell-external-rotation",
+      "name": "支撐式啞鈴肩外旋",
+      "english": "Supported dumbbell external rotation",
+      "muscles": [
+        "back",
+        "shoulders"
+      ],
+      "equipment": "啞鈴",
+      "category": "back",
+      "mode": "reps",
+      "videoId": "gOwur9N0cM0",
+      "videoTitle": "Dumbbell External Rotation",
+      "channel": "Testosterone Nation",
+      "focuses": [
+        "teres-minor"
+      ],
+      "steps": [
+        "坐姿將上臂支撐在屈起的膝上，手肘彎約 90 度，使用很輕的啞鈴。",
+        "上臂維持支撐，以肩關節外旋讓前臂向上轉起。",
+        "只在可控制的舒適角度慢慢轉回，兩側分別做。"
+      ],
+      "mistakes": [
+        "把上臂整個抬起來代替肩外旋。",
+        "用大重量或猛轉到關節極限。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=gOwur9N0cM0"
+    },
+    {
+      "id": "assisted-pull-up",
+      "name": "輔助引體向上",
+      "english": "Assisted pull-up progression",
+      "muscles": [
+        "back",
+        "biceps"
+      ],
+      "equipment": "單槓",
+      "category": "back",
+      "mode": "reps",
+      "videoId": "bAEua0zu_74",
+      "videoTitle": "How To: Beginner Pull-Up Progressions",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "upper-lats",
+        "teres-major"
+      ],
+      "steps": [
+        "使用牢固單槓與可穩定提供輔助的設備，握距略寬於肩。",
+        "先穩定肩胛，手肘朝身側拉，讓胸口靠近槓。",
+        "控制下降與輔助量，避免跳起借力。"
+      ],
+      "mistakes": [
+        "用擺盪或踢腿代替拉起。",
+        "聳肩夾頸、下放時突然掉落。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=bAEua0zu_74"
+    },
+    {
+      "id": "incline-barbell-bench",
+      "name": "上斜槓鈴臥推",
+      "english": "Incline barbell bench press",
+      "muscles": [
+        "chest",
+        "shoulders",
+        "triceps"
+      ],
+      "equipment": "槓鈴",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "SrqOu55lrYU",
+      "videoTitle": "How To: Incline Barbell Bench Press | 3 GOLDEN RULES! (MADE BETTER!)",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "upper-chest"
+      ],
+      "steps": [
+        "椅背設低上斜、雙腳踩穩，肩胛貼住椅面。",
+        "槓鈴緩慢降向上胸附近，手腕位於手肘上方。",
+        "推回起點，保留可控制的幅度。"
+      ],
+      "mistakes": [
+        "椅背過高、聳肩推舉。",
+        "槓鈴反彈或臀部離椅。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=SrqOu55lrYU"
+    },
+    {
+      "id": "decline-barbell-bench",
+      "name": "下斜槓鈴臥推",
+      "english": "Decline barbell bench press",
+      "muscles": [
+        "chest",
+        "triceps",
+        "shoulders"
+      ],
+      "equipment": "槓鈴",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "LfyQBUKR8SE",
+      "videoTitle": "How To: Barbell Decline Bench Press",
+      "channel": "ScottHermanFitness",
+      "focuses": [
+        "lower-chest"
+      ],
+      "steps": [
+        "使用可固定雙腿的下斜椅，確認安全架或保護者。",
+        "手腕保持穩定，槓鈴慢慢降向下胸附近。",
+        "沿原路推回，動作與呼吸保持控制。"
+      ],
+      "mistakes": [
+        "沒有固定身體就開始下斜推舉。",
+        "為了加重而縮短動作或彈胸。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=LfyQBUKR8SE"
+    },
+    {
+      "id": "pec-deck",
+      "name": "蝴蝶機夾胸",
+      "english": "Pec deck chest fly",
+      "muscles": [
+        "chest",
+        "shoulders"
+      ],
+      "equipment": "器械",
+      "category": "chest",
+      "mode": "reps",
+      "videoId": "Z57CtFmRMxA",
+      "videoTitle": "How to Do Chest Fly Exercises on a Machine",
+      "channel": "LIVESTRONG",
+      "focuses": [
+        "middle-chest",
+        "chest-fly"
+      ],
+      "steps": [
+        "調整椅高，握把或前臂墊約在胸口高度。",
+        "背部貼靠椅背，肩膀放鬆，雙臂往胸前合攏。",
+        "慢慢打開至肩膀舒適的角度，再重複。"
+      ],
+      "mistakes": [
+        "椅高不合而聳肩。",
+        "機器拉得過開，重量片回程撞擊。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=Z57CtFmRMxA"
+    },
+    {
+      "id": "pull-up",
+      "name": "引體向上",
+      "english": "Pull-up",
+      "muscles": [
+        "back",
+        "biceps",
+        "core"
+      ],
+      "equipment": "單槓",
+      "category": "back",
+      "mode": "reps",
+      "videoId": "eGo4IYlbE5g",
+      "videoTitle": "The Perfect Pull Up  - Do it right!",
+      "channel": "Calisthenicmovement",
+      "focuses": [
+        "upper-lats",
+        "teres-major"
+      ],
+      "steps": [
+        "確認單槓牢固，握距略寬於肩，腹部與臀部保持穩定。",
+        "肩胛先穩定，手肘往身側拉，胸部往單槓靠近。",
+        "控制伸直手臂下降；無法穩定完成時改輔助版本。"
+      ],
+      "mistakes": [
+        "擺盪踢腿借力。",
+        "為越過單槓而用下巴往前伸。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=eGo4IYlbE5g"
+    },
+    {
+      "id": "leg-press",
+      "name": "坐姿腿推",
+      "english": "Seated leg press",
+      "muscles": [
+        "quads",
+        "glutes"
+      ],
+      "equipment": "器械",
+      "category": "legs",
+      "mode": "reps",
+      "videoId": "IZxyjW7MPJQ",
+      "videoTitle": "How To: Seated Leg Press (Cybex)",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "背臀貼靠椅墊，雙腳踩踏板約肩寬。",
+        "膝蓋沿腳尖方向彎曲，下放到骨盆仍穩定的範圍。",
+        "全腳掌推回，膝蓋保持微彎、不撞直。"
+      ],
+      "mistakes": [
+        "下放太深使腰臀捲起。",
+        "膝蓋內夾或頂端猛鎖膝。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=IZxyjW7MPJQ"
+    },
+    {
+      "id": "leg-extension",
+      "name": "坐姿腿伸展",
+      "english": "Leg extension",
+      "muscles": [
+        "quads"
+      ],
+      "equipment": "器械",
+      "category": "legs",
+      "mode": "reps",
+      "videoId": "YyvSfVjQeL0",
+      "videoTitle": "How To: Leg Extension (Cybex)",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "椅背調好，膝關節對準機器轉軸，腿墊放在腳踝上方。",
+        "穩定坐姿，慢慢伸直膝蓋。",
+        "控制彎回，不讓重量片撞擊。"
+      ],
+      "mistakes": [
+        "用臀部彈跳甩起重量。",
+        "轉軸沒有對準膝部。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=YyvSfVjQeL0"
+    },
+    {
+      "id": "lying-leg-curl",
+      "name": "俯臥腿彎舉",
+      "english": "Prone leg curl",
+      "muscles": [
+        "hamstrings"
+      ],
+      "equipment": "器械",
+      "category": "legs",
+      "mode": "reps",
+      "videoId": "1Tq3QdYUuHs",
+      "videoTitle": "How To: Prone Leg Curl (Cybex)",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "膝蓋對準機器轉軸，腿墊位於腳踝上方。",
+        "髖部貼墊，慢慢彎膝把腳跟往臀部帶。",
+        "停頓後控制伸回起點。"
+      ],
+      "mistakes": [
+        "抬臀或挺腰借力。",
+        "用慣性甩起後放任重量落下。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=1Tq3QdYUuHs"
+    },
+    {
+      "id": "bodyweight-lunge",
+      "name": "徒手弓箭步",
+      "english": "Bodyweight lunge",
+      "muscles": [
+        "quads",
+        "glutes"
+      ],
+      "equipment": "徒手",
+      "category": "legs",
+      "mode": "reps",
+      "videoId": "QOVaHwm-Q6U",
+      "videoTitle": "Bowflex® How-To | Lunges for Beginners",
+      "channel": "BowFlex",
+      "focuses": [],
+      "steps": [
+        "站穩、雙腳約髖寬，向前跨出一步。",
+        "屈膝下蹲，前膝跟隨腳尖，軀幹保持穩定。",
+        "以前腳推地回起點，換側重複。"
+      ],
+      "mistakes": [
+        "雙腳站成一條線，失去平衡。",
+        "膝蓋內夾或急速撞地。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=QOVaHwm-Q6U"
+    },
+    {
+      "id": "bulgarian-split-squat",
+      "name": "保加利亞分腿蹲",
+      "english": "Bulgarian split squat",
+      "muscles": [
+        "quads",
+        "glutes"
+      ],
+      "equipment": "啞鈴",
+      "category": "legs",
+      "mode": "reps",
+      "videoId": "2C-uNgKwPLE",
+      "videoTitle": "How To: Bulgarian Split Squat",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "後腳放在穩固低椅，前腳踩穩；先徒手確認距離。",
+        "彎曲前腿下蹲，髖部穩定，膝蓋順腳尖方向移動。",
+        "以前腿推地站起，兩側分開完成。"
+      ],
+      "mistakes": [
+        "後椅太高導致骨盆扭轉。",
+        "前腳太近而失去平衡。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=2C-uNgKwPLE"
+    },
+    {
+      "id": "hammer-curl",
+      "name": "啞鈴槌式彎舉",
+      "english": "Dumbbell hammer curl",
+      "muscles": [
+        "biceps"
+      ],
+      "equipment": "啞鈴",
+      "category": "arms",
+      "mode": "reps",
+      "videoId": "zC3nLlEvin4",
+      "videoTitle": "How To: Dumbbell Hammer Curl",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "雙手握啞鈴，掌心相對，手肘靠近身側。",
+        "上臂保持穩定，彎肘把啞鈴往上帶。",
+        "慢慢伸回起點，維持中立手腕。"
+      ],
+      "mistakes": [
+        "腰背後仰甩重量。",
+        "手肘一直向前跑、手腕折彎。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=zC3nLlEvin4"
+    },
+    {
+      "id": "tricep-kickback",
+      "name": "啞鈴三頭後踢",
+      "english": "Dumbbell tricep kickback",
+      "muscles": [
+        "triceps"
+      ],
+      "equipment": "啞鈴",
+      "category": "arms",
+      "mode": "reps",
+      "videoId": "6SS6K3lAwZ8",
+      "videoTitle": "How To: Tricep Kickback (Dumbbell)",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "髖部後推俯身，一手支撐，另一側上臂貼近軀幹。",
+        "保持上臂位置，慢慢伸直手肘。",
+        "控制彎回，肩膀不要甩動。"
+      ],
+      "mistakes": [
+        "用整隻手臂來回擺。",
+        "重量太重而挺腰或聳肩。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=6SS6K3lAwZ8"
+    },
+    {
+      "id": "crunch",
+      "name": "捲腹",
+      "english": "Crunch",
+      "muscles": [
+        "core"
+      ],
+      "equipment": "徒手",
+      "category": "core",
+      "mode": "reps",
+      "videoId": "Xyd_fa5zoEU",
+      "videoTitle": "How to Do Crunches",
+      "channel": "LIVESTRONG",
+      "focuses": [],
+      "steps": [
+        "仰躺屈膝、腳底踩地，雙手輕放胸前或頭側。",
+        "吐氣讓肋骨朝骨盆靠近，肩胛稍微離地。",
+        "慢慢放回，頸部維持自然位置。"
+      ],
+      "mistakes": [
+        "用雙手拉扯脖子。",
+        "起身過高變成整個坐起。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=Xyd_fa5zoEU"
+    },
+    {
+      "id": "hanging-leg-raise",
+      "name": "懸垂舉腿",
+      "english": "Hanging leg raise",
+      "muscles": [
+        "core"
+      ],
+      "equipment": "單槓",
+      "category": "core",
+      "mode": "reps",
+      "videoId": "Pr1ieGZ5atk",
+      "videoTitle": "Hanging Leg Raise | HOW-TO",
+      "channel": "ATHLEAN-X™",
+      "focuses": [],
+      "steps": [
+        "握牢穩固單槓，身體不擺盪；初學先用屈膝版本。",
+        "吐氣收腹，控制骨盆往上捲，把膝或腿抬高。",
+        "緩慢放下，停止擺動後再重複。"
+      ],
+      "mistakes": [
+        "用前後擺盪甩腿。",
+        "只抬大腿、腰部一直過度前拱。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=Pr1ieGZ5atk"
+    },
+    {
+      "id": "hip-thrust",
+      "name": "槓鈴臀推",
+      "english": "Barbell hip thrust",
+      "muscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "equipment": "槓鈴",
+      "category": "legs",
+      "mode": "reps",
+      "videoId": "SEdqd1n0cvg",
+      "videoTitle": "How To: Hip Thrust",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "上背靠穩固椅緣，槓鈴加軟墊放髖部，腳底踩穩。",
+        "下巴微收，臀部向上推至軀幹與大腿接近一直線。",
+        "保持肋骨下收，慢慢降回。"
+      ],
+      "mistakes": [
+        "頂端過度挺腰。",
+        "椅子滑動或槓鈴沒有保護墊。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=SEdqd1n0cvg"
+    },
+    {
+      "id": "front-squat",
+      "name": "槓鈴前蹲",
+      "english": "Barbell front squat",
+      "muscles": [
+        "quads",
+        "glutes",
+        "core"
+      ],
+      "equipment": "槓鈴",
+      "category": "legs",
+      "mode": "reps",
+      "videoId": "tlfahNdNPPI",
+      "videoTitle": "How To: Front Squat (Barbell)",
+      "channel": "ScottHermanFitness",
+      "focuses": [],
+      "steps": [
+        "使用安全架，槓鈴放肩前支撐位置，手肘抬高。",
+        "腳底踩穩，髖膝一起彎曲，下蹲至可維持穩定的深度。",
+        "全腳掌推地站起，胸口與手肘維持位置。"
+      ],
+      "mistakes": [
+        "手肘下垂導致槓鈴滑落。",
+        "腳跟離地或膝蓋內夾。"
+      ],
+      "sourceUrl": "https://www.youtube.com/watch?v=tlfahNdNPPI"
+    }
+  ],
+  "focuses": [
+    {
+      "id": "upper-chest",
+      "parent": "chest",
+      "name": "上胸",
+      "description": "胸大肌鎖骨部取向；低上斜推舉與由下往上的夾胸。"
+    },
+    {
+      "id": "middle-chest",
+      "parent": "chest",
+      "name": "中胸",
+      "description": "胸大肌胸肋部的水平推與水平內收。"
+    },
+    {
+      "id": "lower-chest",
+      "parent": "chest",
+      "name": "下胸",
+      "description": "胸肋部下側纖維取向；由高往低的內收路徑。"
+    },
+    {
+      "id": "chest-fly",
+      "parent": "chest",
+      "name": "夾胸／飛鳥",
+      "description": "這是水平內收的動作類型，不是另一塊「內胸肌」。"
+    },
+    {
+      "id": "rhomboids",
+      "parent": "back",
+      "name": "菱形肌",
+      "description": "肩胛後收，常與中斜方肌一起參與划船。"
+    },
+    {
+      "id": "teres-major",
+      "parent": "back",
+      "name": "大圓肌",
+      "description": "協助肩伸展、內收與內旋，常與背闊肌共同工作。"
+    },
+    {
+      "id": "teres-minor",
+      "parent": "back",
+      "name": "小圓肌",
+      "description": "旋轉肌袖的一員，主要參與肩外旋；與大圓肌功能不同。"
+    },
+    {
+      "id": "upper-lats",
+      "parent": "back",
+      "name": "上背闊取向",
+      "description": "用垂直拉與肩內收探索背闊肌；不是只練上段的隔離動作。"
+    },
+    {
+      "id": "lower-lats",
+      "parent": "back",
+      "name": "下背闊取向",
+      "description": "用手肘朝髖部的肩伸展路徑探索背闊肌；區域刺激會因人而異。"
+    },
+    {
+      "id": "spinal-erectors",
+      "parent": "back",
+      "name": "下背／豎脊肌",
+      "description": "髖鉸鏈時維持脊椎穩定，不以反覆過度挺腰代替動作。"
+    }
+  ],
+  "anatomyNotes": {
+    "chest": "上、中、下胸是訓練區域的俗稱；胸大肌主要分鎖骨部與胸肋部，各動作仍會共同使用胸肌。",
+    "back": "菱形肌在較深層；本圖為位置示意。大圓肌與小圓肌功能不同，背闊肌上／下取向不代表能完全隔離。"
+  },
+  "references": [
+    "https://www.precisionnutrition.com/video-exercise-library",
+    "https://www.acefitness.org/resources/everyone/exercise-library/",
+    "https://www.strengthlog.com/workout-log-with-exercise-instructions/",
+    "https://www.ncbi.nlm.nih.gov/books/NBK525991/",
+    "https://www.ncbi.nlm.nih.gov/books/NBK546633/"
   ]
 }

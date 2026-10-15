@@ -8,6 +8,21 @@ import { session } from '../auth.js';
 import { recordFeedback } from '../pet-feedback.js';
 
 const messages = ref([]);
+const coachPlan=ref(null), composerEl=ref(null);
+function preparePlanChange() {draft.value='我想調整訓練和飲食計畫，';nextTick(()=>composerEl.value?.focus());}
+let reminderTimer;
+async function refreshReminders() {
+  if(disposed || sending.value || document.hidden) return;
+  const sequence=submitSequence;
+  try {
+    const [history,plan]=await Promise.all([api.chatHistory(),api.coachPlan()]);
+    if(disposed || sending.value || sequence!==submitSequence) return;
+    const changed=history.at(-1)?.id !== messages.value.at(-1)?.id;
+    messages.value=history;coachPlan.value=plan;
+    if(changed) scrollDown();
+  } catch {}
+}
+
 const draft = ref('');
 const sending = ref(false);
 const error = ref('');
@@ -125,6 +140,7 @@ async function load() {
   try {
     const [history, health] = await Promise.all([api.chatHistory(), api.health(), refreshModels()]);
     messages.value = history;
+    coachPlan.value=await api.coachPlan();
     geminiReady.value = health.gemini;
     scrollDown();
     let savedId; try { savedId = sessionStorage.getItem(receiptKey()); } catch {}
@@ -249,13 +265,15 @@ function render(text) {
     .replace(/\n/g, '<br>');
 }
 
-onMounted(load);
+onMounted(()=>{load();reminderTimer=setInterval(refreshReminders,30_000);document.addEventListener('visibilitychange',refreshReminders);});
+onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visibilitychange',refreshReminders);});
 </script>
 
 <template>
   <div class="chat">
+    <details v-if="coachPlan" class="coach-plan-card"><summary>我的{{ coachPlan.goal }}計畫 · 每日 08:00 提醒</summary><p class="small muted">台灣時間 · 依個人檔案建立起始安排；調整身體資料或目標後會更新。</p><p>{{ coachPlan.basis }}</p><template v-if="!coachPlan.needsAssessment"><p>每日 {{ coachPlan.target.kcal }} kcal · 蛋白質 {{ coachPlan.target.protein }}g</p><p>{{ coachPlan.rationale }}</p><ul><li v-for="e in coachPlan.strength" :key="e.name">{{ e.name }}：{{ e.sets }} 組 × {{ e.reps }}</li></ul><p class="small muted">{{ coachPlan.assumptions }}</p></template><p v-else>請先確認個人健康限制，再安排具體訓練與飲食。</p><button type="button" @click="preparePlanChange">跟教練調整計畫</button></details>
     <div v-if="!geminiReady" class="error" style="margin-bottom:.8rem">
-      教練暫時無法使用，請稍後再試；你仍可直接記錄飲食與訓練。
+      AI 對話暫時無法使用；預設計畫與每日提醒仍可查看，也能直接記錄飲食與訓練。
     </div>
 
     <div ref="listEl" class="messages">
@@ -324,7 +342,7 @@ onMounted(load);
               @click="fileEl.click()">
         {{ preparing ? '…' : '📷' }}
       </button>
-      <textarea
+      <textarea ref="composerEl"
         v-model="draft"
         rows="1"
         :placeholder="pending ? '想補充什麼嗎？' : '輸入訊息…'"
@@ -459,4 +477,6 @@ onMounted(load);
   border-radius: 9px;
   flex: 0 0 auto;
 }
+
+.coach-plan-card {padding:.7rem 1rem;margin-bottom:.7rem;background:var(--accent-soft);border-radius:14px;flex-shrink:0;font-size:.85rem;max-height:45vh;overflow:auto;}.coach-plan-card summary {font-weight:650;cursor:pointer;}.coach-plan-card p {line-height:1.6;}.coach-plan-card ul {padding-left:1.2rem;}
 </style>

@@ -1,3 +1,4 @@
+import { ensureCoachMessages } from '../coach-plan.js';
 import { chat, saveMessage, loadHistory, clearHistory } from '../coach.js';
 import { saveDataUrl } from '../uploads.js';
 import { listModels, selectableModels } from '../gemini.js';
@@ -6,7 +7,11 @@ import { beginRequest, requestStatus, updateRequest, finishRequest, cancelReques
 
 export default async function chatRoutes(app) {
   // 對話是私人的，不開放跨帳號查看
-  app.get('/chat/history', async (req) => loadHistory(req.userId, Number(req.query.limit || 50)));
+  app.get('/chat/plan', async req => ensureCoachMessages(req.userId).plan);
+  app.get('/chat/history', async req => {
+    ensureCoachMessages(req.userId);
+    return loadHistory(req.userId, Math.min(200,Math.max(1,Number(req.query.limit) || 50)));
+  });
 
   app.delete('/chat/history', async (req) => ({ ok: true, deleted: clearHistory(req.userId) }));
 

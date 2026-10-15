@@ -20,10 +20,14 @@ beforeAll(async()=>{
 });
 beforeEach(()=>db.exec('DELETE FROM workouts;DELETE FROM workout_save_requests'));
 afterAll(async()=>{await app.close();vi.unstubAllEnvs();vi.useRealTimers();});
-it('15 個影片與十個部位都有對應，來源 ID 與頻道完整',()=>{
-  expect(catalog.muscles).toHaveLength(10);expect(catalog.exercises).toHaveLength(15);
+it('細分部位與影片都有對應，教學與來源完整',()=>{
+  expect(catalog.muscles).toHaveLength(10);expect(catalog.exercises).toHaveLength(43);
   expect(new Set(catalog.exercises.map(e=>e.id)).size).toBe(catalog.exercises.length);
   for(const region of catalog.muscles)expect(catalog.exercises.some(e=>e.muscles.includes(region.id))).toBe(true);
+  for(const focus of catalog.focuses) {expect(catalog.muscles.some(m=>m.id===focus.parent)).toBe(true);expect(catalog.exercises.some(e=>e.focuses.includes(focus.id))).toBe(true);}
+  for(const e of catalog.exercises) {expect(e.steps.length).toBeGreaterThanOrEqual(3);expect(e.mistakes.length).toBeGreaterThanOrEqual(2);}
+  expect(catalog.exercises.find(e=>e.id==='dumbbell-external-rotation').focuses).toEqual(['teres-minor']);
+  expect(catalog.exercises.find(e=>e.id==='lat-pulldown').focuses).not.toContain('teres-minor');
   for(const e of catalog.exercises){expect(e.videoId).toMatch(/^[\w-]{11}$/);expect(e.channel).toBeTruthy();expect(e.videoTitle).toBeTruthy();}
 });
 it('每組不同重量與次數完整保存，今日與區間總量皆正確',()=>{

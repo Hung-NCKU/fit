@@ -1,3 +1,5 @@
+import { ensureCoachMessages } from './coach-plan.js';
+import { USERS, passwordOf } from './users.js';
 import { notifyHours, notifyUser, allUsers, pushEnabled } from './push.js';
 
 /**
@@ -8,6 +10,19 @@ import { notifyHours, notifyUser, allUsers, pushEnabled } from './push.js';
  * 注意：這台電腦沒開、或服務沒在跑的時候不會有通知。
  */
 let timer = null;
+let coachTimer = null;
+export function runCoachReminders(now = new Date()) {
+  for (const u of USERS.filter(u=>!u.temp && passwordOf(u))) {
+    try { ensureCoachMessages(u.id,now); }
+    catch(err) {console.warn('[coach-reminder] '+u.id+': '+err.message);}
+  }
+}
+function scheduleCoach() {
+  clearTimeout(coachTimer);
+  runCoachReminders();
+  coachTimer = setTimeout(scheduleCoach,60_000-Date.now()%60_000);
+  coachTimer.unref?.();
+}
 
 function nextRun(from = new Date()) {
   const hours = notifyHours();
@@ -56,8 +71,10 @@ function schedule() {
 }
 
 export function startScheduler() {
+  scheduleCoach();
+  console.log("[coach-reminder] 每日 08:00 Asia/Taipei，寫入私人教練對話（不需推播訂閱）");
   if (!pushEnabled()) {
-    console.warn('[notify] 沒有設定 VAPID 金鑰，定時提醒不會啟動');
+    console.warn('[notify] 沒有設定 VAPID 金鑰，熱量推播不會啟動；教練對話提醒照常');
     return;
   }
   console.log(`[notify] 每日提醒時間：${notifyHours().map(h => `${h}:00`).join('、')}`);

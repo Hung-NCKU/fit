@@ -7,19 +7,22 @@ import MuscleMap from './MuscleMap.vue';
 import catalog from '../../../shared/workout-catalog.json';
 const emit=defineEmits(['saved']);
 const muscle=ref('chest'), equipment=ref('全部'), selectedId=ref('');
-const choicesEl=ref(null);
+const choicesEl=ref(null), focus=ref(''), search=ref('');
+const focuses=computed(()=>catalog.focuses.filter(f=>f.parent===muscle.value));
+const focusInfo=computed(()=>focuses.value.find(f=>f.id===focus.value));
+const equipmentOptions=computed(()=>['全部',...new Set(catalog.exercises.filter(e=>e.muscles.includes(muscle.value)).map(e=>e.equipment))]);
 const date=ref(todayStr()), note=ref(''), sets=ref([]), playing=ref(false), saving=ref(false), error=ref(''), success=ref('');
 const editingId=ref(null), requestId=ref(crypto.randomUUID()), pending=ref(null), detailEl=ref(null);
 const draftKey=()=>`fit.workout-draft.${session.user}`;
 const exercise=computed(()=>catalog.exercises.find(e=>e.id===selectedId.value));
 const muscleName=computed(()=>catalog.muscles.find(m=>m.id===muscle.value)?.name || '');
-const choices=computed(()=>catalog.exercises.filter(e=>e.muscles.includes(muscle.value) && (equipment.value==='全部' || e.equipment===equipment.value)).sort((a,b)=>Number(b.muscles[0]===muscle.value)-Number(a.muscles[0]===muscle.value)));
+const choices=computed(()=>catalog.exercises.filter(e=>e.muscles.includes(muscle.value) && (!focus.value || e.focuses.includes(focus.value)) && (!search.value.trim() || `${e.name} ${e.english}`.toLowerCase().includes(search.value.trim().toLowerCase())) && (equipment.value==='全部' || e.equipment===equipment.value)).sort((a,b)=>Number(b.muscles[0]===muscle.value)-Number(a.muscles[0]===muscle.value)));
 const completed=computed(()=>sets.value.filter(s=>s.done));
 const volume=computed(()=>exercise.value?.mode==='time' ? 0 : completed.value.reduce((sum,s)=>sum+Number(s.weight_kg || 0)*Number(s.reps || 0),0));
 const freshSet=previous=>({weight_kg:previous?.weight_kg ?? 0,reps:previous?.reps ?? 10,duration_s:previous?.duration_s ?? 30,rpe:previous?.rpe ?? '',done:false});
 const scrollTo=el=>el?.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
 async function selectMuscle(id) {
-  muscle.value=id;equipment.value='全部';
+  muscle.value=id;equipment.value='全部';focus.value='';search.value='';
   if(window.matchMedia('(max-width:679px)').matches) {await nextTick();scrollTo(choicesEl.value);}
 }
 function persistDraft() {
@@ -37,7 +40,7 @@ try {
   }
 } catch {}
 watch([selectedId,date,note,sets,requestId,editingId,pending],persistDraft,{deep:true});
-watch(muscle,()=>{equipment.value='全部';});
+watch(muscle,()=>{equipment.value='全部';focus.value='';search.value='';});
 function rowError(set,index) {
   const w=Number(set.weight_kg), value=Number(exercise.value?.mode==='time' ? set.duration_s : set.reps), rpe=Number(set.rpe || 0);
   if(!Number.isFinite(w) || w<0 || w>1000 || !Number.isFinite(value) || value<=0 || value>(exercise.value?.mode==='time'?86400:1000) || exercise.value?.mode!=='time' && !Number.isInteger(value) || !Number.isFinite(rpe) || rpe<0 || rpe>10) return `請確認第 ${index+1} 組的重量、${exercise.value?.mode==='time'?'秒數':'次數'}與 RPE`;
@@ -94,14 +97,18 @@ async function saveSets() {
     <div class="explore-intro"><span class="eyebrow">動作探索</span><h2>從想練的部位開始</h2><p class="small muted">選部位、看示範，完成一組就勾一組。</p></div>
     <p v-if="success" class="success" role="status">✓ {{ success }}</p>
     <div class="explore-grid">
-      <div class="card"><MuscleMap :model-value="muscle" @update:model-value="selectMuscle" /></div>
+      <div class="card"><MuscleMap :model-value="muscle" :focus="focus" @update:model-value="selectMuscle" /></div>
       <div ref="choicesEl" class="card exercise-list stack">
         <div class="spread"><div><span class="eyebrow">選擇動作</span><h3>{{ muscleName }}</h3></div><span class="badge">{{ choices.length }} 個動作</span></div>
-        <label>器材<select v-model="equipment" aria-label="器材"><option v-for="name in ['全部','徒手','啞鈴','槓鈴','滑輪']" :key="name">{{ name }}</option></select></label>
+        <div v-if="focuses.length" class="focus-options" aria-label="細分訓練重點"><button :class="{active:!focus}" :aria-pressed="!focus" @click="focus=''">全部重點</button><button v-for="f in focuses" :key="f.id" :class="{active:focus===f.id}" :aria-pressed="focus===f.id" @click="focus=f.id">{{ f.name }}</button></div>
+        <p v-if="focusInfo" class="focus-description small" role="status">{{ focusInfo.description }}</p>
+        <p v-if="catalog.anatomyNotes[muscle]" class="small muted anatomy-note">{{ catalog.anatomyNotes[muscle] }}</p>
+        <label>搜尋動作<input v-model="search" type="search" placeholder="例如：上斜、划船、fly" /></label>
+        <label>器材<select v-model="equipment" aria-label="器材"><option v-for="name in equipmentOptions" :key="name">{{ name }}</option></select></label>
         <button v-for="item in choices" :key="item.id" class="exercise-choice" :class="{chosen:selectedId===item.id}" :disabled="saving || !!pending" @click="selectExercise(item)">
           <span class="exercise-symbol" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><g v-if="item.equipment==='徒手'"><circle cx="12" cy="4" r="2" /><path d="M12 8v7m-5-5 5 2 5-2m-5 5-4 6m4-6 4 6" /></g><path v-else d="M3 8v8m4-10v12m10-12v12m4-10v8M7 12h10" /></svg></span><span><b>{{ item.name }}</b><small>{{ item.equipment }} · {{ item.muscles[0]===muscle ? '主要肌群' : '協同肌群' }}</small><small>{{ item.english }}</small></span><span aria-hidden="true">›</span>
         </button>
-        <p v-if="!choices.length" class="small muted">這個部位還沒有此器材的動作，試試「全部」。</p>
+        <p v-if="!choices.length" class="small muted">沒有符合的動作，請調整重點、搜尋文字或器材。</p>
         <p class="small muted list-foot">點選動作後，下方會出現教學影片與組數記錄。</p>
       </div>
     </div>
@@ -112,6 +119,7 @@ async function saveSets() {
         <button v-else class="video-preview" @click="playing=true" :aria-label="`播放${exercise.name}教學`"><img :src="`https://i.ytimg.com/vi/${exercise.videoId}/hqdefault.jpg`" :alt="`${exercise.name}教學預覽`" loading="lazy" /><span class="play-label">▶ 播放動作教學</span></button>
       </div>
       <div class="video-source small"><span class="muted">{{ exercise.channel }} · 英文教學</span><a :href="`https://www.youtube.com/watch?v=${exercise.videoId}`" target="_blank" rel="noopener noreferrer">到 YouTube 觀看 ↗</a><a :href="`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.name+' 中文 動作教學')}`" target="_blank" rel="noopener noreferrer">找中文教學 ↗</a></div>
+      <div v-if="exercise.steps" class="technique-grid"><section><h3>怎麼做</h3><ol><li v-for="step in exercise.steps" :key="step">{{ step }}</li></ol></section><section><h3>常見錯誤</h3><ul><li v-for="mistake in exercise.mistakes" :key="mistake">{{ mistake }}</li></ul><p class="small muted">先以能控制的重量熟悉動作，再逐步增加。</p></section></div>
       <form class="stack" @submit.prevent="saveSets">
         <div class="spread record-heading"><label>訓練日期<input v-model="date" type="date" required :disabled="saving || !!pending" /></label><b class="small" role="status">{{ completed.length }} / {{ sets.length }} 組完成</b></div>
         <div class="set-progress" role="progressbar" :aria-valuenow="completed.length" :aria-valuemin="0" :aria-valuemax="sets.length || 1" aria-label="已完成組數"><span :style="{width:`${sets.length ? completed.length/sets.length*100 : 0}%`}"></span></div>
@@ -139,4 +147,7 @@ async function saveSets() {
 .explore-intro h2 {font-size:1.3rem;margin:.15rem 0;}.explore-intro p {margin:.25rem 0;}.eyebrow {font-size:.72rem;color:var(--muted);letter-spacing:.08em;}.explore-grid {display:grid;gap:.8rem;}.exercise-list h3 {font-size:1.15rem;margin:.2rem 0;}.exercise-list {align-self:start;}.exercise-choice {display:flex;align-items:center;text-align:left;gap:.7rem;padding:.8rem;min-height:76px;}.exercise-choice>span:nth-child(2) {flex:1;min-width:0;}.exercise-choice small {display:block;color:var(--muted);font-size:.72rem;margin-top:.2rem;}.exercise-choice.chosen {border-color:var(--accent);background:var(--accent-soft);}.exercise-symbol {display:grid;place-items:center;width:38px;height:38px;flex-shrink:0;border-radius:12px;background:var(--surface);font-size:1.6rem;color:var(--accent);}.list-foot {margin:.2rem 0 0;}.exercise-detail {scroll-margin-top:1rem;min-width:0;}.exercise-detail h2 {font-size:1.3rem;margin:.15rem 0 .5rem;}.video-frame {aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#30291f;}.video-frame iframe,.video-preview {display:block;width:100%;height:100%;border:0;}.video-preview {position:relative;padding:0;overflow:hidden;}.video-preview img {width:100%;height:100%;object-fit:cover;}.play-label {position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);white-space:nowrap;background:var(--accent);color:white;padding:.65rem 1rem;border-radius:30px;font-weight:650;box-shadow:0 3px 12px #0003;}.video-source {display:flex;flex-wrap:wrap;gap:.4rem 1rem;}.video-source a {color:var(--accent);text-decoration:underline;}.record-heading {align-items:end;}.record-heading label {max-width:180px;margin:0;}.set-progress {height:6px;border-radius:10px;background:var(--surface-2);overflow:hidden;}.set-progress span {display:block;height:100%;background:var(--accent);transition:width .2s;}.set-hint {margin:0;}.set-columns,.set-row {display:grid;grid-template-columns:24px minmax(0,1.2fr) minmax(0,1fr) minmax(0,.85fr) 40px;gap:.4rem;align-items:center;text-align:center;}.set-row {padding:.6rem .3rem;border-radius:12px;background:var(--surface-2);}.set-row input {padding:.55rem .2rem;text-align:center;min-width:0;}.set-row input:disabled {opacity:1;color:var(--text);-webkit-text-fill-color:var(--text);}.set-row.finished {background:var(--accent-soft);}.set-number {font-size:.85rem;}.done-box {margin:0;display:grid;place-items:center;min-height:42px;}.done-box input {width:23px;height:23px;cursor:pointer;}.success {padding:.7rem 1rem;background:var(--accent-soft);color:var(--accent);border-radius:12px;margin:0;}.save-sets {width:100%;}
 @media(min-width:680px){.explore-grid {grid-template-columns:minmax(210px,.9fr) minmax(0,1.1fr);}}
 @media(max-width:360px){.set-columns,.set-row {grid-template-columns:20px minmax(0,1fr) minmax(0,.9fr) minmax(0,.75fr) 32px;gap:.25rem;}.set-columns {font-size:.72rem;}}
+
+.focus-options {display:flex;flex-wrap:wrap;gap:.35rem;}.focus-options button {padding:.4rem .65rem;font-size:.8rem;min-height:40px;}.focus-options .active {background:var(--accent);color:white;border-color:var(--accent);}.focus-description {padding:.7rem;background:var(--accent-soft);border-radius:10px;margin:0;}.anatomy-note {margin:0;line-height:1.6;}.technique-grid {display:grid;gap:.8rem;}.technique-grid section {padding:1rem;border-radius:14px;background:var(--surface-2);min-width:0;}.technique-grid h3 {font-size:.95rem;margin:0 0 .6rem;}.technique-grid ol,.technique-grid ul {padding-left:1.2rem;margin:0;line-height:1.7;font-size:.88rem;}.technique-grid li+li {margin-top:.4rem;}
+@media(min-width:680px){.technique-grid {grid-template-columns:1.2fr 1fr;}.exercise-list {max-height:850px;overflow:auto;}}
 </style>

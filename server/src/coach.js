@@ -1,3 +1,4 @@
+import { getCoachPlan } from './coach-plan.js';
 import { getDb, getProfile, updateProfile, GOAL_LABEL } from './db.js';
 import { rewardMealSaved } from './pet.js';
 import { generateContent, partsToText, partsToCalls } from './gemini.js';
@@ -271,6 +272,10 @@ export function buildSystemPrompt(userId, context) {
   return `你是一位專業的健身教練兼營養師，服務對象是 ${p.name}，${p.age} 歲${p.sex === 'female' ? '女性' : '男性'}（身高 ${p.height_cm}cm、體重 ${p.weight_kg}kg、目標體重 ${p.goal_weight_kg}kg），目前的目標是「${goal}」。
 每日營養目標：${p.target_kcal} kcal / 蛋白質 ${p.target_protein_g}g / 碳水 ${p.target_carb_g}g / 脂肪 ${p.target_fat_g}g。
 
+【目前預設起始計畫】
+${JSON.stringify(getCoachPlan(userId))}
+這是依個人檔案建立的規則式起始建議，不是假裝已完成的紀錄。請依使用者的器材、經驗與限制協助調整。提出新建議時不要把它當成已執行的訓練或飲食。
+
 【你的角色】
 - 用繁體中文（台灣用語）回答，語氣像真人教練：具體、直接、鼓勵，不說空話。
 - 回答要可執行：給份量、給組數次數、給替代方案，不要只講原則。
@@ -330,7 +335,7 @@ export async function chat(userId, userText, history, image = null, model = null
   if (!image && isGeneralAdvice(userText)) {
     const result = await generateContent({
       contents: [{ role: 'user', parts: [{ text: userText }] }],
-      systemInstruction: '你是飲食與訓練教練。用繁體中文提供簡短、實用的一般建議，不宣稱已新增或修改任何紀錄。',
+      systemInstruction: `你是飲食與訓練教練。用繁體中文提供簡短、實用的建議，不宣稱已新增或修改任何紀錄。使用者的起始計畫為 ${JSON.stringify(getCoachPlan(userId))}。請依其目標與限制回答，不自行臆測尚未提供的身體能力。`,
       preferModel: model,
       signal, onProgress,
       deadline: Date.now() + Number(process.env.COACH_TOTAL_TIMEOUT_MS ?? 75_000),

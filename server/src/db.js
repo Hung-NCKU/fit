@@ -92,6 +92,18 @@ CREATE TABLE IF NOT EXISTS photos (
   created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
 
+CREATE TABLE IF NOT EXISTS coach_plans (
+  fingerprint TEXT PRIMARY KEY,
+  content TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS coach_deliveries (
+  kind TEXT NOT NULL,
+  delivery_key TEXT NOT NULL,
+  message_id INTEGER NOT NULL,
+  PRIMARY KEY (kind, delivery_key)
+);
+
 CREATE TABLE IF NOT EXISTS push_subscriptions (
   endpoint   TEXT PRIMARY KEY,
   p256dh     TEXT NOT NULL,
