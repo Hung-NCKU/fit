@@ -1,6 +1,5 @@
 <script setup>
 import {loadCachedPage,patchCachedPage} from '../page-cache.js';
-import { confirmAction } from '../confirm.js';
 import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue';
 import { api, compressImage, photoUrl, MEAL_TYPES, CATEGORIES } from '../api.js';
 import { openPhoto } from '../components/PhotoViewer.vue';
@@ -244,12 +243,6 @@ async function syncHistory() {
 }
 onUnmounted(() => { disposed = true; clearTimeout(pollTimer); clearTimeout(statusTimer); clearInterval(elapsedTimer); });
 
-async function clearAll() {
-  if (!await confirmAction('確定要清空所有對話紀錄嗎？（訓練與飲食紀錄不會被刪除）')) return;
-  await api.clearChat();
-  ++bookmarkSequence;messages.value = [];bookmarkItems.value=[];bookmarkFetched.value=false;bookmarkBrowsing.value=false;bookmarkOpen.value=false;
-}
-
 function onKeydown(e) {
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
     e.preventDefault();
@@ -403,10 +396,6 @@ onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visi
       ></textarea>
       <ModelPicker v-model="model" :models="models" :disabled="sending" />
       <button class="primary send" :disabled="sending || (!draft.trim() && !pending)" @click="send()">送出</button>
-    </div>
-    <div class="spread small muted" style="margin-top:.4rem">
-      <span>由 Gemini 提供建議，僅供參考，不構成醫療建議。</span>
-      <button v-if="!empty" class="icon" :disabled="sending" @click="clearAll">清空對話</button>
     </div>
   </div>
 </template>
