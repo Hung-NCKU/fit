@@ -70,7 +70,7 @@ const pose = computed(() => clothes.value.length || props.preview ? 'idle' : joy
 watch(()=>props.roomKey,()=>{journey=null;position.value={...initialPosition()};});
 watch(()=>props.pet.position,p=>{if(p && !lifted.value && !journey) position.value={...p};});
 function lift(event) {
-  if(!props.interactive || !props.movable || props.paused) return;
+  if(!props.interactive || props.paused) return;
   const rect=event.currentTarget.parentElement.getBoundingClientRect();
   pointerDrag={id:event.pointerId,x:event.clientX,y:event.clientY,from:{...position.value},rect};
   journey=null;moving.value=false;lifted.value=true;
@@ -86,9 +86,10 @@ function dragPet(event) {
 function drop(event,cancelled=false) {
   if(!pointerDrag || event.pointerId!==pointerDrag.id) return;
   const moved=Math.hypot(event.clientX-pointerDrag.x,event.clientY-pointerDrag.y)>5;
-  if(cancelled || !moved) position.value={...pointerDrag.from};
+  if(cancelled || !moved || !props.movable) position.value={...pointerDrag.from};
   else {position.value={x:position.value.x,y:Math.min(90,Math.max(64,position.value.y))};emit('move',{petKey:props.pet.petKey,position:{...position.value}});}
   lifted.value=false;pointerDrag=null;suppressClick=moved;nextTrip=performance.now()+8000;
+    if(!cancelled && moved && !props.movable)emit('interact',props.pet.petKey);
   landing.value=true;clearTimeout(landingTimer);landingTimer=setTimeout(()=>{landing.value=false;},260);
 }
 function clickPet() {if(suppressClick) {suppressClick=false;return;}say('我在這裡陪你！今天想做什麼呢？');emit(!props.paused && !props.preview ? 'interact' : 'select',props.pet.petKey);}
@@ -118,7 +119,7 @@ const style = computed(() => ({
 </template>
 <style scoped>
 .actor { position:absolute; padding:0; border:0; background:transparent; background-image:none; box-shadow:none; appearance:none; -webkit-appearance:none; -webkit-tap-highlight-color:transparent; transition:none; outline:none; aspect-ratio:1; transform:translate(-50%,12%); overflow:visible; color:#433c32; touch-action:none; cursor:grab; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
-.actor.visiting { cursor:pointer; touch-action:pan-y; }
+.actor.visiting { cursor:grab; touch-action:none; }
   .actor.lifted { cursor:grabbing; }
 .lifted .body { animation:pickup .9s ease-in-out infinite; transform:translateY(-12px) scale(1.06); filter:drop-shadow(0 12px 5px #0002); }
 @keyframes pickup { 0%,100% {transform:translateY(-12px) scale(1.06) rotate(-1.5deg);} 50% {transform:translateY(-14px) scale(1.06) rotate(1.5deg);} }

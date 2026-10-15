@@ -406,7 +406,7 @@ function confirmRename() {
           <ExpandableNote label="心情與飽足度說明" preview="運動就是陪寵物玩耍；記錄飲食能提高飽足度，達到每日熱量目標就會全滿。"><p>當主人運動時，就像陪寵物一起玩耍，能讓牠的心情更好；記錄每天吃下的食物，則會提高寵物的飽足度，達到每日熱量目標時，飽足度就會全滿。平常也可以點一下寵物陪牠玩，每次增加 2 點心情，每 30 秒可獲得一次加成，每天最多 5 次，合計增加 10 點。陪玩額度用完後，仍然可以繼續互動；想再提高心情，就要透過運動累積加成。飲食只影響飽足度，不會額外增加心情。</p></ExpandableNote>
           <p class="small">今日陪玩 +{{ data.care.interactionMood }} / {{ data.care.interactionMoodLimit }} · 運動 +{{ data.care.exerciseMood }} / {{ data.care.exerciseMoodLimit }}</p>
           <p v-if="data.care.interactions >= data.care.interactionLimit" class="small">陪玩加成已滿；可以繼續互動，想提高心情就去記錄運動。</p>
-          <p v-if="!mine" class="small muted">可以點選寵物或按下陪玩；與主人共用每隻寵物每天 +10 的陪玩上限，不改動對方的布置與紀錄。</p>
+          <p v-if="!mine" class="small muted">可以點選、點住拎起寵物或按下陪玩；放開會回到原處。與主人共用每隻寵物每天 +10 的陪玩上限，不改動對方的布置與紀錄。</p>
           <button :disabled="interacting || busy" @click="playWithPet(pet.petKey)">{{ interacting ? '陪玩中…' : '陪牠玩' }}</button>
           <p v-if="careMessage" class="small" role="status">{{ careMessage }}</p>
         </div>
