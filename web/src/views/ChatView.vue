@@ -11,7 +11,7 @@ import { recordFeedback } from '../pet-feedback.js';
 const chatCacheKey=['chat',session.user,new Date().toLocaleDateString('sv-SE')];
 onUnmounted(()=>{if(!bookmarkBrowsing.value)patchCachedPage(chatCacheKey,previous=>[messages.value,{...previous[1],gemini:geminiReady.value},coachPlan.value]);});
 const messages = ref([]);
-const bookmarkOpen=ref(false),bookmarkItems=ref([]),bookmarkFetched=ref(false),bookmarkLoading=ref(false),bookmarkMore=ref(false),bookmarkBefore=ref(null),bookmarkBrowsing=ref(false),bookmarkError=ref(''),focusedBookmark=ref(null);
+const bookmarkOpen=ref(true),bookmarkItems=ref([]),bookmarkFetched=ref(false),bookmarkLoading=ref(false),bookmarkMore=ref(false),bookmarkBefore=ref(null),bookmarkBrowsing=ref(false),bookmarkError=ref(''),focusedBookmark=ref(null);
 let bookmarkSequence=0,bookmarkTimer;
 const bookmarks=computed(()=>{
  const map=new Map(bookmarkItems.value.map(item=>[String(item.id),item]));
@@ -24,11 +24,12 @@ async function loadBookmarks(more=false){
  catch(e){if(!disposed)bookmarkError.value=e.message;}finally{bookmarkLoading.value=false;}
 }
 watch(bookmarkOpen,value=>{if(value && !bookmarkFetched.value)loadBookmarks();});
+onMounted(()=>loadBookmarks());
 async function jumpToQuestion(item){
  const sequence=++bookmarkSequence;bookmarkBrowsing.value=true;bookmarkError.value='';
  try {
   if(!messages.value.some(m=>String(m.id)===String(item.id))){bookmarkLoading.value=true;const context=await api.chatQuestion(item.id);if(disposed || sequence!==bookmarkSequence)return;messages.value=context;}
-  bookmarkOpen.value=false;await nextTick();
+  await nextTick();
   const node=document.getElementById('chat-message-'+item.id);if(!node)throw new Error('找不到問題位置，請重新開啟書籤');
   focusedBookmark.value=item.id;node.focus({preventScroll:true});node.scrollIntoView({block:'center',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   clearTimeout(bookmarkTimer);bookmarkTimer=setTimeout(()=>{focusedBookmark.value=null;},2500);
@@ -310,19 +311,22 @@ onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visi
 
 <template>
   <div class="chat">
-    <details v-if="coachPlan" class="coach-plan-card"><summary>我的{{ coachPlan.goal }}計畫 · 每日 08:00 提醒</summary><p class="small muted">台灣時間 · 依個人檔案建立起始安排；調整身體資料或目標後會更新。</p><p>{{ coachPlan.basis }}</p><template v-if="!coachPlan.needsAssessment"><p>每日 {{ coachPlan.target.kcal }} kcal · 蛋白質 {{ coachPlan.target.protein }}g</p><p>{{ coachPlan.rationale }}</p><ul><li v-for="e in coachPlan.strength" :key="e.name">{{ e.name }}：{{ e.sets }} 組 × {{ e.reps }}</li></ul><p class="small muted">{{ coachPlan.assumptions }}</p></template><p v-else>請先確認個人健康限制，再安排具體訓練與飲食。</p><button type="button" @click="preparePlanChange">跟教練調整計畫</button></details>
-    <div v-if="!geminiReady" class="error" style="margin-bottom:.8rem">
-      AI 對話暫時無法使用；預設計畫與每日提醒仍可查看，也能直接記錄飲食與訓練。
-    </div>
-
     <details class="question-bookmarks" :open="bookmarkOpen" @toggle="bookmarkOpen=$event.target.open">
       <summary>我的提問書籤<span v-if="bookmarks.length">（{{ bookmarks.length }}）</span></summary>
+      <div class="bookmark-content">
       <p class="small muted">點選問題，跳到當時的提問與附近回答。</p>
       <div class="bookmark-list"><button v-for="item in bookmarks" :key="item.id" :disabled="bookmarkLoading" :aria-controls="'chat-message-'+item.id" @click="jumpToQuestion(item)"><span>{{ item.preview || '圖片提問' }}</span><small v-if="item.created_at">{{ item.created_at }}</small></button></div>
       <p v-if="!bookmarks.length && !bookmarkLoading" class="small muted">送出提問後會自動出現在這裡。</p>
       <button v-if="bookmarkMore" :disabled="bookmarkLoading" @click="loadBookmarks(true)">載入更早的提問</button>
       <p v-if="bookmarkLoading" class="small" role="status">讀取問題中…</p>
+      </div>
     </details>
+    <details v-if="coachPlan" class="coach-plan-card"><summary>我的{{ coachPlan.goal }}計畫 · 每日 08:00 提醒</summary><p class="small muted">台灣時間 · 依個人檔案建立起始安排；調整身體資料或目標後會更新。</p><p>{{ coachPlan.basis }}</p><template v-if="!coachPlan.needsAssessment"><p>每日 {{ coachPlan.target.kcal }} kcal · 蛋白質 {{ coachPlan.target.protein }}g</p><p>{{ coachPlan.rationale }}</p><ul><li v-for="e in coachPlan.strength" :key="e.name">{{ e.name }}：{{ e.sets }} 組 × {{ e.reps }}</li></ul><p class="small muted">{{ coachPlan.assumptions }}</p></template><p v-else>請先確認個人健康限制，再安排具體訓練與飲食。</p><button type="button" @click="preparePlanChange">跟教練調整計畫</button></details>
+    <div v-if="!geminiReady" class="error" style="margin-bottom:.8rem">
+      AI 對話暫時無法使用；預設計畫與每日提醒仍可查看，也能直接記錄飲食與訓練。
+    </div>
+
+
     <div v-if="bookmarkBrowsing" class="bookmark-location small"><span>正在查看書籤問題</span><button :disabled="bookmarkLoading" @click="returnLatest">回到最新對話</button></div>
     <p v-if="bookmarkError" class="error small" role="alert">{{ bookmarkError }}</p>
     <div ref="listEl" class="messages">
@@ -408,7 +412,7 @@ onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visi
 </template>
 
 <style scoped>
-.question-bookmarks{flex:0 0 auto;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.65rem .8rem;margin-bottom:.6rem;max-height:35vh;overflow:auto;overscroll-behavior:contain}.question-bookmarks summary{cursor:pointer;font-size:.85rem;font-weight:650}.bookmark-list{display:grid;gap:.4rem}.bookmark-list button{text-align:left;display:grid;gap:.2rem;min-width:0}.bookmark-list button span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.bookmark-list small{color:var(--muted);font-size:.65rem}.bookmark-location{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-bottom:.5rem}.bookmark-location button{font-size:.75rem}.bookmark-focus .bubble{outline:3px solid var(--accent);outline-offset:3px}.msg:focus{outline:none}
+.question-bookmarks{position:sticky;top:0;z-index:4;flex:0 0 auto;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.65rem .8rem;margin-bottom:.6rem;}.bookmark-content{max-height:28vh;overflow:auto;overscroll-behavior:contain}.question-bookmarks summary{cursor:pointer;font-size:.85rem;font-weight:650}.bookmark-list{display:grid;gap:.4rem}.bookmark-list button{text-align:left;display:grid;gap:.2rem;min-width:0}.bookmark-list button span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.bookmark-list small{color:var(--muted);font-size:.65rem}.bookmark-location{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-bottom:.5rem}.bookmark-location button{font-size:.75rem}.bookmark-focus .bubble{outline:3px solid var(--accent);outline-offset:3px}.msg:focus{outline:none}
 .chat { display: flex; flex-direction: column; height: 100%; }
 
 .messages {
