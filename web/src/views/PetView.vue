@@ -456,6 +456,7 @@ function confirmRename() {
       <!-- 商城 -->
       <template v-if="tab === 'shop'">
         <div class="card stack shop-filters">
+          <p class="small muted" style="margin:0">先輕鬆布置小屋，再慢慢收集套裝與新夥伴。環境、擺飾較易入手；服飾與寵物需要較長時間累積。</p>
           <label>搜尋商品<input v-model="shopSearch" type="search" placeholder="搜尋套裝、裝飾或寵物名稱" /></label>
           <div class="row wrap">
             <label>商城分類<select v-model="shopSection"><option v-for="section in shopSections" :key="section">{{ section }}</option></select></label>

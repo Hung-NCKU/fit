@@ -9,7 +9,8 @@
       "wear-cat-7",
       "wear-cat-8",
       "wear-cat-10"
-    ]
+    ],
+    "price": 400
   },
   {
     "id": "outfit-cat-2",
@@ -20,7 +21,8 @@
       "wear-cat-2",
       "wear-cat-5",
       "wear-cat-6"
-    ]
+    ],
+    "price": 550
   },
   {
     "id": "outfit-cat-3",
@@ -31,7 +33,8 @@
       "wear-cat-3",
       "wear-cat-4",
       "wear-cat-9"
-    ]
+    ],
+    "price": 700
   },
   {
     "id": "outfit-dog-1",
@@ -42,7 +45,8 @@
       "wear-dog-1",
       "wear-dog-4",
       "wear-dog-7"
-    ]
+    ],
+    "price": 400
   },
   {
     "id": "outfit-dog-2",
@@ -54,7 +58,8 @@
       "wear-dog-6",
       "wear-dog-8",
       "wear-dog-9"
-    ]
+    ],
+    "price": 550
   },
   {
     "id": "outfit-dog-3",
@@ -64,7 +69,8 @@
     "legacy": [
       "wear-dog-3",
       "wear-dog-5"
-    ]
+    ],
+    "price": 700
   },
   {
     "id": "outfit-rabbit-1",
@@ -75,7 +81,8 @@
       "wear-rabbit-2",
       "wear-rabbit-5",
       "wear-rabbit-8"
-    ]
+    ],
+    "price": 400
   },
   {
     "id": "outfit-rabbit-2",
@@ -86,7 +93,8 @@
       "wear-rabbit-3",
       "wear-rabbit-6",
       "wear-rabbit-9"
-    ]
+    ],
+    "price": 550
   },
   {
     "id": "outfit-rabbit-3",
@@ -97,7 +105,8 @@
       "wear-rabbit-1",
       "wear-rabbit-4",
       "wear-rabbit-7"
-    ]
+    ],
+    "price": 700
   },
   {
     "id": "outfit-hamster-1",
@@ -108,7 +117,8 @@
       "wear-hamster-1",
       "wear-hamster-4",
       "wear-hamster-6"
-    ]
+    ],
+    "price": 400
   },
   {
     "id": "outfit-hamster-2",
@@ -120,7 +130,8 @@
       "wear-hamster-7",
       "wear-hamster-9",
       "wear-hamster-10"
-    ]
+    ],
+    "price": 550
   },
   {
     "id": "outfit-hamster-3",
@@ -131,7 +142,8 @@
       "wear-hamster-3",
       "wear-hamster-5",
       "wear-hamster-8"
-    ]
+    ],
+    "price": 700
   },
   {
     "id": "outfit-guinea-1",
@@ -142,7 +154,8 @@
       "wear-guinea-1",
       "wear-guinea-6",
       "wear-guinea-8"
-    ]
+    ],
+    "price": 400
   },
   {
     "id": "outfit-guinea-2",
@@ -154,7 +167,8 @@
       "wear-guinea-4",
       "wear-guinea-7",
       "wear-guinea-10"
-    ]
+    ],
+    "price": 550
   },
   {
     "id": "outfit-guinea-3",
@@ -165,7 +179,8 @@
       "wear-guinea-2",
       "wear-guinea-5",
       "wear-guinea-9"
-    ]
+    ],
+    "price": 700
   },
   {
     "id": "outfit-hedgehog-1",
@@ -176,7 +191,8 @@
       "wear-hedgehog-1",
       "wear-hedgehog-4",
       "wear-hedgehog-7"
-    ]
+    ],
+    "price": 400
   },
   {
     "id": "outfit-hedgehog-2",
@@ -188,7 +204,8 @@
       "wear-hedgehog-5",
       "wear-hedgehog-8",
       "wear-hedgehog-9"
-    ]
+    ],
+    "price": 550
   },
   {
     "id": "outfit-hedgehog-3",
@@ -199,7 +216,8 @@
       "wear-hedgehog-2",
       "wear-hedgehog-6",
       "wear-hedgehog-10"
-    ]
+    ],
+    "price": 700
   },
   {
     "id": "outfit-ferret-1",
@@ -210,7 +228,8 @@
       "wear-ferret-1",
       "wear-ferret-4",
       "wear-ferret-7"
-    ]
+    ],
+    "price": 400
   },
   {
     "id": "outfit-ferret-2",
@@ -222,7 +241,8 @@
       "wear-ferret-6",
       "wear-ferret-8",
       "wear-ferret-9"
-    ]
+    ],
+    "price": 550
   },
   {
     "id": "outfit-ferret-3",
@@ -233,7 +253,8 @@
       "wear-ferret-3",
       "wear-ferret-5",
       "wear-ferret-10"
-    ]
+    ],
+    "price": 700
   },
   {
     "id": "outfit-parrot-1",
@@ -245,7 +266,8 @@
       "wear-parrot-4",
       "wear-parrot-9",
       "wear-parrot-10"
-    ]
+    ],
+    "price": 400
   },
   {
     "id": "outfit-parrot-2",
@@ -256,7 +278,8 @@
       "wear-parrot-2",
       "wear-parrot-5",
       "wear-parrot-8"
-    ]
+    ],
+    "price": 550
   },
   {
     "id": "outfit-parrot-3",
@@ -267,7 +290,8 @@
       "wear-parrot-3",
       "wear-parrot-6",
       "wear-parrot-7"
-    ]
+    ],
+    "price": 700
   },
   {
     "id": "outfit-tortoise-1",
@@ -278,7 +302,8 @@
       "wear-tortoise-1",
       "wear-tortoise-4",
       "wear-tortoise-10"
-    ]
+    ],
+    "price": 400
   },
   {
     "id": "outfit-tortoise-2",
@@ -289,7 +314,8 @@
       "wear-tortoise-2",
       "wear-tortoise-6",
       "wear-tortoise-9"
-    ]
+    ],
+    "price": 550
   },
   {
     "id": "outfit-tortoise-3",
@@ -301,7 +327,8 @@
       "wear-tortoise-5",
       "wear-tortoise-7",
       "wear-tortoise-8"
-    ]
+    ],
+    "price": 700
   },
   {
     "id": "outfit-chinchilla-1",
@@ -313,7 +340,8 @@
       "wear-chinchilla-5",
       "wear-chinchilla-7",
       "wear-chinchilla-8"
-    ]
+    ],
+    "price": 400
   },
   {
     "id": "outfit-chinchilla-2",
@@ -325,7 +353,8 @@
       "wear-chinchilla-4",
       "wear-chinchilla-9",
       "wear-chinchilla-10"
-    ]
+    ],
+    "price": 550
   },
   {
     "id": "outfit-chinchilla-3",
@@ -335,6 +364,7 @@
     "legacy": [
       "wear-chinchilla-3",
       "wear-chinchilla-6"
-    ]
+    ],
+    "price": 700
   }
 ]

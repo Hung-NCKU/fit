@@ -1,9 +1,7 @@
 import catalog from './pet-outfit-catalog.json' with { type: 'json' };
-import { ALL_WEAR } from './pet-wardrobe.js';
-const legacyById=new Map(ALL_WEAR.map(item=>[item.id,item]));
 export const ALL_OUTFITS=catalog.map(set=>({
   ...set,slot:'outfit',group:'套裝',
-  price:Math.max(150,set.legacy.reduce((sum,id)=>sum+(legacyById.get(id)?.price || 0),0)),
+  price:set.price,
   desc:'帽子、衣服與配件一起畫好的完整套裝，支援走路與拎起。',
   img:`/pets/outfits-v1/${set.id}.webp`,
 }));

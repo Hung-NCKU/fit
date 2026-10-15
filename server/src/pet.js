@@ -51,10 +51,10 @@ export const speciesOf = (id) => SPECIES.find(s => s.id === id) || SPECIES[0];
 /** 五個環境。圖是整張場景插畫，不是小圖示。 */
 const SCENES = [
   ['bg_room',   '小房間',  0,   '預設的窩'],
-  ['bg_garden', '庭院',    120, '曬得到太陽'],
-  ['bg_beach',  '海邊',    220, '看得到海'],
-  ['bg_gym',    '健身房',  300, '牠也想練'],
-  ['bg_space',  '太空艙',  400, '誰說寵物不能上太空'],
+  ['bg_garden', '庭院',    30, '曬得到太陽'],
+  ['bg_beach',  '海邊',    45, '看得到海'],
+  ['bg_gym',    '健身房',  60, '牠也想練'],
+  ['bg_space',  '太空艙',  80, '誰說寵物不能上太空'],
 ];
 
 /** 五個環境是所有物種共用的 */
@@ -81,7 +81,7 @@ export const itemOf = (id) => EVERYTHING.find(i => i.id === id) || null;
 
 const parse = (s, fallback) => { try { return JSON.parse(s); } catch { return fallback; } };
 
-export const PET_PRICE = 500;
+export const PET_PRICE = 1000;
 
 function mainPet(userId) {
   const row = getDb(userId).prepare('SELECT * FROM pet WHERE id = 1').get();

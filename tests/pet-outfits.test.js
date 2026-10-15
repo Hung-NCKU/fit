@@ -55,7 +55,7 @@ it('寵物 API 回傳完整套裝給每隻角色與商城，舊商品转换後�
   const response=await routes.get('get /pet')({userId:'eli',query:{}});
   expect(response.roster[0].worn.map(i=>i.id)).toEqual(['outfit-cat-1']);
   expect(response.shop.filter(i=>i.slot==='outfit')).toHaveLength(3);
-  expect(response.petsForSale.every(i=>i.price===500)).toBe(true);
+  expect(response.petsForSale.every(i=>i.price===1000)).toBe(true);
   await routes.get('post /pet/buy')({userId:'eli',body:{item:'outfit-cat-2'}});
   const updated=await routes.get('get /pet')({userId:'eli',query:{}});
   expect(updated.roster[0].worn.map(i=>i.id)).toEqual(['outfit-cat-2']);
