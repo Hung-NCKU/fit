@@ -1,10 +1,16 @@
 import {invalidatePageCache,clearPageCache} from './page-cache.js';
+import {updateState} from './app-update.js';
 import { onUnauthorized } from './auth.js';
 import { recordFeedback } from './pet-feedback.js';
 
 const BASE = '/api';
 
 async function request(path, options = {}) {
+  const writing=['POST','PUT','PATCH','DELETE'].includes(options.method);
+  if(writing)updateState.pendingWrites++;
+  try{return await performRequest(path,options);}finally{if(writing)updateState.pendingWrites--;}
+}
+async function performRequest(path, options = {}) {
   const hasBody = options.body !== undefined && options.body !== null;
 
   let res;

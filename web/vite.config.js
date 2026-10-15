@@ -1,11 +1,16 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import {readFileSync,writeFileSync} from 'node:fs';
+import {resolve} from 'node:path';
+const buildId=Date.now().toString(36);
+function releaseVersion(){return {name:'release-version',apply:'build',generateBundle(){this.emitFile({type:'asset',fileName:'version.json',source:JSON.stringify({version:buildId})});},writeBundle(options){const file=resolve(options.dir,'sw.js');writeFileSync(file,readFileSync(file,'utf8').replace("'fit-v11'",JSON.stringify('fit-'+buildId)));}};}
 import {gzipSync,brotliCompressSync,constants} from 'node:zlib';
 function compressedAssets() {return {name:'compressed-assets',apply:'build',generateBundle(_,bundle){for(const asset of Object.values(bundle)){if(!/\.(js|css|html)$/.test(asset.fileName))continue;const source=Buffer.from(asset.type==='chunk'?asset.code:asset.source);if(source.length<1024)continue;this.emitFile({type:'asset',fileName:asset.fileName+'.gz',source:gzipSync(source)});this.emitFile({type:'asset',fileName:asset.fileName+'.br',source:brotliCompressSync(source,{params:{[constants.BROTLI_PARAM_QUALITY]:5}})});}}};}
 import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
-  plugins: [vue(),compressedAssets()],
+  plugins: [vue(),compressedAssets(),releaseVersion()],
+  define: {__APP_BUILD__:JSON.stringify(buildId)},
   server: {
     port: 5173,
     host: true,

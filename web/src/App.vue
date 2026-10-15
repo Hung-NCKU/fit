@@ -10,6 +10,8 @@ import NotifyToggle from './components/NotifyToggle.vue';
 import DeleteAccount from './components/DeleteAccount.vue';
 import NewAccount from './components/NewAccount.vue';
 import ConfirmDialog from './components/ConfirmDialog.vue';
+import UpdateNotice from './components/UpdateNotice.vue';
+import {updateState} from './app-update.js';
 
 const route = useRoute();
 watch(()=>[session.user,session.authed],clearPageCache,{flush:'sync'});
@@ -58,19 +60,22 @@ function hideChrome(){
   if(headerEl.value?.querySelector('.sheet')){chromeTimer=setTimeout(hideChrome,5000);return;}
   chromeVisible.value=false;
 }
-function showChrome(){
+function showChrome(event){
+  if(event?.type==='click'){
+    const control=event.target?.closest?.('button,a,input,textarea,select,summary,label,[role="button"],[contenteditable]');
+    if(control && !control.closest('.topbar,.tabbar'))return;
+  }
+  if(event?.type==='click' && !event.target?.closest?.('.topbar,.tabbar') && event.clientY>84 && event.clientY<window.innerHeight-96)return;
   if(!session.ready || locked.value)return;
   chromeVisible.value=true;clearTimeout(chromeTimer);chromeTimer=setTimeout(hideChrome,5000);
 }
 onMounted(()=>{
-  document.addEventListener('pointerdown',showChrome,true);
-  document.addEventListener('pointerup',showChrome,true);
+  document.addEventListener('click',showChrome,true);
   document.addEventListener('keydown',showChrome,true);
 });
 onUnmounted(()=>{
   clearTimeout(chromeTimer);
-  document.removeEventListener('pointerdown',showChrome,true);
-  document.removeEventListener('pointerup',showChrome,true);
+  document.removeEventListener('click',showChrome,true);
   document.removeEventListener('keydown',showChrome,true);
 });
 
@@ -111,7 +116,8 @@ onMounted(async () => {
 
 <template>
   <ConfirmDialog />
-  <div class="shell" :class="{ 'chrome-auto': session.ready && !locked, 'chrome-hidden': !chromeVisible }">
+  <UpdateNotice />
+  <div class="shell" :inert="!!updateState.version" :class="{ 'chrome-auto': session.ready && !locked, 'chrome-hidden': !chromeVisible }">
     <div v-if="!session.ready" class="boot muted small">載入中…</div>
 
     <template v-else>

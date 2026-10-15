@@ -16,7 +16,7 @@ const SHELL = `${VERSION}-shell`;
 //                   該快取的前端檔案擠掉。交給瀏覽器的 HTTP 快取就好——
 //                   伺服器送的是預壓縮的 .gz（約 9MB）。
 const NEVER_CACHE = (url) =>
-  url.pathname.startsWith('/api')
+  url.pathname === '/version.json' || url.pathname.startsWith('/api')
   || url.pathname.startsWith('/uploads')
   || url.pathname.startsWith('/petgame');
 
