@@ -19,7 +19,7 @@ command -v tailscale > /dev/null 2>&1 && tailscale funnel status 2>/dev/null | g
 
 age() { [ -n "$1" ] && ps -o etime= -p "${1%% *}" 2>/dev/null | tr -d ' '; }
 
-echo "═══ 增肌教練 ═══"
+echo "═══ 健身養寵 ═══"
 printf '  %-10s %s\n' "啟動器" "$([ -n "$STARTER" ] && echo "執行中 (PID $STARTER・已 $(age "$STARTER"))" || echo '未執行')"
 printf '  %-10s %s\n' "後端"   "$([ -n "$SERVER" ]  && echo "執行中 (PID $SERVER・已 $(age "$SERVER"))"   || echo '未執行')"
 printf '  %-10s %s\n' "外網通道" "$([ -n "$TUNNEL" ] && echo "執行中 (PID $TUNNEL・已 $(age "$TUNNEL"))" || { [ -n "$TS_FUNNEL" ] && echo 'Funnel 已開啟（tailscaled 持久設定）' || echo '未執行'; })"

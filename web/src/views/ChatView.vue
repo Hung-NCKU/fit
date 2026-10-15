@@ -368,9 +368,9 @@ onMounted(load);
   word-break: break-word;
 }
 .msg.user .bubble {
-  background: var(--accent-dim);
-  border-color: var(--accent-dim);
-  color: #ffe9c7;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
 }
 .bubble :deep(.li) { display: block; padding-left: .3rem; }
 .bubble :deep(strong) { color: var(--accent); }
@@ -415,7 +415,6 @@ onMounted(load);
   margin-top: .25rem;
   font-size: .72rem;
   color: var(--muted);
-  opacity: .75;
 }
 .composer textarea {
   flex: 1 1 auto;

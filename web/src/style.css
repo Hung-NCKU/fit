@@ -1,23 +1,31 @@
 :root {
-  --bg: #0a0a0a;
-  --surface: #1c1b1b;
-  --surface-2: #272525;
-  --border: #302d2d;
-  --text: #ffffff;
-  --muted: #8e8e93;
+  color-scheme: light;
+  --bg: #fff4df;
+  --surface: #fffaf0;
+  --surface-2: #f7e5c8;
+  --border: #ddc5a1;
+  --line: var(--border);
+  --text: #38291f;
+  --muted: #735d4c;
 
-  /* 琥珀橘是主色；accent-soft 用在有底色的標籤與選中狀態上 */
-  --accent: #e08a00;
-  --accent-dim: #5c3a00;
-  --accent-soft: rgba(224, 138, 0, .16);
+  /* 奶油垂耳狗、暖杏色背景與藍色啞鈴，對應同一套品牌色。 */
+  --accent: #235c96;
+  --accent-dim: #b5cee8;
+  --accent-soft: #e4eef9;
+  --on-accent: #ffffff;
+  --amber: #efb357;
+  --amber-soft: #ffe8b5;
+  --amber-ink: #80501e;
+  --shadow-popover: 0 10px 30px rgba(92, 57, 23, .15);
+  --overlay: rgba(59, 38, 22, .38);
 
   /* 三大營養素各有固定顏色，環形圖與數字都用同一組 */
-  --protein: #f44336;
-  --carb: #ffc107;
-  --fat: #1fc8a9;
+  --protein: #b05245;
+  --carb: #95601d;
+  --fat: #477451;
 
-  --warn: #f5a97f;
-  --danger: #ef7b7b;
+  --warn: #92511e;
+  --danger: #b13f36;
   --radius: 18px;
   --font: -apple-system, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
 
@@ -78,20 +86,19 @@ button {
   padding: .5rem .9rem;
   transition: background .15s, border-color .15s, opacity .15s;
 }
-button:hover:not(:disabled) { background: #313135; border-color: #3d3d42; }
+button:hover:not(:disabled) { background: #efdbb8; border-color: #b99a70; }
 button:disabled { opacity: .45; cursor: not-allowed; }
 
 button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #2b1700;
+  color: var(--on-accent);
   font-weight: 700;
   border-radius: 14px;
   padding: .75rem 1rem;
-  /* 那個 App 的主要按鈕帶一圈橘色光暈，是它最明顯的視覺特徵之一 */
-  box-shadow: 0 0 18px rgba(224, 138, 0, .30);
+  box-shadow: 0 4px 10px rgba(35, 92, 150, .15);
 }
-button.primary:hover:not(:disabled) { background: #f59c10; border-color: #f59c10; }
+button.primary:hover:not(:disabled) { background: #194b7e; border-color: #194b7e; }
 
 button.ghost { background: transparent; }
 button.icon {
@@ -115,14 +122,20 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--accent-dim);
-  box-shadow: 0 0 0 3px rgba(224, 138, 0, .18);
+  box-shadow: 0 0 0 3px rgba(35, 92, 150, .15);
 }
 textarea { resize: vertical; }
+input, select, textarea { accent-color: var(--accent); }
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+::selection { background: var(--accent); color: var(--on-accent); }
+summary { cursor: pointer; }
 label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: .25rem; }
 
 .card {
   background: var(--surface);
-  border: 1px solid transparent;   /* 靠底色深淺區分層次，不畫線 */
+  border: 1px solid #ead6b5;
+  box-shadow: 0 3px 14px rgba(92, 57, 23, .04);
   border-radius: var(--radius);
   padding: 1rem 1.1rem;
 }
@@ -154,7 +167,7 @@ label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: .2
 }
 .badge.ai { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
 
-/* 那個 App 用這種「琥珀底、琥珀字」的膠囊放吐槽文案與狀態 */
+/* 一般狀態採用清楚的藍字與淺藍底；代幣另用暖金色。 */
 .badge.soft {
   color: var(--accent);
   background: var(--accent-soft);
@@ -177,8 +190,8 @@ tbody tr:last-child td { border-bottom: none; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 .error {
-  background: rgba(239, 123, 123, .1);
-  border: 1px solid rgba(239, 123, 123, .35);
+  background: #fff0e9;
+  border: 1px solid #e8b5a8;
   color: var(--danger);
   border-radius: 10px;
   padding: .6rem .8rem;
@@ -186,5 +199,5 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 }
 
 ::-webkit-scrollbar { width: 9px; height: 9px; }
-::-webkit-scrollbar-thumb { background: #333944; border-radius: 99px; }
+::-webkit-scrollbar-thumb { background: #ccb18c; border-radius: 99px; }
 ::-webkit-scrollbar-track { background: transparent; }

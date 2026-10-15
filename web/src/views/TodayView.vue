@@ -422,7 +422,7 @@ onMounted(() => {
   border-radius: 999px;
   font-variant-numeric: tabular-nums;
 }
-.day.on .dd { background: var(--accent); color: #2b1700; }
+.day.on .dd { background: var(--accent); color: var(--on-accent); }
 .day .dot { width: 4px; height: 4px; border-radius: 999px; background: transparent; }
 .day .dot.show { background: var(--accent); }
 .day.on .dot.show { background: var(--accent); }

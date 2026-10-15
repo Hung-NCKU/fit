@@ -46,5 +46,5 @@ const viewingOther = computed(() => model.value !== session.user);
   border-color: transparent;
   color: var(--accent);
 }
-.me { opacity: .7; font-size: .78rem; }
+.me { color: var(--muted); font-size: .78rem; }
 </style>

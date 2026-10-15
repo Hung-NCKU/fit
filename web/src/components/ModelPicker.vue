@@ -119,7 +119,7 @@ onUnmounted(() => {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 -8px 30px rgba(0, 0, 0, .45);
+  box-shadow: var(--shadow-popover);
 }
 .head { padding: .3rem .5rem .4rem; }
 

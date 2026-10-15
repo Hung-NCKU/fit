@@ -37,7 +37,7 @@ function handleKeys(event) {
 </template>
 
 <style scoped>
-.confirm-overlay { position: fixed; inset: 0; z-index: 200; background: #000a; display: grid; place-items: center; padding: 1rem; }
+.confirm-overlay { position: fixed; inset: 0; z-index: 200; background: var(--overlay); display: grid; place-items: center; padding: 1rem; }
 .confirm-panel { width: 100%; max-width: 380px; }
 p { white-space: pre-line; }
 .row { justify-content: flex-end; gap: .6rem; }

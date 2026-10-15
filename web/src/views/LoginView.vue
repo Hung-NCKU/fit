@@ -57,8 +57,8 @@ onMounted(() => input.value?.focus());
 <template>
   <div class="gate">
     <div class="card box">
-      <div class="hero">🏋️‍♀️</div>
-      <h2>增肌教練</h2>
+      <img class="hero" src="/icon-192.png?v=fitness-puppy-v1" alt="拿啞鈴健身的垂耳狗" />
+      <h2>健身養寵</h2>
       <p class="muted small">請輸入密碼</p>
 
       <form @submit.prevent="submit">
@@ -86,7 +86,7 @@ onMounted(() => input.value?.focus());
         不用提供密碼或 Gemini API 金鑰，直接開始試用。試用中可建立帳號保留紀錄；未建立帳號就登出，會刪除試用紀錄。
       </p>
 
-      <p class="muted small foot">輸入誰的密碼就以誰的身分登入（設定在 <code>server/.env</code>）</p>
+      <p class="muted small foot">輸入你的登入密碼，即可回到原本的帳號。</p>
     </div>
   </div>
 </template>
@@ -103,7 +103,7 @@ onMounted(() => input.value?.focus());
   padding: 1rem;
 }
 .box { width: 100%; max-width: 340px; text-align: center; }
-.hero { font-size: 2.6rem; }
+.hero { width:104px; height:104px; border-radius:26px; margin:0 auto .7rem; box-shadow:0 6px 18px #80501e15; }
 form { display: flex; flex-direction: column; gap: .6rem; margin-top: 1rem; }
 
 /* 「或」兩側各一條線 */

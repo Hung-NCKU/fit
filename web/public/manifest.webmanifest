@@ -1,7 +1,7 @@
 {
-  "name": "增肌教練",
-  "short_name": "增肌教練",
-  "description": "AI 增肌教練：拍照記錄飲食、追蹤訓練與體重",
+  "name": "健身養寵",
+  "short_name": "健身養寵",
+  "description": "健身養寵：記錄飲食與訓練，陪寵物一起成長",
   "lang": "zh-Hant",
   "dir": "ltr",
   "start_url": "/",
@@ -9,17 +9,17 @@
   "id": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0f1115",
-  "theme_color": "#171a21",
+  "background_color": "#fff4df",
+  "theme_color": "#fffaf0",
   "categories": ["health", "fitness", "lifestyle"],
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icon-192.png?v=fitness-puppy-v1", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png?v=fitness-puppy-v1", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png?v=fitness-puppy-v1", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "今日進度", "url": "/today", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
-    { "name": "飲食紀錄", "url": "/meals", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
-    { "name": "訓練紀錄", "url": "/workouts", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+    { "name": "今日進度", "url": "/today", "icons": [{ "src": "/icon-192.png?v=fitness-puppy-v1", "sizes": "192x192" }] },
+    { "name": "飲食紀錄", "url": "/meals", "icons": [{ "src": "/icon-192.png?v=fitness-puppy-v1", "sizes": "192x192" }] },
+    { "name": "訓練紀錄", "url": "/workouts", "icons": [{ "src": "/icon-192.png?v=fitness-puppy-v1", "sizes": "192x192" }] }
   ]
 }

@@ -147,7 +147,7 @@ const current = computed(() => props.items[index.value] || null);
 
 .card.on {
   filter: none;
-  box-shadow: 0 0 0 3px var(--accent), 0 10px 24px rgba(0, 0, 0, .45);
+  box-shadow: 0 0 0 3px var(--accent), var(--shadow-popover);
 }
 
 .bar {

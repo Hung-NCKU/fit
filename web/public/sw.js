@@ -5,7 +5,7 @@
  * /api 與 /uploads 是隨時在變的個人資料（飲食紀錄、餐點照片），
  * 一律不進快取，快取起來只會讀到舊的。
  */
-const VERSION = 'fit-v10';   // 改版號會清掉所有舊快取。public/ 下的圖換了就要改，
+const VERSION = 'fit-v11';   // 改版號會清掉所有舊快取。public/ 下的圖換了就要改，
                             // 否則 cache-first 會一直端出舊的那張。
 const SHELL = `${VERSION}-shell`;
 
@@ -136,8 +136,8 @@ self.addEventListener('fetch', (e) => {
 
 self.addEventListener('push', (e) => {
   let d = {};
-  try { d = e.data ? e.data.json() : {}; } catch { d = { title: '增肌教練', body: e.data?.text() || '' }; }
-  e.waitUntil(self.registration.showNotification(d.title || '增肌教練', {
+  try { d = e.data ? e.data.json() : {}; } catch { d = { title: '健身養寵', body: e.data?.text() || '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || '健身養寵', {
     body: d.body || '',
     icon: '/icon-192.png',
     badge: '/icon-192.png',

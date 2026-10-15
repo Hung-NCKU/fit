@@ -47,7 +47,7 @@ const tabs = [
   { to: '/meals', label: '飲食', icon: '🍚' },
 ];
 
-const title = computed(() => tabs.find(t => t.to === route.path)?.label ?? '增肌教練');
+const title = computed(() => tabs.find(t => t.to === route.path)?.label ?? '健身養寵');
 const locked = computed(() => session.authRequired && !session.authed);
 
 async function logout() {
@@ -99,7 +99,7 @@ onMounted(async () => {
       </header>
 
       <header v-else class="topbar">
-        <span class="logo">增肌教練</span>
+        <span class="logo"><img class="brand-icon" src="/icon-192.png?v=fitness-puppy-v1" alt="" />健身養寵</span>
         <span class="muted small page">{{ title }}</span>
         <span v-if="session.name" class="who">{{ session.name }}</span>
         <span class="bell-spacer"></span>
@@ -116,7 +116,7 @@ onMounted(async () => {
           <button class="icon" @click="showHint = false">✕</button>
         </div>
         <p class="small muted">
-          瀏覽器沒有主動跳出安裝提示。可能是<b>已經裝過了</b>（先看看桌面有沒有「增肌教練」圖示），
+          瀏覽器沒有主動跳出安裝提示。可能是<b>已經裝過了</b>（先看看桌面有沒有「健身養寵」圖示），
           或這個瀏覽器不支援。
         </p>
         <p class="small">
@@ -165,14 +165,15 @@ onMounted(async () => {
   align-items: baseline;
   gap: .6rem;
   /* 上方多留狀態列的高度，並讓 topbar 的底色一路填到螢幕頂端，
-     不然 iPhone 上時間與訊號會直接壓在「增肌教練」上面 */
+     不然 iPhone 上時間與訊號會直接壓在「健身養寵」上面 */
   padding: calc(.75rem + var(--safe-top)) calc(1rem + var(--safe-right)) .75rem calc(1rem + var(--safe-left));
   border-bottom: 1px solid var(--border);
   background: var(--surface);
   flex: 0 0 auto;
   position: relative;      /* 提醒設定面板以這裡為基準 */
 }
-.logo { font-weight: 700; letter-spacing: .02em; }
+.logo { display:inline-flex; align-items:center; gap:.4rem; font-weight:700; letter-spacing:.02em; color:var(--text); }
+.brand-icon { width:28px; height:28px; border-radius:8px; vertical-align:middle; }
 
 /* 標題列擠不下時的取捨。
    手機上一排要放：logo、頁名、使用者、鈴鐺、新增帳號、安裝、登出，

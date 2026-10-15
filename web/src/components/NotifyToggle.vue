@@ -151,11 +151,11 @@ onMounted(refresh);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 10px 34px rgba(0, 0, 0, .5);
+  box-shadow: var(--shadow-popover);
 }
 .sheet p { margin: .5rem 0 0; line-height: 1.6; }
 .sheet b { color: var(--text); }
 .warn { color: var(--warn); }
 .note { color: var(--accent); }
-.foot { opacity: .7; }
+.foot { color: var(--muted); }
 </style>

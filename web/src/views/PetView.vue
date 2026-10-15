@@ -524,7 +524,8 @@ function confirmRename() {
 .shop-filters label { flex:1; min-width:120px; }
 .reward-entry { display:flex; justify-content:space-between; gap:1rem; padding:.6rem 0; border-bottom:1px solid var(--border); }
 .reward-entry small { display:block; margin-top:.2rem; }
-.pet-modal { position:fixed; inset:0; z-index:30; background:#0009; display:grid; place-items:center; padding:1rem; }
+.pet-modal { position:fixed; inset:0; z-index:30; background:var(--overlay); display:grid; place-items:center; padding:1rem; }
+.scene-actions .badge.soft { color:var(--amber-ink); background:var(--amber-soft); }
 .pet-modal .card { width:min(420px,100%); max-height:90vh; overflow:auto; }
 .purchase-face { width:120px; height:120px; object-fit:contain; align-self:center; }
 .family { margin-top:1rem; gap:.5rem; }
@@ -556,7 +557,7 @@ function confirmRename() {
   padding: .6rem .8rem;
   border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: 0 8px 26px rgba(0, 0, 0, .55);
+  box-shadow: var(--shadow-popover);
   border: 1px solid var(--accent-soft);
 }
 .trybar .stack.tight { flex: 1; gap: .1rem; min-width: 0; }
@@ -572,7 +573,7 @@ function confirmRename() {
 .pet-title { min-width:0; overflow-wrap:anywhere; }
 .scene-actions { margin-left:auto; }
 .family button { max-width:100%; white-space:normal; overflow-wrap:anywhere; }
-.scene-card.shop-preview { position:sticky; top:0; z-index:6; padding:0; box-shadow:0 8px 18px #0006; }
+.scene-card.shop-preview { position:sticky; top:0; z-index:6; padding:0; box-shadow:var(--shadow-popover); }
 .shop-preview .scene { min-height:130px; max-height:clamp(130px, 26vh, 240px); }
 .shop-preview .scene-heading, .shop-preview .family,
 .shop-preview .says, .shop-preview .stats, .shop-preview > p.small,

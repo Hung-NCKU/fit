@@ -195,7 +195,7 @@ async function submit() {
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: rgba(0, 0, 0, .6);
+  background: var(--overlay);
   overflow-y: auto;
 }
 .panel { width: 100%; max-width: 380px; }
