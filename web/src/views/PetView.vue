@@ -229,10 +229,13 @@ const movePet = ({petKey,position})=>act(async()=>{
   try {await api.movePet(petKey,position);}
   catch(e) {await load();throw e;}
 },'move-pet');
+function blockRoomScroll(event) {
+  if(arranging.value && event.cancelable)event.preventDefault();
+}
 function toggleArranging() {
   arranging.value = !arranging.value;
   trying.value = null;
-  if (arranging.value) sceneEl.value?.scrollIntoView({ behavior:'smooth', block:'start' });
+
 }
 
 async function act(fn, key) {
@@ -370,7 +373,7 @@ function confirmRename() {
       </div>
       <div class="card scene-dock" :class="{ 'shop-preview': tab === 'shop' }">
         <!-- 場景與分頁共用固定尺寸，切換商城不重排布置。 -->
-        <div ref="sceneEl" class="scene" :style="{ '--tint': pet.tint || '#f6efdf', '--floor-lift': sceneHeight * .12 + 'px' }">
+        <div ref="sceneEl" class="scene" :class="{ 'room-editing': arranging }" @touchmove="blockRoomScroll" @dragstart.prevent :style="{ '--tint': pet.tint || '#f6efdf', '--floor-lift': sceneHeight * .12 + 'px' }">
           <img class="scene-bg" :src="sceneImg" :alt="bg?.name || '小房間'" />
           <RoomDecor :scene-height="sceneHeight" :scene-width="sceneWidth" :items="decorations" :editable="mine && arranging && !busy" :selected="decorSelected" @select="decorSelected=$event" @move="moveDecor" />
           <PetActor v-for="(member, index) in roster" :key="member.petKey"
@@ -635,11 +638,13 @@ function confirmRename() {
 .scene-tabs { padding:.4rem; margin:0; background:var(--surface); }
 .scene-tabs button { flex:1; }
 .room-saving { display:block; padding:0 .6rem .4rem; }
-.scene-dock .scene { min-height:130px; max-height:clamp(130px, 26vh, 240px); }
+.scene-dock .scene { width:min(100%, calc(clamp(130px, 26vh, 240px) * 16 / 9)); aspect-ratio:16 / 9; min-height:0; max-height:none; padding-bottom:0; margin-inline:auto; }
+.scene.room-editing { touch-action:none; overscroll-behavior:contain; user-select:none; -webkit-user-select:none; }
+.scene.room-editing :deep(*) { touch-action:none; }
 .shop-preview .scene-heading, .shop-preview .family,
 .shop-preview .says, .shop-preview .stats, .shop-preview > p.small,
 .shop-preview :deep(.name) { display:none; }
-@media(max-height:600px) { .scene-dock .scene { min-height:100px; max-height:120px; } }
+@media(max-height:600px) { .scene-dock .scene { width:min(100%, calc(120px * 16 / 9)); } }
 .scene-card .says { color: var(--text); }
 /* 插畫本身是米白底的，疊在深色上一定像貼紙。
    索性讓整個場景用同一組暖色，變成一扇「看進牠世界」的窗。 */

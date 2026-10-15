@@ -41,7 +41,7 @@ const width = item => roomDecorWidth(item,props.sceneHeight || 230,props.sceneWi
 <template>
   <button v-for="item in objects" :key="item.id" class="room-object" :class="{ editing:editable, picked:editable && selected === item.id }"
     :style="{left:`${item.x}%`,top:`${item.y}%`,width:`${width(item)}px`,transform:`translate(-50%,-100%) rotate(${item.rotation || 0}deg)`,zIndex:(editable ? 2000 : 0) + Math.round(item.y*10) + (item.layer || 0)*100}" :disabled="!editable"
-    :aria-label="`裝飾 ${item.name}，拖曳或使用方向鍵移動`" @pointerdown.stop.prevent="start($event,item)" @pointermove="move"
+    :aria-label="`裝飾 ${item.name}，拖曳或使用方向鍵移動`" @pointerdown.stop.prevent="start($event,item)" @pointermove.prevent="move"
     @pointerup="finish($event)" @pointercancel="finish($event,true)" @keydown="keyboard($event,item)" @click.stop="editable && emit('select',item.id)">
     <DecorArt :item="item" />
   </button>
@@ -51,7 +51,7 @@ const width = item => roomDecorWidth(item,props.sceneHeight || 230,props.sceneWi
 .room-object :deep(.decor-art) { object-fit:contain; pointer-events:none; filter:drop-shadow(0 2px 1px #60402022); }
 .room-object:disabled { opacity:1; pointer-events:none; }
 .room-object:hover:not(:disabled),.room-object:active:not(:disabled),.room-object:focus { background:transparent; border:0; }
-.room-object.editing { touch-action:none; cursor:grab; z-index:3; }
+.room-object.editing { touch-action:none; cursor:grab; user-select:none; -webkit-user-select:none; z-index:3; }
 .room-object.editing:active { cursor:grabbing; }
 .room-object.picked,.room-object:focus-visible { outline:2px dashed #c19058; outline-offset:4px; }
 </style>
