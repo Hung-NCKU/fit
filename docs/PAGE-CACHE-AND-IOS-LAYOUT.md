@@ -43,3 +43,5 @@
 上下把手各保留 44px 操作區，避免遮住教練輸入框或內容頂部；鍵盤開啟時下把手隱藏並退還下方空間。
 
 把手再調整為左下角單一 44×44px 圓形箭頭，不顯示「功能／分頁」文字；控制上下兩列，展開後移到分頁列上方避免遮住寵物分頁。保留 aria-label 與 aria-expanded，還原上方預留的把手空間。
+
+教練輸入鍵盤修正：教練頁外層 content 不再捲動，只讓 messages 捲動；chat min-height:0、輸入列不縮小、textarea 固定至少 16px 避免 iOS 聚焦縮放。鍵盤高度與 VisualViewport.offsetTop 分開處理：高度仍只用 viewport.height，offsetTop 僅在 iOS 主畫面鍵盤出現時作 body 定位，不加進高度；監聽 viewport scroll／resize，關閉鍵盤歸零。以未輸入時高度作鍵盤判定，避免 innerHeight 也縮小時漏判。

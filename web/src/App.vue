@@ -157,7 +157,7 @@ onMounted(async () => {
 
       <template v-else>
         <button class="chrome-handle chrome-handle-bottom" :style="{bottom:chromeVisible ? (navHeight+8)+'px' : 'max(8px, min(var(--safe-bottom), 12px))'}" :aria-expanded="chromeVisible" :aria-label="chromeVisible ? '收起功能列' : '展開功能列'" aria-controls="app-topbar app-tabbar" @click="toggleChrome"><span aria-hidden="true">功能</span></button>
-        <main class="content">
+        <main class="content" :class="{ 'chat-content': route.path === '/chat' }">
           <RouterView v-slot="{ Component }">
             <component :is="Component" />
           </RouterView>
@@ -195,7 +195,11 @@ onMounted(async () => {
 }
 .chrome-auto .topbar,.chrome-auto .tabbar { transition:opacity .18s ease,visibility .18s; }
 .chrome-auto.chrome-hidden .topbar,.chrome-auto.chrome-hidden .tabbar { opacity:0;visibility:hidden;pointer-events:none; }
-.chrome-auto .content { margin-top:var(--safe-top);margin-bottom:calc(44px + clamp(6px, var(--safe-bottom), 12px));padding-top:1rem;padding-bottom:1rem; }
+/* 安全區域用 padding 讓，不要用 margin。
+   margin 會把捲動區「框」在中間，上下各剩一條只有底色的空白帶（iPhone 上約 50px）；
+   padding 則讓捲動區佔滿整個視窗，內容會一路穿過瀏海與 home indicator，
+   第一張卡片一樣不會被狀態列壓到。 */
+.chrome-auto .content { padding-top:calc(1rem + var(--safe-top));padding-bottom:calc(1rem + 44px + clamp(6px, var(--safe-bottom), 12px)); }
 @media(prefers-reduced-motion:reduce){.chrome-auto .topbar,.chrome-auto .tabbar{transition:none;}}
 .chrome-handle {position:fixed;left:max(calc(8px + var(--safe-left)), calc((100% - 820px) / 2 + 8px));z-index:40;width:44px;height:44px;padding:0;border-radius:50%;font-size:.75rem;font-weight:650;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-popover);touch-action:manipulation;}
 
@@ -268,6 +272,8 @@ onMounted(async () => {
 }
 .hint p { margin: .5rem 0 0; line-height: 1.7; }
 .hint b { color: var(--accent); }
+.content.chat-content {overflow:hidden;overflow-anchor:none;}
+:global(html.app-keyboard .chrome-auto .topbar),:global(html.app-keyboard .chrome-auto .tabbar) {display:none;}
 .logout { font-size: .78rem; }
 
 .tabbar {
@@ -289,8 +295,17 @@ onMounted(async () => {
   z-index:20;
 }
 :global(html.ios-installed .chrome-auto .tabbar) { padding-bottom:clamp(6px, var(--safe-bottom), 12px); }
-:global(html.ios-installed .chrome-auto .content) { margin-top:var(--safe-top);padding-top:1rem;padding-bottom:1rem; }
-:global(html.ios-installed .chrome-auto::before) { content:'';position:fixed;top:0;left:0;right:0;height:var(--safe-top);background:var(--surface);z-index:35;pointer-events:none; }
+:global(html.ios-installed .chrome-auto .content) { padding-top:calc(1rem + var(--safe-top)); }
+
+/* 狀態列底下的襯底。原本是一塊不透明的 --surface，等於永遠有一條純色帶；
+   改成半透明＋模糊之後，內容捲動時看得到從底下經過，時間與訊號也還讀得清楚。 */
+:global(html.ios-installed .chrome-auto::before) {
+  content:'';position:fixed;top:0;left:0;right:0;height:var(--safe-top);z-index:35;pointer-events:none;
+  background:var(--bg);
+  background:color-mix(in srgb, var(--bg) 70%, transparent);
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+}
 :global(html.ios-installed.app-keyboard .tabbar) { display:none; }
 :global(html.app-keyboard .chrome-auto .content) { margin-bottom:0;padding-bottom:.75rem; }
 .tab {

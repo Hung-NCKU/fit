@@ -41,7 +41,7 @@ async function returnLatest(){
 }
 onUnmounted(()=>{++bookmarkSequence;clearTimeout(bookmarkTimer);});
 const coachPlan=ref(null), composerEl=ref(null);
-function preparePlanChange() {draft.value='我想調整訓練和飲食計畫，';nextTick(()=>composerEl.value?.focus());}
+function preparePlanChange() {draft.value='我想調整訓練和飲食計畫，';nextTick(()=>composerEl.value?.focus({preventScroll:true}));}
 let reminderTimer;
 async function refreshReminders() {
   if(disposed || sending.value || bookmarkBrowsing.value || document.hidden) return;
@@ -397,9 +397,10 @@ onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visi
 
 <style scoped>
 .question-bookmarks{position:sticky;top:0;z-index:4;flex:0 0 auto;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.65rem .8rem;margin-bottom:.6rem;}.bookmark-content{max-height:28vh;overflow:auto;overscroll-behavior:contain}.question-bookmarks summary{cursor:pointer;font-size:.85rem;font-weight:650}.bookmark-list{display:grid;gap:.4rem}.bookmark-list button{text-align:left;display:grid;gap:.2rem;min-width:0}.bookmark-list button span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.bookmark-list small{color:var(--muted);font-size:.65rem}.bookmark-location{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-bottom:.5rem}.bookmark-location button{font-size:.75rem}.bookmark-focus .bubble{outline:3px solid var(--accent);outline-offset:3px}.msg:focus{outline:none}
-.chat { display: flex; flex-direction: column; height: 100%; }
+.chat { display: flex; flex-direction: column; height: 100%; min-height:0;overflow:hidden; }
 
 .messages {
+  overflow-anchor:none;
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -410,6 +411,7 @@ onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visi
   padding-bottom: .5rem;
 }
 
+:global(html.app-keyboard .coach-plan-card) {max-height:22vh;overflow:auto;flex:0 0 auto;}
 .welcome { text-align: center; padding: 2.5rem 1rem 1rem; }
 .hero { font-size: 2.6rem; }
 
@@ -463,6 +465,7 @@ onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visi
 }
 
 .composer {
+  flex:0 0 auto;
   position: relative;          /* 模型選單的面板以這裡為基準，撐滿整條輸入列 */
   display: flex;
   gap: .5rem;
@@ -474,6 +477,7 @@ onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visi
   color: var(--muted);
 }
 .composer textarea {
+  font-size:16px;
   flex: 1 1 auto;
   min-width: 0;                 /* 沒有這行，長文字會把兩側按鈕擠掉 */
   min-height: 42px;
