@@ -156,7 +156,7 @@ onMounted(async () => {
       <LoginView v-if="locked" />
 
       <template v-else>
-        <button class="chrome-handle chrome-handle-bottom" :style="{bottom:chromeVisible ? (navHeight+8)+'px' : 'max(8px, min(var(--safe-bottom), 12px))'}" :aria-expanded="chromeVisible" :aria-label="chromeVisible ? '收起功能列' : '展開功能列'" aria-controls="app-topbar app-tabbar" @click="toggleChrome"><span aria-hidden="true">{{ chromeVisible ? '⌄' : '⌃' }}</span></button>
+        <button class="chrome-handle chrome-handle-bottom" :style="{bottom:chromeVisible ? (navHeight+8)+'px' : 'max(8px, min(var(--safe-bottom), 12px))'}" :aria-expanded="chromeVisible" :aria-label="chromeVisible ? '收起功能列' : '展開功能列'" aria-controls="app-topbar app-tabbar" @click="toggleChrome"><span aria-hidden="true">功能</span></button>
         <main class="content">
           <RouterView v-slot="{ Component }">
             <component :is="Component" />
@@ -197,7 +197,7 @@ onMounted(async () => {
 .chrome-auto.chrome-hidden .topbar,.chrome-auto.chrome-hidden .tabbar { opacity:0;visibility:hidden;pointer-events:none; }
 .chrome-auto .content { margin-top:var(--safe-top);margin-bottom:calc(44px + clamp(6px, var(--safe-bottom), 12px));padding-top:1rem;padding-bottom:1rem; }
 @media(prefers-reduced-motion:reduce){.chrome-auto .topbar,.chrome-auto .tabbar{transition:none;}}
-.chrome-handle {position:fixed;left:max(calc(8px + var(--safe-left)), calc((100% - 820px) / 2 + 8px));z-index:40;width:44px;height:44px;padding:0;border-radius:50%;font-size:1.4rem;font-weight:650;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-popover);touch-action:manipulation;}
+.chrome-handle {position:fixed;left:max(calc(8px + var(--safe-left)), calc((100% - 820px) / 2 + 8px));z-index:40;width:44px;height:44px;padding:0;border-radius:50%;font-size:.75rem;font-weight:650;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-popover);touch-action:manipulation;}
 
 :global(.shell:has(.topbar .sheet) .chrome-handle) {visibility:hidden;}
 :global(html.app-keyboard .chrome-handle-bottom) {display:none;}
