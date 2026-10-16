@@ -363,11 +363,6 @@ onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visi
       <RouterLink to="/meals">查看飲食紀錄</RouterLink>
       <span v-if="receipt.actions?.some(a => a.tool !== 'get_records')" class="small muted">已有處理紀錄，請先查看，避免再次新增。</span>
     </div>
-    <div class="row wrap small" style="margin:.5rem 0">
-      <RouterLink to="/meals?new=1">直接記飲食</RouterLink>
-      <RouterLink to="/workouts?new=1">直接記訓練</RouterLink>
-      <span class="muted">不用等待 AI</span>
-    </div>
 
     <div v-if="empty" class="chips">
       <button v-for="s in SUGGESTIONS" :key="s" class="chip" @click="send(s)">{{ s }}</button>
