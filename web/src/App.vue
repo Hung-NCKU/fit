@@ -284,7 +284,9 @@ onMounted(async () => {
   width:min(100%,820px);
   z-index:20;
 }
-:global(html.ios-installed .chrome-auto .content) { padding-bottom:calc(1rem + var(--safe-bottom)); }
+:global(html.ios-installed .chrome-auto .tabbar) { padding-bottom:clamp(6px, var(--safe-bottom), 12px); }
+:global(html.ios-installed .chrome-auto .content) { margin-top:var(--safe-top);padding-top:1rem;padding-bottom:calc(1rem + var(--safe-bottom)); }
+:global(html.ios-installed .chrome-auto::before) { content:'';position:fixed;top:0;left:0;right:0;height:var(--safe-top);background:var(--surface);z-index:35;pointer-events:none; }
 :global(html.ios-installed.app-keyboard .tabbar) { display:none; }
 :global(html.ios-installed.app-keyboard .content) { padding-bottom:.75rem; }
 .tab {
