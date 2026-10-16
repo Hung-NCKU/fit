@@ -53,31 +53,30 @@ const tabs = [
 
 const title = computed(() => tabs.find(t => t.to === route.path)?.label ?? '健身養寵');
 const locked = computed(() => session.authRequired && !session.authed);
-const chromeVisible=ref(false),headerEl=ref(null);
+const chromeVisible=ref(false),headerEl=ref(null),navEl=ref(null);
+const headerHeight=ref(80),navHeight=ref(72);
 let chromeTimer;
 function hideChrome(){
-  // Account / notification sheets must remain usable while open.
-  if(headerEl.value?.querySelector('.sheet')){chromeTimer=setTimeout(hideChrome,5000);return;}
+  if(headerEl.value?.querySelector('.sheet')){chromeTimer=setTimeout(hideChrome,8000);return;}
   chromeVisible.value=false;
 }
-function showChrome(event){
-  if(event?.type==='click'){
-    const control=event.target?.closest?.('button,a,input,textarea,select,summary,label,[role="button"],[contenteditable]');
-    if(control && !control.closest('.topbar,.tabbar'))return;
-  }
-  if(event?.type==='click' && !event.target?.closest?.('.topbar,.tabbar') && event.clientY>84 && event.clientY<window.innerHeight-96)return;
+function showChrome(){
   if(!session.ready || locked.value)return;
-  chromeVisible.value=true;clearTimeout(chromeTimer);chromeTimer=setTimeout(hideChrome,5000);
+  chromeVisible.value=true;clearTimeout(chromeTimer);chromeTimer=setTimeout(hideChrome,8000);
 }
-onMounted(()=>{
-  document.addEventListener('click',showChrome,true);
-  document.addEventListener('keydown',showChrome,true);
+function toggleChrome(){
+  if(chromeVisible.value && !headerEl.value?.querySelector('.sheet')){clearTimeout(chromeTimer);chromeVisible.value=false;}
+  else showChrome();
+}
+function keepChrome(event){
+  if(chromeVisible.value && event.target?.closest?.('.topbar,.tabbar'))showChrome();
+}
+const barObserver=new ResizeObserver(entries=>{
+  for(const entry of entries){if(entry.target===headerEl.value)headerHeight.value=entry.target.getBoundingClientRect().height;if(entry.target===navEl.value)navHeight.value=entry.target.getBoundingClientRect().height;}
 });
-onUnmounted(()=>{
-  clearTimeout(chromeTimer);
-  document.removeEventListener('click',showChrome,true);
-  document.removeEventListener('keydown',showChrome,true);
-});
+watch([headerEl,navEl],([header,nav])=>{barObserver.disconnect();if(header)barObserver.observe(header);if(nav)barObserver.observe(nav);});
+onMounted(()=>{document.addEventListener('click',keepChrome,true);document.addEventListener('keydown',keepChrome,true);});
+onUnmounted(()=>{clearTimeout(chromeTimer);barObserver.disconnect();document.removeEventListener('click',keepChrome,true);document.removeEventListener('keydown',keepChrome,true);});
 
 async function logout() {
   try {
@@ -128,7 +127,7 @@ onMounted(async () => {
         <button v-if="canShowInstall" class="icon install" @click="install">📲 安裝</button>
       </header>
 
-      <header v-else ref="headerEl" class="topbar" :inert="!chromeVisible" :aria-hidden="!chromeVisible">
+      <header v-else id="app-topbar" ref="headerEl" class="topbar" :inert="!chromeVisible" :aria-hidden="!chromeVisible">
         <span class="logo"><img class="brand-icon" src="/icon-192.png?v=fitness-puppy-v1" alt="" /><span class="brand-copy"><b>健身養寵</b><span class="brand-subtitle">{{ title }}<template v-if="session.name"> · {{ session.name }}</template></span></span></span>
         <div class="header-tools">
         <DeleteAccount v-if="session.authed" />
@@ -157,13 +156,15 @@ onMounted(async () => {
       <LoginView v-if="locked" />
 
       <template v-else>
+        <button class="chrome-handle chrome-handle-top" :style="{top:chromeVisible ? headerHeight+'px' : 'var(--safe-top)'}" :aria-expanded="chromeVisible" aria-controls="app-topbar" @click="toggleChrome">{{ chromeVisible ? '⌃ 收起功能' : '⌄ 功能' }}</button>
+        <button class="chrome-handle chrome-handle-bottom" :style="{bottom:chromeVisible ? navHeight+'px' : 'clamp(6px, var(--safe-bottom), 12px)'}" :aria-expanded="chromeVisible" aria-controls="app-tabbar" @click="toggleChrome">{{ chromeVisible ? '⌄ 收起分頁' : '⌃ 分頁' }}</button>
         <main class="content">
           <RouterView v-slot="{ Component }">
             <component :is="Component" />
           </RouterView>
         </main>
 
-        <nav class="tabbar" :inert="!chromeVisible" :aria-hidden="!chromeVisible" aria-label="頁面切換">
+        <nav id="app-tabbar" ref="navEl" class="tabbar" :inert="!chromeVisible" :aria-hidden="!chromeVisible" aria-label="頁面切換">
           <RouterLink v-for="t in tabs" :key="t.to" :to="t.to" class="tab">
             <span class="ico">{{ t.icon }}</span>
             <span class="lbl">{{ t.label }}</span>
@@ -195,8 +196,12 @@ onMounted(async () => {
 }
 .chrome-auto .topbar,.chrome-auto .tabbar { transition:opacity .18s ease,visibility .18s; }
 .chrome-auto.chrome-hidden .topbar,.chrome-auto.chrome-hidden .tabbar { opacity:0;visibility:hidden;pointer-events:none; }
-.chrome-auto .content { padding-top:calc(1rem + var(--safe-top));padding-bottom:calc(1rem + var(--safe-bottom)); }
+.chrome-auto .content { margin-top:calc(44px + var(--safe-top));margin-bottom:calc(44px + clamp(6px, var(--safe-bottom), 12px));padding-top:1rem;padding-bottom:1rem; }
 @media(prefers-reduced-motion:reduce){.chrome-auto .topbar,.chrome-auto .tabbar{transition:none;}}
+.chrome-handle {position:fixed;left:50%;transform:translateX(-50%);z-index:40;min-width:96px;min-height:44px;padding:.3rem .8rem;border-radius:0 0 16px 16px;font-size:.75rem;font-weight:650;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-popover);touch-action:manipulation;}
+.chrome-handle-bottom {border-radius:16px 16px 0 0;}
+:global(.shell:has(.topbar .sheet) .chrome-handle) {visibility:hidden;}
+:global(html.app-keyboard .chrome-handle-bottom) {display:none;}
 .boot { display: grid; place-items: center; height: 100%; padding-top: var(--safe-top); }
 
 .topbar {
@@ -285,10 +290,10 @@ onMounted(async () => {
   z-index:20;
 }
 :global(html.ios-installed .chrome-auto .tabbar) { padding-bottom:clamp(6px, var(--safe-bottom), 12px); }
-:global(html.ios-installed .chrome-auto .content) { margin-top:var(--safe-top);padding-top:1rem;padding-bottom:calc(1rem + var(--safe-bottom)); }
+:global(html.ios-installed .chrome-auto .content) { margin-top:calc(44px + var(--safe-top));padding-top:1rem;padding-bottom:1rem; }
 :global(html.ios-installed .chrome-auto::before) { content:'';position:fixed;top:0;left:0;right:0;height:var(--safe-top);background:var(--surface);z-index:35;pointer-events:none; }
 :global(html.ios-installed.app-keyboard .tabbar) { display:none; }
-:global(html.ios-installed.app-keyboard .content) { padding-bottom:.75rem; }
+:global(html.app-keyboard .chrome-auto .content) { margin-bottom:0;padding-bottom:.75rem; }
 .tab {
   display: flex;
   flex-direction: column;
