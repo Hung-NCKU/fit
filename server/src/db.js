@@ -172,6 +172,13 @@ CREATE TABLE IF NOT EXISTS pet_room_positions (
 -- 換寵物會把上一隻連同代幣與買過的東西全部清掉。開發期間這件事發生過四次，
 -- 每次都只能靠手動改資料庫救回來，而且當天的備份不見得涵蓋得到。
 -- 換掉之前先把舊的那隻整隻存進這裡，就不會再有「無法復原」這回事。
+CREATE TABLE IF NOT EXISTS pet_care_play_slots (
+  pet_key TEXT NOT NULL,
+  date TEXT NOT NULL,
+  slot TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  PRIMARY KEY(pet_key,date,slot)
+);
 CREATE TABLE IF NOT EXISTS pet_care_interactions (
   pet_key TEXT NOT NULL,date TEXT NOT NULL,count INTEGER NOT NULL DEFAULT 0,last_at INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY(pet_key,date)
