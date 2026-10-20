@@ -162,6 +162,8 @@ export const HABITS = {
   },
 };
 
+HABITS.bully={...HABITS.dog,size:.36,habit:'兇兇督促吃飯與運動'};
+
 /** 幾點的活躍度。小時可以是小數，中間用線性內插，免得整點跳一下。 */
 export function activityAt(species, hour = new Date().getHours()) {
   const curve = RHYTHMS[HABITS[species]?.rhythm] || RHYTHMS.diurnal;

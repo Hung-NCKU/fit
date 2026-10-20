@@ -47,6 +47,7 @@ export default async function petRoutes(app) {
       // 生活習性（來源：pet/動物特性.txt），前端的行為狀態機吃這份
       behavior: behaviorOf(pet.species),
       roster: listPets(u).map(p => ({
+        barkReminders:p.species === "bully",
         petKey: p.petKey, species: p.species, name: p.name, equipped: p.equipped,
         speciesName: speciesOf(p.species).name, behavior: behaviorOf(p.species),
         position:petRoomPosition(u,p.petKey),

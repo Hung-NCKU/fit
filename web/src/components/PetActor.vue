@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref, watch, onUnmounted } from 'vue';
+import BullyFrames from './BullyFrames.vue';
 import PetFrames from './PetFrames.vue';
 import {petActorSize} from '../room-scale.js';
 import PetPickup from './PetPickup.vue';
@@ -19,6 +20,10 @@ const moving=ref(false);
 const facing=ref(1);
 let frame, journey, nextTrip=0;
 const speech=ref('');
+const barkIndex=ref(0);
+const barkTimer=setInterval(()=>{if(!props.paused && !document.hidden) barkIndex.value++;},4500);
+const barking=computed(()=>props.pet.barkReminders && !props.paused && !lifted.value);
+const barkText=computed(()=>barkIndex.value%2 ? '汪汪！去運動！' : '汪汪！去吃飯！');
 const joyful=ref(false);
 let speechTimer;
 function say(text, celebrate=false) {
@@ -62,7 +67,7 @@ function step() {
 watch(() => props.pet.petKey, () => { clearTimeout(timer); step(); }, { immediate: true });
 // Begin after setup so actorSize and behavior are available.
 frame=requestAnimationFrame(roam);
-onUnmounted(() => {clearTimeout(timer);clearTimeout(landingTimer);clearTimeout(speechTimer);cancelAnimationFrame(frame);});
+onUnmounted(() => {clearInterval(barkTimer);clearTimeout(timer);clearTimeout(landingTimer);clearTimeout(speechTimer);cancelAnimationFrame(frame);});
 const clothes = computed(() => props.wearing || props.pet.worn || []);
 const outfit=computed(()=>clothes.value.find(item=>item.slot==='outfit'));
 // The complete outfit is baked into each character pose; no garment overlays.
@@ -109,12 +114,13 @@ const style = computed(() => ({
   <button class="actor" :class="{ selected, visiting:!movable, roaming: moving, lifted, landing, joyful }" :style="style" :disabled="!interactive" :aria-label="`選擇寵物 ${pet.name}`"
     @pointerdown.stop="lift" @pointermove="dragPet" @pointerup="drop($event)" @pointercancel="drop($event,true)" @click="clickPet">
     <span class="body" :class="{ resting: current?.pose === 'sleep' }">
-      <OutfitFrames v-if="outfit" :outfit="outfit.id" :pose="lifted ? 'pickup' : moving ? 'walk' : 'idle'" :label="`${pet.speciesName}・${outfit.name}`" :resting="!lifted && current?.pose === 'sleep'" />
+      <BullyFrames v-if="pet.species === 'bully'" :pose="lifted ? 'pickup' : moving ? 'walk' : 'idle'" :label="pet.speciesName" />
+      <OutfitFrames v-else-if="outfit" :outfit="outfit.id" :pose="lifted ? 'pickup' : moving ? 'walk' : 'idle'" :label="`${pet.speciesName}・${outfit.name}`" :resting="!lifted && current?.pose === 'sleep'" />
       <PetPickup v-else-if="lifted" :species="pet.species" :label="pet.speciesName" />
       <PetFrames v-else :species="pet.species" :pose="pose" :label="pet.speciesName" :resting="clothes.length > 0 && current?.pose === 'sleep'" />
     </span>
     <span class="name">{{ pet.name }}</span>
-    <span v-if="(speech || reminder && selected && !paused && !lifted) && !preview" class="pet-speech" role="status">{{ speech || reminder }}</span>
+    <span v-if="(barking || speech || reminder && selected && !paused && !lifted) && !preview" class="pet-speech" aria-live="off">{{ barking ? barkText : speech || reminder }}</span>
   </button>
 </template>
 <style scoped>

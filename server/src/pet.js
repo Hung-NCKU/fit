@@ -36,7 +36,7 @@ export const SPECIES = [
   { id: 'chinchilla', name: '龍貓',   nick: '霧球', tint: '#e9e1ed' },
 ];
 
-export const speciesOf = (id) => SPECIES.find(s => s.id === id) || SPECIES[0];
+export const speciesOf = (id) => [...SPECIES, {id:"bully",name:"惡霸犬",nick:"小霸",tint:"#f3eadb"}].find(s => s.id === id) || SPECIES[0];
 
 /* ---------------- 商城 ---------------- */
 
@@ -604,4 +604,21 @@ export function arrangeDecor(userId, itemId, position, expected) {
     db.prepare('INSERT INTO pet_room_decor(scene,item_id,x,y,scale,locked,layer,rotation) VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(scene,item_id) DO UPDATE SET x=excluded.x,y=excluded.y,scale=excluded.scale,locked=excluded.locked,layer=excluded.layer,rotation=excluded.rotation').run(scene,itemId,x,y,scale,locked ? 1 : 0,layer,rotation);
   }
   return roomDecor(userId);
+}
+
+/** Martina 專屬贈送；重跑不重複、不扣款、不切換目前寵物。 */
+export function grantMartinaBully(userId) {
+  if(userId !== 'martina') throw Object.assign(new Error('僅限 Martina'),{status:403});
+  const main=mainPet(userId);
+  if(!main) throw new Error('請先領養寵物');
+  const db=getDb(userId);
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    db.prepare('INSERT OR IGNORE INTO pet_companions(species,name,purchase_id) VALUES (?,?,?)').run('bully','小霸','gift-martina-bully-v1');
+    const row=db.prepare('SELECT id FROM pet_companions WHERE purchase_id=?').get('gift-martina-bully-v1');
+    const key='companion-'+row.id;
+    db.prepare('INSERT OR IGNORE INTO pet_room_positions(scene,pet_key,x,y) VALUES (?,?,?,?)').run(main.equipped.bg || 'bg_room',key,25,82);
+    db.exec('COMMIT');
+    return petByKey(userId,key);
+  } catch(err) {if(db.isTransaction) db.exec('ROLLBACK');throw err;}
 }
