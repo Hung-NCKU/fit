@@ -6,6 +6,7 @@ import { openPhoto } from '../components/PhotoViewer.vue';
 import ModelPicker from '../components/ModelPicker.vue';
 import { session } from '../auth.js';
 import { recordFeedback } from '../pet-feedback.js';
+import { render } from '../markdown.js';
 
 const chatCacheKey=['chat',session.user,new Date().toLocaleDateString('sv-SE')];
 onUnmounted(()=>{if(!bookmarkBrowsing.value)patchCachedPage(chatCacheKey,previous=>[messages.value,{...previous[1],gemini:geminiReady.value},coachPlan.value]);});
@@ -286,17 +287,6 @@ function describeAction(a) {
 
 const loggingActions = (m) => (m.actions || []).filter(a => a.tool !== 'get_records');
 
-/** 極簡 markdown：**粗體**、清單、段落 */
-function render(text) {
-  const esc = String(text)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return esc
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^#{1,6}\s*(.+)$/gm, '<strong>$1</strong>')
-    .replace(/^\s*[-*]\s+(.+)$/gm, '<span class="li">• $1</span>')
-    .replace(/^\s*(\d+)\.\s+(.+)$/gm, '<span class="li">$1. $2</span>')
-    .replace(/\n/g, '<br>');
-}
 
 onMounted(()=>{load();reminderTimer=setInterval(refreshReminders,30_000);document.addEventListener('visibilitychange',refreshReminders);});
 onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visibilitychange',refreshReminders);});

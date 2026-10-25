@@ -17,8 +17,22 @@ const setPasswords = (first = '', second = '') => {
  */
 const martina = USERS.find(u => u.id === 'martina');
 const wasDisabled = martina?.disabled;
-beforeAll(() => { if (martina) delete martina.disabled; });
-afterAll(() => { if (martina && wasDisabled) martina.disabled = true; });
+
+/**
+ * USERS 會把 server/data/guests.json 裡的訪客一起載進來，而訪客的密碼是存在那個
+ * 檔案裡的（不是環境變數），所以只要線上還有一個試用中的訪客，setPasswords() 清掉
+ * 環境變數也沒用，authRequired() 仍然是 true，這支就會莫名其妙紅。
+ * 這裡測的是兩個內建帳號的邏輯，跟當下有沒有人在試用無關，所以先拿掉再還原。
+ */
+const guests = USERS.filter(u => u.guest);
+beforeAll(() => {
+  if (martina) delete martina.disabled;
+  for (const g of guests) USERS.splice(USERS.indexOf(g), 1);
+});
+afterAll(() => {
+  if (martina && wasDisabled) martina.disabled = true;
+  USERS.push(...guests);
+});
 
 afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
 

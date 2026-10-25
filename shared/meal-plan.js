@@ -41,6 +41,36 @@ export const defaultSettings = () => ({
 
 export const recipeById = (id) => recipes.find(r => r.id === id) || null;
 
+/**
+ * 一份不夠就吃一份半。
+ *
+ * 食譜的營養都是「一人份」，落在 365–540 kcal；增肌的人晚餐目標動輒 800 kcal 以上，
+ * 每一道都偏小，光靠挑菜永遠補不到目標，排序也會退化成「照份量大小排」。
+ * 所以讓份量可以放大，只用 1 / 1.5 / 2 這三種好抓的份量——
+ * 再細的倍數（1.37 份）煮的時候根本沒辦法量。
+ */
+export const PORTIONS = [1, 1.5, 2];
+
+export function portionFor(recipe, targets) {
+  const want = (targets?.kcal || 0) * DINNER_SHARE;
+  if (!want || !recipe?.kcal) return 1;
+  return PORTIONS.reduce((best, p) => (
+    Math.abs(recipe.kcal * p - want) < Math.abs(recipe.kcal * best - want) ? p : best
+  ), 1);
+}
+
+/** 食譜加上「實際要吃幾份」之後的熱量、蛋白質與花費。原本的一人份數值保留不動 */
+export function servedRecipe(recipe, targets) {
+  const portion = portionFor(recipe, targets);
+  return {
+    ...recipe,
+    portion,
+    servedKcal: Math.round(recipe.kcal * portion),
+    servedProtein: Math.round(recipe.protein * portion),
+    servedCost: Math.round(recipe.cost * portion),
+  };
+}
+
 /** 飲食需求要全部滿足，設備要有一樣對得上 */
 export function eligible(settings) {
   const equipment = settings.equipment?.length ? settings.equipment : EQUIPMENT;
@@ -60,39 +90,69 @@ export function scoreRecipe(recipe, targets, settings) {
   const wantProtein = (targets?.protein_g || 0) * DINNER_SHARE;
   if (!wantKcal) return 0;                      // 沒有目標就不排序，維持原本的輪流取法
 
-  const kcalGap = Math.abs(recipe.kcal - wantKcal) / wantKcal;
-  const proteinGap = wantProtein ? Math.max(0, wantProtein - recipe.protein) / wantProtein : 0;
+  // 用「實際會吃幾份」來比，不然一道份量小但蛋白質密度高的菜會被低估
+  const served = servedRecipe(recipe, targets);
+  const kcalGap = Math.abs(served.servedKcal - wantKcal) / wantKcal;
+  const proteinGap = wantProtein ? Math.max(0, wantProtein - served.servedProtein) / wantProtein : 0;
 
   // 預算只當次要條件：超了才扣，而且扣得比營養差距輕
-  const weekCost = recipe.cost * (settings.people || 1) * 7;
+  const weekCost = served.servedCost * (settings.people || 1) * 7;
   const over = settings.budget ? Math.max(0, weekCost - settings.budget) / settings.budget : 0;
 
   return kcalGap + proteinGap * 1.5 + over * 0.5;
 }
 
+const rank = (pool, targets, settings) => [...pool]
+  .sort((a, b) => scoreRecipe(a, targets, settings) - scoreRecipe(b, targets, settings))
+  .map((recipe, i) => ({ recipe, weight: 1 / (i + 1) }));   // 名次越前面越重
+
+/**
+ * 從袋子裡依權重抽一道出來（抽走，不放回）。
+ *
+ * 用名次的倒數當權重：第一名被抽中的機會是第五名的五倍，但不是「永遠就那幾道」，
+ * 按一次「重新排菜」還是會換一批。
+ */
+function takeWeighted(bag, rng) {
+  const total = bag.reduce((sum, b) => sum + b.weight, 0);
+  let point = rng() * total;
+  for (let i = 0; i < bag.length; i++) {
+    point -= bag[i].weight;
+    if (point <= 0) return bag.splice(i, 1)[0].recipe;
+  }
+  return bag.pop().recipe;    // 浮點數誤差時的保險
+}
+
 /**
  * 排出七天。
  *
- * 食譜只有六道，所以一定會重複；排序後輪流取，讓最貼近目標的那幾道多出現，
- * 又不會七天全是同一道。offset 讓每次重新產生的結果不同。
+ * 原本是「排序後隨機取一段連續七道」。食譜只有六道時沒差（七天一定繞一圈，
+ * 全部都排得到），但食譜變成十五道之後，起點落在後半就整週都是最不合目標的菜
+ * ——實測第一名進菜單的機率 46%、最後一名 47%，等於排序白做。
+ *
+ * 改成依名次加權抽樣：好的常出現，差的偶爾出現，每次重排仍然不一樣。
+ * rng 可以換掉，測試才有辦法固定結果。
  */
-export function planFor(settings, targets) {
+export function planFor(settings, targets, rng = Math.random) {
   const pool = eligible(settings);
   if (!pool.length) return null;
-  const ranked = [...pool].sort((a, b) => scoreRecipe(a, targets, settings) - scoreRecipe(b, targets, settings));
-  const offset = Math.floor(Math.random() * ranked.length);
-  return Array.from({ length: 7 }, (_, i) => ranked[(offset + i) % ranked.length].id);
+  const ranked = rank(pool, targets, settings);
+
+  const picks = [];
+  let bag = [];
+  while (picks.length < 7) {
+    if (!bag.length) bag = ranked.map(b => ({ ...b }));   // 不到七道就再來一輪
+    picks.push(takeWeighted(bag, rng).id);
+  }
+  return picks;
 }
 
-/** 換掉某一天：從符合條件的食譜裡挑一道「不是現在這道」的 */
-export function swapDay(settings, targets, day) {
+/** 換掉某一天：從符合條件、而且不是現在這道的食譜裡，一樣依名次加權抽一道 */
+export function swapDay(settings, targets, day, rng = Math.random) {
   const pool = eligible(settings);
   if (!pool.length) return settings.plan;
   const current = settings.plan[day];
   const others = pool.filter(r => r.id !== current);
-  const ranked = (others.length ? others : pool)
-    .sort((a, b) => scoreRecipe(a, targets, settings) - scoreRecipe(b, targets, settings));
-  const pick = ranked[Math.floor(Math.random() * Math.min(3, ranked.length))];
+  const pick = takeWeighted(rank(others.length ? others : pool, targets, settings), rng);
   return settings.plan.map((id, i) => (i === day ? pick.id : id));
 }
 
@@ -104,14 +164,16 @@ export function swapDay(settings, targets, day) {
  *
  * key 是勾選狀態的鍵：手動項目加上前綴，才不會跟同名的食材互相連動。
  */
-export function shoppingFor(settings) {
+export function shoppingFor(settings, targets) {
   const map = new Map();
   for (const id of settings.plan || []) {
     const r = recipeById(id);
     if (!r) continue;
+    // 要吃一份半就得買一份半的量，不然照著清單買會不夠
+    const portion = portionFor(r, targets);
     for (const [name, qty, unit] of r.ingredients) {
       const row = map.get(name) || { name, qty: 0, unit };
-      row.qty += qty * (settings.people || 1);
+      row.qty += qty * (settings.people || 1) * portion;
       map.set(name, row);
     }
   }
@@ -126,6 +188,9 @@ export function shoppingFor(settings) {
   return rows;
 }
 
-/** 這份菜單一週大約多少錢 */
-export const weekCost = (settings) =>
-  (settings.plan || []).reduce((sum, id) => sum + (recipeById(id)?.cost || 0), 0) * (settings.people || 1);
+/** 這份菜單一週大約多少錢（含放大的份量） */
+export const weekCost = (settings, targets) =>
+  (settings.plan || []).reduce((sum, id) => {
+    const r = recipeById(id);
+    return sum + (r ? servedRecipe(r, targets).servedCost : 0);
+  }, 0) * (settings.people || 1);

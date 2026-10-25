@@ -2,7 +2,7 @@ import { getDb, getProfile } from './db.js';
 import { addMeal, today } from './records.js';
 import {
   DIETS, EQUIPMENT, STORES, DINNER_SHARE,
-  defaultSettings, eligible, planFor, recipeById, shoppingFor, swapDay, weekCost,
+  defaultSettings, eligible, planFor, recipeById, servedRecipe, shoppingFor, swapDay, weekCost,
 } from '../../shared/meal-plan.js';
 import { recipes } from '../../shared/recipes.js';
 
@@ -111,13 +111,15 @@ export function swap(userId, day) {
 export function cook(userId, recipeId, { date, meal_type = 'dinner' } = {}) {
   const r = recipeById(Number(recipeId));
   if (!r) throw invalid('沒有這道食譜');
+  // 記的是實際吃的份量，不是食譜的一人份——畫面上寫 1.5 份，紀錄就要是 1.5 份
+  const served = servedRecipe(r, targetsOf(userId));
   return addMeal(userId, {
     date: date || today(),
     meal_type,
     name: r.name,
-    portion: '1 人份',
-    kcal: r.kcal,
-    protein_g: r.protein,
+    portion: `${served.portion} 人份`,
+    kcal: served.servedKcal,
+    protein_g: served.servedProtein,
     note: `來自菜單：${r.time} 分鐘・${r.equipment}`,
   }, 'meal_plan');
 }
@@ -130,9 +132,10 @@ export function planView(userId) {
     settings,
     options: { diets: DIETS, equipment: EQUIPMENT, stores: STORES },
     recipes,
-    plan: (settings.plan || []).map(id => recipeById(id)).filter(Boolean),
-    shopping: shoppingFor(settings),
-    weekCost: weekCost(settings),
+    plan: (settings.plan || []).map(id => recipeById(id)).filter(Boolean)
+      .map(r => servedRecipe(r, targets)),
+    shopping: shoppingFor(settings, targets),
+    weekCost: weekCost(settings, targets),
     eligibleCount: eligible(settings).length,
     // 讓畫面說得出「為什麼挑這幾道」
     dinnerTarget: {

@@ -16,7 +16,10 @@ async function performRequest(path, options = {}) {
   let res;
   try {
     res = await fetch(BASE + path, {
-      signal: options.signal || AbortSignal.timeout(path === '/chat' ? 90_000 : 15_000),
+      // 問模型的兩條路徑要給久一點：教練會跑工具所以最久，料理小幫手只問一輪
+      signal: options.signal || AbortSignal.timeout(
+        path === '/chat' ? 90_000 : path === '/meal-plan/ask' ? 60_000 : 15_000,
+      ),
       credentials: 'same-origin',
       ...options,
       // 只有真的帶 body 才宣告 JSON：Fastify 對「content-type 是 JSON 但 body 空的」
@@ -113,6 +116,9 @@ export const api = {
   generateMealPlan: () => request('/meal-plan/generate', { method: 'POST' }),
   swapMealPlanDay: (day) => request('/meal-plan/swap', { method: 'POST', body: { day } }),
   cookRecipe: (recipeId) => request('/meal-plan/cook', { method: 'POST', body: { recipeId } }),
+  // 料理小幫手：上下文由前端帶，問答不留在伺服器
+  askCook: (question, recipeId, history) =>
+    request('/meal-plan/ask', { method: 'POST', body: { question, recipeId, history } }),
   arrangeDecor: (item, position, expected) => request('/pet/room', { method:'PATCH', body:{ item, position, expected } }),
   restoreRoom: (items, expected) => request('/pet/room', { method:'PUT', body:{ items, expected } }),
   movePet: (petKey, position) => request('/pet/position', { method:'PATCH', body:{ petKey, position } }),

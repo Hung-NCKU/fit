@@ -2,7 +2,9 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
-import { DINNER_SHARE, EQUIPMENT, eligible, scoreRecipe, shoppingFor } from '../shared/meal-plan.js';
+import {
+  DINNER_SHARE, EQUIPMENT, eligible, planFor, portionFor, recipeById, scoreRecipe, servedRecipe, shoppingFor,
+} from '../shared/meal-plan.js';
 import { recipes } from '../shared/recipes.js';
 
 /**
@@ -27,10 +29,10 @@ it('挑菜依每日目標，不是依預算', () => {
   const targets = { kcal: 3000, protein_g: 160 };
   const settings = { people: 2, budget: 2000, diets: [], equipment: ['平底鍋', '烤箱', '氣炸鍋'] };
 
-  // 晚餐抓一天的四成：1200 kcal / 64 g
-  const best = [...recipes].sort((a, b) => scoreRecipe(a, targets, settings) - scoreRecipe(b, targets, settings))[0];
-  const worst = [...recipes].sort((a, b) => scoreRecipe(b, targets, settings) - scoreRecipe(a, targets, settings))[0];
-  expect(Math.abs(best.kcal - 3000 * DINNER_SHARE)).toBeLessThan(Math.abs(worst.kcal - 3000 * DINNER_SHARE));
+  // 晚餐抓一天的四成：1200 kcal / 64 g。比的是實際吃的份量，不是食譜的一人份
+  const byScore = [...recipes].sort((a, b) => scoreRecipe(a, targets, settings) - scoreRecipe(b, targets, settings));
+  const gap = r => Math.abs(servedRecipe(r, targets).servedKcal - 3000 * DINNER_SHARE);
+  expect(gap(byScore[0])).toBeLessThan(gap(byScore[byScore.length - 1]));
 
   // 蛋白質不夠罰得比熱量重：同樣差距下，缺蛋白質的分數比較差
   const lowProtein = { kcal: 1200, protein: 20, cost: 100, tags: [], equipment: '平底鍋' };
@@ -66,17 +68,56 @@ it('購物清單把七天食材依人數合併同名項目', () => {
   expect(salmon.unit).toBe('g');
 });
 
-it('煮完一道直接變成飲食紀錄，熱量與蛋白質照食譜帶入', () => {
+it('煮完一道直接變成飲食紀錄，熱量與蛋白質照實際份量帶入', () => {
   const r = recipes[0];
+  const p = db.getProfile('eli');
+  const served = servedRecipe(r, { kcal: p.target_kcal, protein_g: p.target_protein_g });
+
   const meal = plan.cook('eli', r.id, { date: '2026-10-25' });
   expect(meal.name).toBe(r.name);
-  expect(meal.kcal).toBe(r.kcal);
-  expect(meal.protein_g).toBe(r.protein);
+  expect(meal.kcal).toBe(served.servedKcal);
+  expect(meal.protein_g).toBe(served.servedProtein);
+  expect(meal.portion).toBe(`${served.portion} 人份`);
   expect(meal.meal_type).toBe('dinner');
 
   // 真的進了當天的飲食統計，寵物與代幣那套才看得到
   expect(records.dailySummary('eli', '2026-10-25').nutrition.items).toBe(1);
   expect(() => plan.cook('eli', 999)).toThrow(/沒有這道食譜/);
+});
+
+it('菜單真的偏向分數好的食譜，不是隨機切一段', () => {
+  const settings = { people: 2, budget: 2000, diets: [], equipment: [] };
+  const targets = { kcal: 2170, protein_g: 130 };
+  const ranked = [...recipes].sort((a, b) => scoreRecipe(a, targets, settings) - scoreRecipe(b, targets, settings));
+
+  // rng 永遠回 0 ＝ 每次都抽目前權重最高的那道，也就是照名次排前七名
+  expect(planFor(settings, targets, () => 0)).toEqual(ranked.slice(0, 7).map(r => r.id));
+
+  // 實際跑隨機：第一名進菜單的次數要明顯多於最後一名
+  let best = 0, worst = 0;
+  for (let i = 0; i < 400; i++) {
+    const p = planFor(settings, targets);
+    if (p.includes(ranked[0].id)) best++;
+    if (p.includes(ranked[ranked.length - 1].id)) worst++;
+  }
+  expect(best).toBeGreaterThan(worst * 2);
+});
+
+it('份量不夠就吃一份半或兩份，食材與紀錄一起放大', () => {
+  const small = { id: 99, kcal: 400, protein: 20, cost: 50, tags: [], equipment: '平底鍋', ingredients: [] };
+  expect(portionFor(small, { kcal: 2000 })).toBe(2);      // 晚餐要 800，400 的兩倍最接近
+  expect(portionFor(small, { kcal: 1500 })).toBe(1.5);    // 要 600
+  expect(portionFor(small, { kcal: 1000 })).toBe(1);      // 要 400，剛好一份
+  expect(portionFor(small, {})).toBe(1);                  // 沒有目標就不放大
+
+  const served = servedRecipe(small, { kcal: 2000 });
+  expect([served.servedKcal, served.servedProtein, served.servedCost]).toEqual([800, 40, 100]);
+
+  // 食譜 1 的鮭魚 150g：一人份、兩人吃、放大兩份 → 600
+  const targets = { kcal: 2430, protein_g: 140 };   // 晚餐 972，486 的兩倍剛好
+  expect(portionFor(recipeById(1), targets)).toBe(2);
+  const rows = shoppingFor({ plan: [1], people: 2 }, targets);
+  expect(rows.find(r => r.name === '鮭魚').qty).toBe(600);
 });
 
 it('每一種設備都至少有一道菜可做', () => {
@@ -129,6 +170,22 @@ it('換菜單會清掉食材的勾選，自己加的項目留著', () => {
   const after = plan.regenerate('eli');
   expect(after.checked).toEqual(['+醬油']);
   expect(after.extras).toEqual(['醬油']);
+});
+
+it('料理小幫手：先擋問題格式，提示帶上這道菜與目標，但沒有改紀錄的能力', async () => {
+  const assistant = await import('../server/src/cook-chat.js');
+  await expect(assistant.askCook('eli', { question: '   ' })).rejects.toThrow(/請先輸入問題/);
+  await expect(assistant.askCook('eli', { question: 'x'.repeat(501) })).rejects.toThrow(/500/);
+  await expect(assistant.askCook('eli', { question: '可以換嗎', history: '亂填' }))
+    .rejects.toThrow(/格式不正確/);
+
+  const prompt = assistant.cookSystemPrompt('eli', 1);
+  expect(prompt).toContain(recipeById(1).name);
+  expect(prompt).toContain(recipeById(1).ingredients[0][0]);
+  expect(prompt).toMatch(/每日目標是 \d+ kcal/);
+  // 要寫入紀錄只有「煮好了，記一餐」那條路，小幫手不碰資料庫
+  expect(prompt).toContain('煮好了，記一餐');
+  expect(prompt).toContain('你沒有任何修改紀錄的能力');
 });
 
 it('設定只收認得的欄位與合法的值', () => {

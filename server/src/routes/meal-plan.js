@@ -1,4 +1,5 @@
 import { planView, updateSettings, regenerate, swap, cook } from '../meal-plan.js';
+import { askCook } from '../cook-chat.js';
 import { getUser } from '../users.js';
 
 /**
@@ -49,4 +50,7 @@ export default async function mealPlanRoutes(app) {
     });
     return reply.code(201).send(meal);
   });
+
+  // 料理小幫手。問答不存檔，所以看別人的菜單時也可以問——問的是菜，不是對方的紀錄
+  app.post('/meal-plan/ask', async (req) => askCook(req.userId, req.body || {}));
 }

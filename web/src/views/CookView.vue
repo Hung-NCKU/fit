@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted } from 'vue';
 import { api } from '../api.js';
 import { session } from '../auth.js';
+import { render } from '../markdown.js';
 import UserTabs from '../components/UserTabs.vue';
 
 /**
@@ -101,6 +102,44 @@ async function cook(recipe) {
   finally { busy.value = null; }
 }
 
+/**
+ * 料理小幫手：站在廚房裡隨口問的小視窗。
+ *
+ * 用的是跟教練同一個模型，但不給工具、也不存對話——問完就算了。
+ * 正在看哪道菜就把那道菜一起送過去，答案才接得上畫面。
+ */
+const helperOpen = ref(false);
+const chat = ref([]);
+const question = ref('');
+const asking = ref(false);
+const askError = ref('');
+const logEl = ref(null);
+
+async function ask() {
+  const text = question.value.trim();
+  if (!text || asking.value) return;
+  question.value = '';
+  askError.value = '';
+  const sent = chat.value.slice();        // 這一句之前的對話才是上下文
+  chat.value.push({ role: 'user', text });
+  asking.value = true;
+  await scrollLog();
+  try {
+    const { answer } = await api.askCook(text, open.value?.id ?? null, sent);
+    chat.value.push({ role: 'assistant', text: answer });
+  } catch (e) {
+    askError.value = e.message;
+  } finally {
+    asking.value = false;
+    await scrollLog();
+  }
+}
+
+async function scrollLog() {
+  await nextTick();
+  if (logEl.value) logEl.value.scrollTop = logEl.value.scrollHeight;
+}
+
 const shoppingText = computed(() =>
   (data.value?.shopping || []).map(r => r.label).join('\n'));
 const searchUrl = (r) =>
@@ -130,6 +169,7 @@ async function copyList() {
         </div>
         <p v-if="target.kcal" class="small muted" style="margin:0">
           依你的每日目標挑菜：晚餐抓 <b>{{ target.kcal }} kcal</b>、蛋白質 <b>{{ target.protein_g }} g</b>。
+          食譜是一人份，份量不夠的會自動算成 1.5 或 2 份，食材與購物清單一起放大。
           預算是次要條件，不會因此排不出菜。
         </p>
         <p v-else class="small muted" style="margin:0">
@@ -153,7 +193,10 @@ async function copyList() {
           </button>
         </div>
         <b>{{ r.name }}</b>
-        <span class="small muted">{{ r.kcal }} kcal・蛋白質 {{ r.protein }} g・約 {{ r.cost }} 元/人</span>
+        <span class="small muted">
+          {{ r.servedKcal }} kcal・蛋白質 {{ r.servedProtein }} g・約 {{ r.servedCost }} 元/人
+          <template v-if="r.portion !== 1">（吃 {{ r.portion }} 份才到目標）</template>
+        </span>
         <div class="row wrap" style="gap:.4rem">
           <span v-for="t in r.tags" :key="t" class="badge soft small">{{ t }}</span>
         </div>
@@ -166,9 +209,11 @@ async function copyList() {
           </button>
         </div>
         <div v-if="open?.id === r.id" class="stack steps">
-          <b class="small">食材（1 人份）</b>
+          <b class="small">食材（{{ r.portion }} 人份）</b>
           <ul class="small">
-            <li v-for="(ing, n) in r.ingredients" :key="n">{{ ing[0] }} {{ ing[1] }}{{ ing[2] }}</li>
+            <li v-for="(ing, n) in r.ingredients" :key="n">
+              {{ ing[0] }} {{ Math.round(ing[1] * r.portion * 10) / 10 }}{{ ing[2] }}
+            </li>
           </ul>
           <b class="small">做法</b>
           <ol class="small">
@@ -257,6 +302,35 @@ async function copyList() {
         </p>
       </div>
     </template>
+
+    <!-- 浮動小幫手。按鈕固定在右下角，再按一次收起 -->
+    <button
+      class="helper-toggle" :class="{ on: helperOpen }" :aria-expanded="helperOpen"
+      aria-controls="cook-helper" :aria-label="helperOpen ? '收起料理小幫手' : '打開料理小幫手'"
+      @click="helperOpen = !helperOpen"
+    >{{ helperOpen ? '✕' : '🍳' }}</button>
+
+    <section v-if="helperOpen" id="cook-helper" class="helper card stack">
+      <div class="spread">
+        <b>料理小幫手</b>
+        <span class="small muted">{{ open ? open.name : '展開一道菜就會針對它回答' }}</span>
+      </div>
+      <div ref="logEl" class="log stack">
+        <p v-if="!chat.length" class="small muted" style="margin:0">
+          問食材能換什麼、火候、怎麼備料都可以。它不會改你的紀錄，要記這一餐請按「煮好了，記一餐」。
+        </p>
+        <p v-for="(m, i) in chat" :key="i" class="msg small" :class="m.role" v-html="render(m.text)"></p>
+        <p v-if="asking" class="small muted" style="margin:0">想一下…</p>
+      </div>
+      <div v-if="askError" class="error small">{{ askError }}</div>
+      <form class="row add-item" @submit.prevent="ask">
+        <input
+          v-model="question" maxlength="500" :disabled="asking"
+          placeholder="例如：蝦仁可以換成什麼？" aria-label="問料理小幫手"
+        />
+        <button type="submit" class="icon" :disabled="asking || !question.trim()">送出</button>
+      </form>
+    </section>
   </div>
 </template>
 
@@ -286,4 +360,26 @@ async function copyList() {
 }
 .video-source { display:flex; flex-wrap:wrap; gap:.3rem .8rem; align-items:baseline; }
 .video-source a { color:var(--accent); text-decoration:underline; }
+
+/* 右下角：左下角是 App 的「功能」把手，不要疊在一起 */
+.helper-toggle {
+  position:fixed; right:max(12px, var(--safe-right)); z-index:25;
+  bottom:calc(12px + var(--safe-bottom));
+  width:52px; height:52px; padding:0; border-radius:50%; font-size:1.4rem;
+  background:var(--surface); box-shadow:0 3px 12px #0003;
+}
+.helper-toggle.on { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+.helper {
+  position:fixed; z-index:24;
+  right:max(12px, var(--safe-right)); left:max(12px, var(--safe-left));
+  bottom:calc(74px + var(--safe-bottom));
+  max-width:520px; margin-inline:auto;
+  box-shadow:0 6px 24px #0004;
+}
+.helper .log { max-height:40vh; overflow-y:auto; gap:.5rem; }
+/* 換行已經由 markdown 轉成 <br>，不要再加 pre-wrap，不然會變兩倍行距 */
+.helper .msg { margin:0; padding:.5rem .7rem; border-radius:12px; line-height:1.6; }
+.helper .msg :deep(.li) { display:block; padding-left:.3rem; }
+.helper .msg.user { background:var(--accent-soft); color:var(--accent); align-self:flex-end; max-width:85%; }
+.helper .msg.assistant { background:var(--surface-2); }
 </style>
