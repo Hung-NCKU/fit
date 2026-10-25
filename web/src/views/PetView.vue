@@ -137,22 +137,44 @@ const itemById = (id) => (data.value?.shop || []).find(i => i.id === id) || null
 const trying = ref(null);
 
 /** 畫面上要顯示的穿戴狀態：試穿中的東西蓋過實際穿著的 */
-const shown = computed(() => (
-  trying.value ? { ...equipped.value, [trying.value.slot]: trying.value.id } : equipped.value
-));
+const shown = computed(() => {
+  const t = trying.value;
+  if (!t) return equipped.value;
+  // 試穿別隻的套裝時不要套到目前這隻身上——牠穿不下，畫面也會對不起來
+  if (t.petKey && t.petKey !== pet.value?.petKey) return equipped.value;
+  return { ...equipped.value, [t.slot]: t.id };
+});
 
 const tryOn = (item) => { trying.value = trying.value?.id === item.id ? null : item; };
 
-/** 確認才真的買。買過的只是換上，不扣款。 */
+/**
+ * 確認才真的買。買過的只是換上，不扣款。
+ *
+ * 套裝是綁物種的，而且商城會把「每一隻」的套裝都上架，所以要用這件商品
+ * 自己的 petKey，不能用目前選中的那一隻——否則買兔子的衣服時會被後端
+ * 以「這件穿搭不適合這隻寵物」擋下來。
+ */
 function confirmTry() {
   const item = trying.value;
   if (!item) return;
+  const key = item.petKey || pet.value.petKey;
   act(async () => {
     // buyItem 本來就會順手換上，所以買過的才需要另外呼叫 equip
-    if (owned.value.has(item.id)) await api.equipItem(item.id, pet.value.petKey);
-    else await api.buyItem(item.id, pet.value.petKey);
+    if (owned.value.has(item.id)) await api.equipItem(item.id, key);
+    else await api.buyItem(item.id, key);
     trying.value = null;
   }, 'try');
+}
+
+/** 賣回商店，退半價。賣掉之前會先從身上脫下來、從房間收走（後端處理）。 */
+const refundOf = (item) => Math.floor((item?.price ?? 0) / 2);
+function sellTrying() {
+  const item = trying.value;
+  if (!item) return;
+  act(async () => {
+    await api.sellItem(item.id);
+    trying.value = null;
+  }, 'sell');
 }
 
 const bg = computed(() => itemById(shown.value.bg));
@@ -556,6 +578,7 @@ function confirmRename() {
               <OutfitFrames v-else-if="i.slot==='outfit'" class="item-face" :outfit="i.id" :label="i.name" still />
               <img v-else class="item-face" :src="i.img" :alt="i.name" loading="lazy" />
               <span class="small">{{ i.name }}</span>
+              <span v-if="i.petName && roster.length > 1" class="small muted">給 {{ i.petName }}</span>
 
               <span v-if="isUsed(i)" class="badge soft small">{{ i.slot === 'decor' ? '已擺放' : '使用中' }}</span>
               <span v-else-if="owned.has(i.id)" class="small muted">已擁有</span>
@@ -574,12 +597,16 @@ function confirmRename() {
         <span class="stack tight">
           <b class="small">{{ trying.name }}</b>
           <span class="small muted">
-            {{ owned.has(trying.id) ? '已經有了，換上不用錢'
+            {{ owned.has(trying.id) ? `已經有了，換上不用錢${trying.price > 0 ? `；賣回退 ${refundOf(trying)} 枚` : ''}`
                : pet.coins < trying.price ? `還差 ${trying.price - pet.coins} 枚代幣`
                : `買下要 ${trying.price} 枚，剩 ${pet.coins - trying.price} 枚` }}
           </span>
         </span>
         <button class="icon" :disabled="busy" @click="trying = null">取消</button>
+        <button
+          v-if="owned.has(trying.id) && trying.price > 0 && !isUsed(trying)"
+          class="icon sell" :disabled="busy" @click="sellTrying"
+        >賣出 🪙 {{ refundOf(trying) }}</button>
         <button
           class="primary small"
           :disabled="busy || (!owned.has(trying.id) && pet.coins < trying.price)"
@@ -617,6 +644,7 @@ function confirmRename() {
 .poor { color: var(--danger); }
 
 /* 商品列表很長，確認列要一直跟著，不然得捲回上面才按得到 */
+.trybar .sell { color: var(--muted); white-space: nowrap; }
 .trybar {
   position: sticky;
   bottom: .6rem;

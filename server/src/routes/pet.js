@@ -1,5 +1,5 @@
 import {
-  SPECIES, shopFor, getPet, adoptPet, ownedItems,
+  SPECIES, shopFor, getPet, adoptPet, ownedItems, sellItem,
   settleCoins, petState, buyItem, equipItem, unequipSlot, speciesOf, replacePet,
   listPets, purchasePet, selectPet, renamePet, PET_PRICE, itemOf,
   roomDecor, arrangeDecor, restoreRoom, rewardOverview,
@@ -14,7 +14,7 @@ export default async function petRoutes(app) {
   function viewUser(req) {
     const asked = req.query?.user;
     if (!asked || asked === req.userId) return req.userId;
-    if (!getUser(asked)) {
+    if (!getUser(asked) || getUser(asked).disabled) {
       throw Object.assign(new Error(`沒有這個使用者：${asked}`), { status: 404 });
     }
     return asked;
@@ -37,6 +37,9 @@ export default async function petRoutes(app) {
     const pet = getPet(u);
     if (!pet) return { pet: null, species: SPECIES, mine };
 
+    // 商城要照「養了哪幾隻」上架套裝，所以 roster 先算出來給兩邊共用
+    const roster = listPets(u);
+
     return {
       mine,
       // 換寵物也要挑，所以不管有沒有養都要把清單帶出去
@@ -46,7 +49,7 @@ export default async function petRoutes(app) {
       care: petCare(u,pet.petKey),
       // 生活習性（來源：pet/動物特性.txt），前端的行為狀態機吃這份
       behavior: behaviorOf(pet.species),
-      roster: listPets(u).map(p => ({
+      roster: roster.map(p => ({
         barkReminders:p.species === "bully",
         petKey: p.petKey, species: p.species, name: p.name, equipped: p.equipped,
         speciesName: speciesOf(p.species).name, behavior: behaviorOf(p.species),
@@ -56,7 +59,7 @@ export default async function petRoutes(app) {
       petsForSale: SPECIES.map(s => ({ species: s.id, name: s.name, nick: s.nick, price: PET_PRICE, img: `/pets/${s.id}-pet.webp` })),
       owned: ownedItems(u),
       decorations: roomDecor(u),
-      shop: shopFor(pet.species),
+      shop: shopFor(roster),
       settled,
       rewards: mine ? rewardOverview(u) : null,
     };
@@ -85,6 +88,12 @@ export default async function petRoutes(app) {
   app.post('/pet/buy', async (req) => {
     writeGuard(req);
     return buyItem(req.userId, req.body?.item, req.body?.petKey);
+  });
+
+  // 賣回商店，退半價
+  app.post('/pet/sell', async (req) => {
+    writeGuard(req);
+    return sellItem(req.userId, req.body?.item);
   });
 
   app.post('/pet/purchase', async (req, reply) => {
