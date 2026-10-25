@@ -3,6 +3,7 @@ import { ref, computed, watch, nextTick, onMounted } from 'vue';
 import { api } from '../api.js';
 import { session } from '../auth.js';
 import { render } from '../markdown.js';
+import { BTN, SLOP, snapSpot, parseSpot, toggleStyle, panelStyle } from '../helper-spot.js';
 import UserTabs from '../components/UserTabs.vue';
 
 /**
@@ -139,6 +140,67 @@ async function scrollLog() {
   await nextTick();
   if (logEl.value) logEl.value.scrollTop = logEl.value.scrollHeight;
 }
+
+/**
+ * 按鈕可以拖，放開後貼回最近的那一側。
+ *
+ * 它是固定在畫面上的，不管捲到哪裡都會壓住一塊地方——有時候正好壓在
+ * 「煮好了，記一餐」或影片上，所以要能挪開，而且挪到哪裡下次還在那裡。
+ *
+ * 用 pointer 事件（滑鼠與觸控同一套）＋ setPointerCapture：手指滑出按鈕外面
+ * 之後還是收得到移動。位移沒超過 SLOP 就當成點擊，不然手指一抖就開不起來。
+ */
+const SPOT_KEY = 'fit.cook.helper-spot';
+const spot = ref(loadSpot());
+const drag = ref(null);      // 拖曳中按鈕左上角的即時座標，沒在拖是 null
+let press = null;            // 按下那一刻的指標位置與抓取偏移
+let dragged = false;         // 剛剛是拖曳：緊接著那一下 click 不要當成開關
+
+function loadSpot() {
+  try { return parseSpot(localStorage.getItem(SPOT_KEY)); }
+  catch { return null; }      // 私密模式讀不到就用預設的右下角
+}
+
+const clamp = (v, max) => Math.min(Math.max(v, 0), Math.max(max, 0));
+
+function pressStart(e) {
+  const box = e.currentTarget.getBoundingClientRect();
+  press = { x: e.clientX, y: e.clientY, dx: e.clientX - box.left, dy: e.clientY - box.top };
+  e.currentTarget.setPointerCapture?.(e.pointerId);
+}
+
+function pressMove(e) {
+  if (!press) return;
+  if (!drag.value && Math.hypot(e.clientX - press.x, e.clientY - press.y) < SLOP) return;
+  drag.value = {
+    x: clamp(e.clientX - press.dx, window.innerWidth - BTN),
+    y: clamp(e.clientY - press.dy, window.innerHeight - BTN),
+  };
+}
+
+function pressEnd() {
+  if (!press) return;
+  press = null;
+  const at = drag.value;
+  drag.value = null;
+  if (!at) return;            // 原地放開：交給 click 去開關
+  dragged = true;
+  // 沒收到後續的 click（某些觸控瀏覽器）時別把下一次點擊也吃掉
+  setTimeout(() => { dragged = false; }, 400);
+  spot.value = snapSpot({ ...at, width: window.innerWidth, height: window.innerHeight });
+  try { localStorage.setItem(SPOT_KEY, JSON.stringify(spot.value)); }
+  catch { /* 存不了就只留這一次 */ }
+}
+
+function toggleHelper() {
+  if (dragged) { dragged = false; return; }
+  helperOpen.value = !helperOpen.value;
+}
+
+const toggleAt = computed(() => (drag.value
+  ? { left: `${drag.value.x}px`, top: `${drag.value.y}px`, right: 'auto', bottom: 'auto' }
+  : toggleStyle(spot.value)));
+const panelAt = computed(() => panelStyle(spot.value));
 
 const shoppingText = computed(() =>
   (data.value?.shopping || []).map(r => r.label).join('\n'));
@@ -303,14 +365,17 @@ async function copyList() {
       </div>
     </template>
 
-    <!-- 浮動小幫手。按鈕固定在右下角，再按一次收起 -->
+    <!-- 浮動小幫手。預設在右下角，可以拖走，再按一次收起 -->
     <button
-      class="helper-toggle" :class="{ on: helperOpen }" :aria-expanded="helperOpen"
-      aria-controls="cook-helper" :aria-label="helperOpen ? '收起料理小幫手' : '打開料理小幫手'"
-      @click="helperOpen = !helperOpen"
+      class="helper-toggle" :class="{ on: helperOpen, dragging: !!drag }" :style="toggleAt"
+      :aria-expanded="helperOpen" aria-controls="cook-helper"
+      :aria-label="helperOpen ? '收起料理小幫手' : '打開料理小幫手（可拖曳）'"
+      @pointerdown="pressStart" @pointermove="pressMove"
+      @pointerup="pressEnd" @pointercancel="pressEnd"
+      @click="toggleHelper"
     >{{ helperOpen ? '✕' : '🍳' }}</button>
 
-    <section v-if="helperOpen" id="cook-helper" class="helper card stack">
+    <section v-if="helperOpen" id="cook-helper" class="helper card stack" :style="panelAt">
       <div class="spread">
         <b>料理小幫手</b>
         <span class="small muted">{{ open ? open.name : '展開一道菜就會針對它回答' }}</span>
@@ -367,16 +432,24 @@ async function copyList() {
   bottom:calc(12px + var(--safe-bottom));
   width:52px; height:52px; padding:0; border-radius:50%; font-size:1.4rem;
   background:var(--surface); box-shadow:0 3px 12px #0003;
+  /* 拖的時候不要讓畫面跟著捲，不然在手機上永遠拖不動 */
+  touch-action:none; cursor:grab;
+  transition:left .18s ease, top .18s ease;
 }
 .helper-toggle.on { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+/* 跟著手指走的時候不能有 transition，不然會黏在後面慢慢追 */
+.helper-toggle.dragging { cursor:grabbing; transition:none; z-index:26; box-shadow:0 6px 18px #0005; }
+@media(prefers-reduced-motion:reduce){ .helper-toggle { transition:none; } }
 .helper {
   position:fixed; z-index:24;
   right:max(12px, var(--safe-right)); left:max(12px, var(--safe-left));
   bottom:calc(74px + var(--safe-bottom));
   max-width:520px; margin-inline:auto;
   box-shadow:0 6px 24px #0004;
+  /* 按鈕被拖到中間時視窗高度會被 panelStyle 收窄，由對話記錄讓出空間 */
+  overflow:hidden;
 }
-.helper .log { max-height:40vh; overflow-y:auto; gap:.5rem; }
+.helper .log { flex:1 1 auto; min-height:0; max-height:40vh; overflow-y:auto; gap:.5rem; }
 /* 換行已經由 markdown 轉成 <br>，不要再加 pre-wrap，不然會變兩倍行距 */
 .helper .msg { margin:0; padding:.5rem .7rem; border-radius:12px; line-height:1.6; }
 .helper .msg :deep(.li) { display:block; padding-left:.3rem; }
