@@ -3,7 +3,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {DatabaseSync} from 'node:sqlite';
 import {beforeAll,beforeEach,afterAll,it,expect,vi} from 'vitest';
-import {estimateEnergy} from '../shared/exercise-energy.js';
+import {estimateEnergy,ACTIVITY_GROUPS,CARDIO_METS} from '../shared/exercise-energy.js';
 import {workoutEnergy} from '../server/src/workout-energy.js';
 import {workoutVolume,workoutLabel,workoutEnergyLabel} from '../web/src/workout-metrics.js';
 let records,db,pet;
@@ -68,4 +68,22 @@ it('legacy schema migration adds an average estimate without changing original s
 it('changing cardio activity replaces the old MET with the new activity average',()=>{
  const row=records.addWorkout('eli',{date:'2026-10-15',exercise:'快走',category:'cardio',duration_min:20});
  const updated=records.updateWorkout('eli',row.id,{exercise:'跑步'});expect(updated.calorie_meta.met).toBe(7.5);expect(updated.calories_kcal).toBe(202.1);
+});
+
+it('球類依時間估算熱量，而且選單與 MET 表不會對不起來',()=>{
+ // 籃球 7.5 MET、77 kg、60 分鐘 → 7.5*3.5*77/200*60
+ const row=records.addWorkout('eli',{date:'2026-10-15',exercise:'籃球',category:'cardio',
+  set_details:[{weight_kg:0,reps:0,duration_s:3600}],requestId:'energy-ball-000000001'});
+ expect(row.calories_kcal).toBe(estimateEnergy(7.5,77,60));
+ expect(row.calorie_meta.met).toBe(7.5);
+ expect(row.calorie_meta.source).toBe('estimated');
+
+ // 時間減半，熱量就減半——球類是純粹按時間算的
+ const half=records.addWorkout('eli',{date:'2026-10-15',exercise:'籃球',category:'cardio',
+  set_details:[{weight_kg:0,reps:0,duration_s:1800}],requestId:'energy-ball-000000002'});
+ expect(half.calories_kcal).toBe(Math.round(row.calories_kcal/2*10)/10);
+
+ // 選單列出來的每一項都要查得到 MET，否則會靜靜地退回預設值 4
+ for(const g of ACTIVITY_GROUPS) for(const name of g.items) expect(CARDIO_METS[name]?.met).toBeGreaterThan(0);
+ expect(ACTIVITY_GROUPS.find(g=>g.name==='球類').items).toContain('匹克球');
 });

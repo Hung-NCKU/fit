@@ -5,7 +5,11 @@ import {api,todayStr} from '../api.js';
 import {session} from '../auth.js';
 import {confirmAction} from '../confirm.js';
 const emit=defineEmits(['saved']);
-const activities=['快走','跑步','騎腳踏車','室內飛輪','橢圓機','跳繩','游泳','登階／樓梯'];
+// 選項直接從 MET 表長出來。手寫一份清單的話，加新活動要改兩個地方，
+// 而且漏改就會變成「選得到但估不出熱量」（找不到 MET 就退回預設值 4）。
+import {ACTIVITY_GROUPS,CARDIO_METS} from '../../../shared/exercise-energy.js';
+const groups=ACTIVITY_GROUPS.filter(g=>g.items.length);
+const hintOf=name=>CARDIO_METS[name]?.label || '';
 const empty=()=>({exercise:'快走',date:todayStr(),minutes:30,rpe:'',note:'',reported:''});
 const form=ref(empty()),editingId=ref(null),requestId=ref(crypto.randomUUID());
 const pending=ref(null),saving=ref(false),error=ref(''),success=ref(''),root=ref(null);
@@ -49,11 +53,15 @@ async function save() {
 </script>
 <template>
   <section ref="root" class="card stack cardio-recorder" aria-labelledby="cardio-title">
-    <div><span class="small muted">依活動種類與總時間，估算消耗熱量</span><h2 id="cardio-title">{{ editingId ? '編輯有氧紀錄' : '今天做了哪些有氧？' }}</h2><p class="small muted">選擇活動，填入實際完成的總時間；其他活動也能直接輸入名稱。當天累積 15 分鐘可得 +{{ coins.cardio }} 代幣，同日限一次。</p></div>
+    <div><span class="small muted">依活動種類與總時間，估算消耗熱量</span><h2 id="cardio-title">{{ editingId ? '編輯有氧紀錄' : '今天做了哪些有氧或球類？' }}</h2><p class="small muted">選擇活動，填入實際完成的總時間——球類一樣是用時間估算。其他活動也能直接輸入名稱。當天累積 15 分鐘可得 +{{ coins.cardio }} 代幣，同日限一次。</p></div>
     <p v-if="success" class="cardio-success" role="status">✓ {{ success }}</p>
     <form class="stack" @submit.prevent="save">
       <fieldset class="stack" :disabled="saving || !!pending">
-        <div class="activity-options"><button v-for="activity in activities" :key="activity" type="button" :class="{selected:form.exercise===activity}" :aria-pressed="form.exercise===activity" @click="form.exercise=activity">{{ activity }}</button></div>
+        <div v-for="g in groups" :key="g.name" class="activity-group">
+          <span class="small muted">{{ g.name }}</span>
+          <div class="activity-options"><button v-for="activity in g.items" :key="activity" type="button" :title="hintOf(activity)" :class="{selected:form.exercise===activity}" :aria-pressed="form.exercise===activity" @click="form.exercise=activity">{{ activity }}</button></div>
+        </div>
+        <p v-if="hintOf(form.exercise)" class="small muted" style="margin:0">{{ form.exercise }}：{{ hintOf(form.exercise) }}</p>
         <label>活動名稱<input v-model="form.exercise" required maxlength="120" placeholder="例如：跑步、健走、划船機" /></label>
         <div class="cardio-fields"><label>日期<input v-model="form.date" type="date" required /></label><label>時間（分鐘）<input v-model="form.minutes" type="number" min="0.5" max="1440" step="0.5" inputmode="decimal" required /></label></div>
         <label>手錶／器材熱量（kcal，選填）<input v-model="form.reported" type="number" min="0" max="20000" placeholder="留空自動用平均強度估算" /></label>
@@ -67,5 +75,5 @@ async function save() {
   </section>
 </template>
 <style scoped>
-.cardio-recorder {scroll-margin-top:1rem;}.cardio-recorder h2 {font-size:1.2rem;margin:.25rem 0;}.cardio-recorder p {line-height:1.6;margin:.2rem 0;}.cardio-recorder fieldset {border:0;padding:0;margin:0;min-width:0;}.activity-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;}.activity-options button {min-height:44px;}.activity-options .selected {background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:650;}.cardio-fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;}.cardio-fields input {min-width:0;width:100%;}.cardio-success {padding:.7rem;background:var(--accent-soft);color:var(--accent);border-radius:10px;}@media(max-width:360px){.cardio-fields {grid-template-columns:1fr;}}
+.cardio-recorder {scroll-margin-top:1rem;}.cardio-recorder h2 {font-size:1.2rem;margin:.25rem 0;}.cardio-recorder p {line-height:1.6;margin:.2rem 0;}.cardio-recorder fieldset {border:0;padding:0;margin:0;min-width:0;}.activity-group {display:grid;gap:.3rem;}.activity-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;}.activity-options button {min-height:44px;}.activity-options .selected {background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:650;}.cardio-fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem;}.cardio-fields input {min-width:0;width:100%;}.cardio-success {padding:.7rem;background:var(--accent-soft);color:var(--accent);border-radius:10px;}@media(max-width:360px){.cardio-fields {grid-template-columns:1fr;}}
 </style>
