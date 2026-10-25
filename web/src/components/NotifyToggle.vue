@@ -123,7 +123,7 @@ onMounted(refresh);
 <template>
   <button v-if="cfg.enabled" class="icon bell" :class="{ on }" :title="on ? '定時提醒：開啟' : '定時提醒：關閉'"
           @click="show = !show">
-    {{ on ? '🔔' : '🔕' }}
+    <span aria-hidden="true">{{ on ? '🔔' : '🔕' }}</span> 通知提醒
   </button>
 
   <div v-if="show" class="sheet">

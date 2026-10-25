@@ -400,16 +400,16 @@ function confirmRename() {
         <span v-if="busy === 'arrange'" class="small muted room-saving" role="status">正在保存布置…</span>
       </div>
       <div v-if="tab === 'home'" class="card scene-details">
-        <div class="row wrap family">
+        <div v-if="roster.length > 1" class="row wrap family">
           <button v-for="member in roster" :key="member.petKey" :class="{ on: member.petKey === pet.petKey }"
             :disabled="!mine || busy" @click="choosePet(member.petKey)">{{ member.name }} · {{ member.speciesName }}</button>
         </div>
-        <p class="small muted">共 {{ roster.length }} 隻寵物，共用代幣與環境；目前替「{{ pet.name }}」挑選穿搭。{{ mine ? '點住寵物可拎起拖移，放開後保存位置。' : '' }}</p>
-        <p class="says">{{ reminder || state.says }}</p>
+        <details class="room-help"><summary>小屋操作說明</summary><p class="small muted">共 {{ roster.length }} 隻寵物，共用代幣與環境；目前替「{{ pet.name }}」挑選穿搭。{{ mine ? '點住寵物可拎起拖移，放開後保存位置。' : '' }}</p></details>
+        <p v-if="!reminder" class="says">{{ state.says }}</p>
 
         <div v-if="data.care && tab==='home'" class="pet-care stack">
           <label>今日心情 <b>{{ data.care.mood }} / 100</b><progress :value="data.care.mood" max="100" aria-label="今日心情"></progress></label>
-          <label>今日飽足度（越高越不餓） <b>{{ data.care.fullness }} / 100</b><progress :value="data.care.fullness" max="100" aria-label="今日飽足度"></progress></label>
+          <label>今日飽足度 <b>{{ data.care.fullness }} / 100</b><progress :value="data.care.fullness" max="100" aria-label="今日飽足度"></progress></label>
           <ExpandableNote label="心情與飽足度說明" preview="運動就是陪寵物玩耍；記錄飲食能提高飽足度，達到每日熱量目標就會全滿。"><p>當主人運動時，就像陪寵物一起玩耍，能讓牠的心情更好；記錄每天吃下的食物，則會提高寵物的飽足度，達到每日熱量目標時，飽足度就會全滿。平常也可以點一下寵物陪牠玩，依台灣時間的早餐（05:00–11:00）、午餐（11:00–17:00）、晚餐（17:00–隔日 05:00）各獲得一次加成，分別增加 3、3、4 點心情，每個陪玩日合計最多 10 點，早上 05:00 換日。陪玩額度用完後，仍然可以繼續互動；想再提高心情，就要透過運動累積加成。飲食只影響飽足度，不會額外增加心情。</p></ExpandableNote>
           <p class="small">今日陪玩 +{{ data.care.interactionMood }} / {{ data.care.interactionMoodLimit }} · 運動 +{{ data.care.exerciseMood }} / {{ data.care.exerciseMoodLimit }}</p>
           <p v-if="data.care.interactionMood >= data.care.interactionMoodLimit" class="small">陪玩加成已滿；可以繼續互動，想提高心情就去記錄運動。</p>

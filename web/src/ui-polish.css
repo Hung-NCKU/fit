@@ -1,0 +1,117 @@
+/* Calm UI: shared visual hierarchy without changing room coordinates or data rules. */
+html:root{--bg:#f6f5ef;--surface:#fffefa;--surface-2:#f0eee5;--border:#e3e1d6;--text:#302f27;--muted:#6d6d60;--accent:#526747;--accent-dim:#aebda4;--accent-soft:#eaf0e5;--amber-soft:#f8ebca;--amber-ink:#79591f;--radius:20px;--shadow-popover:0 12px 36px #353c2420}
+html body{background:#eeeee7;line-height:1.65}
+.shell[data-ui]{background:var(--bg);border-color:var(--border)}
+.shell[data-ui] h1,.shell[data-ui] h2{letter-spacing:-.025em;font-weight:750}
+.shell[data-ui] h2{font-size:1.3rem}
+.shell[data-ui] h3{font-weight:680}
+.shell[data-ui] button{background:var(--surface);border-color:var(--border);border-radius:12px;min-height:40px;box-shadow:none;transition:background .15s,border-color .15s,color .15s}
+.shell[data-ui] button:hover:not(:disabled){background:var(--accent-soft);border-color:var(--accent-dim)}
+.shell[data-ui] button.primary{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:none;min-height:44px}
+.shell[data-ui] button.primary:hover:not(:disabled){background:#405438}
+.shell[data-ui] button.icon{background:transparent;border-color:transparent;min-width:36px;padding:.4rem .5rem}
+.shell[data-ui] button.icon:hover:not(:disabled){background:var(--surface-2);color:var(--text)}
+.shell[data-ui] input,.shell[data-ui] select,.shell[data-ui] textarea{background:#fffefa;border-color:var(--border);min-height:42px;border-radius:11px}
+.shell[data-ui] input::placeholder,.shell[data-ui] textarea::placeholder{color:#79796d}
+.shell[data-ui] .card{border:1px solid #e6e5dc;box-shadow:none;background:var(--surface);padding:1.05rem 1.15rem}
+.shell[data-ui] .stack{gap:1rem}
+.shell[data-ui] .card .card{border-radius:14px;background:var(--bg)}
+.shell[data-ui] .badge{border:0;background:var(--surface-2);padding:.2rem .55rem}
+.shell[data-ui] .badge.soft,.shell[data-ui] .badge.ai{background:var(--accent-soft);color:var(--accent)}
+.shell[data-ui] .topbar{position:relative;top:auto;left:auto;transform:none;width:100%;padding:calc(.6rem + var(--safe-top)) calc(1.1rem + var(--safe-right)) .6rem calc(1.1rem + var(--safe-left));min-height:64px;background:var(--surface);border-bottom:1px solid var(--border);z-index:30;flex-wrap:nowrap}
+.shell[data-ui] .brand-icon{width:34px;height:34px;border-radius:11px}
+.shell[data-ui] .brand-copy{gap:.2rem}
+.shell[data-ui] .brand-copy b{font-size:.9rem}
+.shell[data-ui] .brand-subtitle{font-size:.7rem}
+.shell[data-ui] .account-settings{margin-left:auto;position:static;flex:none}
+.shell[data-ui] .settings-trigger{display:flex;align-items:center;gap:.45rem;padding:.3rem .65rem;border:0;background:var(--accent-soft);color:var(--accent);font-size:.8rem;max-width:160px}
+.shell[data-ui] .settings-trigger svg{width:19px;height:19px}
+.shell[data-ui] .settings-trigger>span:not(.settings-chevron){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shell[data-ui] .settings-chevron{font-size:1rem}
+.shell[data-ui] .settings-popover{position:absolute;top:calc(100% + 8px);right:12px;display:flex;flex-direction:column;align-items:stretch;gap:4px;width:min(270px,calc(100vw - 24px));padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-popover);margin:0;z-index:40;max-height:calc(var(--app-height,100dvh) - 100px);overflow:auto}
+.shell[data-ui] .settings-caption{font-size:.72rem;color:var(--muted);padding:4px 8px 8px;border-bottom:1px solid var(--border);margin-bottom:4px}
+.shell[data-ui] .settings-popover>button{text-align:left;width:100%;min-height:44px;border-radius:10px;font-size:.85rem;padding:.6rem .7rem;color:var(--text)}
+.shell[data-ui] .settings-popover .sheet{position:fixed;max-height:calc(var(--app-height,100dvh) - 110px);overflow:auto}
+.shell[data-ui] .settings-popover .sheet:not(:has(.panel)){top:calc(var(--safe-top) + 72px);right:max(12px,calc((100vw - 820px)/2 + 12px));}
+.shell[data-ui] .content{padding:1.15rem calc(1.15rem + var(--safe-right)) 1.5rem calc(1.15rem + var(--safe-left));scroll-padding-top:12px;scrollbar-width:thin}
+.shell[data-ui] .tabbar{position:relative;inset:auto;left:auto;bottom:auto;transform:none;width:100%;z-index:20;background:var(--surface);border-top:1px solid var(--border);padding:6px var(--safe-right) max(6px,var(--safe-bottom)) var(--safe-left);gap:2px}
+.shell[data-ui] .tab{min-height:54px;padding:4px 0;gap:3px;font-size:.68rem;font-weight:550;border-radius:14px;touch-action:manipulation}
+.shell[data-ui] .ico{padding:4px 12px;border-radius:12px;font-size:1rem;transition:background .15s,color .15s}
+.shell[data-ui] .ico svg{width:21px;height:21px}
+.shell[data-ui] .tab.router-link-exact-active{color:var(--accent);font-weight:750}
+.shell[data-ui] .tab.router-link-exact-active .ico{background:var(--accent-soft)}
+.shell[data-ui] .user-tabs{gap:4px;max-width:100%;flex-wrap:wrap;margin:0;}
+.shell[data-ui] .user-tabs button{background:transparent;border:1px solid transparent;min-height:36px;padding:.3rem .8rem;font-size:.8rem}
+.shell[data-ui] .user-tabs button.on{background:var(--accent-soft);border-color:transparent;color:var(--accent);font-weight:650}
+.shell[data-ui] .scene-card{padding:.8rem 1rem;border:0;background:transparent}
+.shell[data-ui] .scene-heading{margin:0!important}
+.shell[data-ui] .scene-dock{padding:0;border-radius:20px;box-shadow:0 5px 18px #403a2010}
+.shell[data-ui] .scene-dock .scene{border-radius:0}
+.shell[data-ui] .scene-tabs{padding:6px;gap:4px}
+.shell[data-ui] .scene-tabs button{min-height:40px;border:0;background:transparent}
+.shell[data-ui] .scene-tabs button.on{background:var(--accent-soft);font-weight:650}
+.shell[data-ui] .family{gap:6px;margin-bottom:12px}
+.shell[data-ui] .family button{font-size:.8rem;min-height:36px;border-radius:999px;padding:.3rem .8rem}
+.shell[data-ui] .family button.on{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.shell[data-ui] .room-help{font-size:.78rem;color:var(--muted);margin-bottom:16px}
+.shell[data-ui] .room-help summary{padding:4px 0}
+.shell[data-ui] .pet-care{display:grid;grid-template-columns:1fr 1fr;padding:0;background:transparent;gap:12px}
+.shell[data-ui] .pet-care>label{font-size:.78rem;margin:0;display:flex;flex-direction:column;align-items:flex-start;background:var(--bg);padding:12px;border-radius:14px;gap:6px}
+.shell[data-ui] .pet-care>label b{font-size:1.05rem;color:var(--text);font-variant-numeric:tabular-nums}
+.shell[data-ui] .pet-care progress{height:6px;appearance:none;border:0;border-radius:99px;background:var(--border);overflow:hidden}
+.shell[data-ui] .pet-care progress::-webkit-progress-bar{background:var(--border);border-radius:99px}
+.shell[data-ui] .pet-care progress::-webkit-progress-value{background:var(--accent);border-radius:99px}
+.shell[data-ui] .pet-care progress::-moz-progress-bar{background:var(--accent);border-radius:99px}
+.shell[data-ui] .pet-care>p,.shell[data-ui] .pet-care>button,.shell[data-ui] .pet-care>details{grid-column:1/-1;margin:0}
+.shell[data-ui] .pet-care>button{background:var(--accent-soft);border-color:transparent;color:var(--accent);font-weight:650;min-height:44px}
+.shell[data-ui] .pet-care .expandable-note:not([open]) .note-preview{display:none}
+.shell[data-ui] .pet-care .expandable-note:not([open]) .note-heading{display:block;font-weight:400;color:var(--muted)}
+.shell[data-ui] .pet-care .expandable-note .note-heading{flex:1}
+.shell[data-ui] .stats{margin-top:16px;padding-top:14px;border-top:1px solid var(--border);gap:12px;font-size:.75rem}
+.shell[data-ui] .item{background:var(--bg);border:1px solid transparent;border-radius:16px;padding:.8rem .5rem}
+.shell[data-ui] .item.on{border-color:var(--accent);background:var(--accent-soft)}
+.shell[data-ui] .shop-filters .row>label{flex:1 1 110px;min-width:0}
+.shell[data-ui] .today-actions{background:var(--accent-soft);border-color:transparent}
+.shell[data-ui] .today-actions .quick-link{min-height:40px;display:inline-flex;align-items:center;background:var(--surface);border:0;border-radius:11px;padding:.4rem .7rem;font-size:.8rem}
+.shell[data-ui] .day.on{background:var(--accent);color:#fff}
+.shell[data-ui] .macro{padding:1rem .4rem;text-align:center;border:0;background:var(--surface)}
+.shell[data-ui] .big-num{font-weight:750;letter-spacing:-.045em}
+.shell[data-ui] .training-modes{padding:4px;background:var(--surface-2);border-radius:15px;gap:4px}
+.shell[data-ui] .training-modes button{border:0;background:transparent;min-height:42px}
+.shell[data-ui] .training-modes button.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 4px #302f2710;font-weight:700}
+.shell[data-ui] .workout-log{padding:14px 0}
+.shell[data-ui] .workout-log+.workout-log{border-top:1px solid var(--border)}
+.shell[data-ui] .quick-link{color:var(--accent)}
+.shell[data-ui] .chat .question-bookmarks{background:var(--surface);border-color:var(--border);padding:.6rem .85rem;margin-bottom:.5rem;border-radius:14px}
+.shell[data-ui] .chat .coach-plan-card{background:var(--accent-soft);padding:.65rem .85rem;margin-bottom:.7rem;border-radius:14px}
+.shell[data-ui] .chat .question-bookmarks summary,.shell[data-ui] .chat .coach-plan-card summary{font-size:.78rem;font-weight:600;line-height:1.6}
+.shell[data-ui] .chat .messages{gap:16px;padding:6px 2px 16px}
+.shell[data-ui] .chat .bubble{border:1px solid var(--border);border-radius:18px;padding:14px 16px;background:var(--surface);line-height:1.8;font-size:.9rem}
+.shell[data-ui] .chat .msg.user .bubble{background:var(--accent);border-color:var(--accent);color:#fff;border-bottom-right-radius:5px}
+.shell[data-ui] .chat .msg.assistant .bubble{border-bottom-left-radius:5px}
+.shell[data-ui] .chat .composer{padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:18px;gap:6px;align-items:flex-end}
+.shell[data-ui] .composer textarea{border:0;box-shadow:none;background:transparent;min-height:42px;padding:10px 4px}
+.shell[data-ui] .composer .attach{border:0;background:var(--bg)}
+.shell[data-ui] .composer .send{min-height:42px;padding:.5rem .8rem;border-radius:12px}
+.shell[data-ui] th,.shell[data-ui] td{border-color:var(--border);padding:.7rem .4rem}
+html.app-keyboard .shell[data-ui] .tabbar,html.app-keyboard .shell[data-ui] .topbar{display:none}
+@media(max-width:520px){.shell[data-ui] .content{padding:14px calc(14px + var(--safe-right)) 20px calc(14px + var(--safe-left))}.shell[data-ui] .card{padding:16px}.shell[data-ui] .scene-dock{padding:0}.shell[data-ui] .scene-card{padding:2px 4px}.shell[data-ui] .topbar{padding-left:calc(16px + var(--safe-left));padding-right:calc(16px + var(--safe-right))}.shell[data-ui] .scene-details{padding:16px}.shell[data-ui] .chat .bubble{padding:12px 14px}.shell[data-ui] .content.chat-content{padding-bottom:10px}.shell[data-ui] .stats{gap:10px}}
+@media(min-width:821px){.shell[data-ui]{box-shadow:0 0 70px #353c240a}.shell[data-ui] .content{padding:24px 28px}.shell[data-ui] .topbar{padding-left:28px;padding-right:28px}.shell[data-ui] .tabbar{padding-inline:32px}.shell[data-ui] .card{padding:22px}.shell[data-ui] .scene-dock{padding:0}.shell[data-ui] .scene-card{padding:0 4px}.shell[data-ui] .scene-details .pet-care{gap:16px}.shell[data-ui] .pet-care>label{padding:16px}}
+@media(prefers-reduced-motion:reduce){.shell[data-ui] button,.shell[data-ui] .ico{transition:none}}
+/* Transparent interactive artwork must never inherit control surfaces. */
+.shell[data-ui] button.actor,.shell[data-ui] button.room-object,.shell[data-ui] button.actor:hover:not(:disabled),.shell[data-ui] button.room-object:hover:not(:disabled){background:transparent;border:0;box-shadow:none;padding:0;min-height:0;transition:none}
+.shell[data-ui] button.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-dim)}
+.shell[data-ui] .day,.shell[data-ui] .day.on{background:transparent;border:0;color:var(--text);min-height:0}
+.shell[data-ui] .day.on .dd{background:var(--accent);color:#fff}
+.shell[data-ui] input[type=checkbox],.shell[data-ui] input[type=radio]{min-height:0;padding:0}
+.shell[data-ui] .thumb-btn,.shell[data-ui] .thumb-btn:hover:not(:disabled){padding:0;min-height:0;background:transparent;border:0}
+@media(max-width:520px){.shell[data-ui] [data-page='/meals'] table{font-size:.78rem}.shell[data-ui] [data-page='/meals'] th,.shell[data-ui] [data-page='/meals'] td{padding:.6rem .25rem}.shell[data-ui] [data-page='/meals'] .thumb{width:36px;height:36px}}
+/* Exercise choices are content rows, not compact toolbar buttons. */
+.shell[data-ui] .exercise-list>*{flex-shrink:0}
+.shell[data-ui] button.exercise-choice{display:flex;align-items:center;flex:0 0 auto;min-height:88px;height:auto;padding:12px;gap:12px;text-align:left}
+.shell[data-ui] .exercise-choice>span:nth-child(2){display:block;flex:1;min-width:0;white-space:normal;overflow-wrap:anywhere}
+.shell[data-ui] .exercise-choice b{display:block;font-size:.9rem;line-height:1.5}
+.shell[data-ui] .exercise-choice small{display:block;font-size:.72rem;line-height:1.5;margin-top:3px}
+.shell[data-ui] .exercise-choice.chosen{border-color:var(--accent);background:var(--accent-soft)}
+.shell[data-ui] .exercise-symbol{flex:0 0 34px;width:34px;height:34px}
+.shell[data-ui] .focus-options button.active{background:var(--accent);border-color:var(--accent);color:#fff}

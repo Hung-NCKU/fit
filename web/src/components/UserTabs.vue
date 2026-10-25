@@ -16,11 +16,11 @@ const viewingOther = computed(() => model.value !== session.user);
 </script>
 
 <template>
-  <div v-if="show" class="tabs">
+  <div v-if="show" class="tabs user-tabs" role="group" aria-label="查看使用者">
     <button
       v-for="u in session.users"
       :key="u.id"
-      :class="{ on: model === u.id }"
+      :class="{ on: model === u.id }" :aria-pressed="model === u.id"
       @click="model !== u.id && clearPageCache(); model = u.id"
     >
       {{ u.name }}<span v-if="u.id === session.user" class="me">（我）</span>

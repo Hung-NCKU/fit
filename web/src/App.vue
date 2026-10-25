@@ -1,10 +1,12 @@
 <script setup>
 import { RouterLink, RouterView, useRoute } from 'vue-router';
 import {clearPageCache} from './page-cache.js';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, nextTick, ref, watch } from 'vue';
 import { api } from './api.js';
 import { session } from './auth.js';
 import LoginView from './views/LoginView.vue';
+import NavIcon from './components/NavIcon.vue';
+import './ui-polish.css';
 import PhotoViewer from './components/PhotoViewer.vue';
 import NotifyToggle from './components/NotifyToggle.vue';
 import DeleteAccount from './components/DeleteAccount.vue';
@@ -35,6 +37,7 @@ const showHint = ref(false);
 const canShowInstall = computed(() => !standalone.value);
 
 async function install() {
+  settingsOpen.value=false;
   const p = installPrompt.value;
   if (!p) { showHint.value = true; return; }   // 沒有原生提示就給手動步驟
   installPrompt.value = null;
@@ -53,30 +56,24 @@ const tabs = [
 
 const title = computed(() => tabs.find(t => t.to === route.path)?.label ?? '健身養寵');
 const locked = computed(() => session.authRequired && !session.authed);
-const chromeVisible=ref(false),headerEl=ref(null),navEl=ref(null);
-const navHeight=ref(72);
-let chromeTimer;
-function hideChrome(){
-  if(headerEl.value?.querySelector('.sheet')){chromeTimer=setTimeout(hideChrome,8000);return;}
-  chromeVisible.value=false;
+const settingsOpen=ref(false),settingsEl=ref(null),settingsButton=ref(null),contentEl=ref(null);
+const scrollPositions=new Map();
+function closeSettings(event){
+  if(!settingsOpen.value)return;
+  if(event.type==='keydown') {
+    if(event.key!=='Escape' || settingsEl.value?.querySelector('.sheet'))return;
+    settingsOpen.value=false;settingsButton.value?.focus();return;
+  }
+  if(!settingsEl.value?.contains(event.target))settingsOpen.value=false;
 }
-function showChrome(){
-  if(!session.ready || locked.value)return;
-  chromeVisible.value=true;clearTimeout(chromeTimer);chromeTimer=setTimeout(hideChrome,8000);
-}
-function toggleChrome(){
-  if(chromeVisible.value && !headerEl.value?.querySelector('.sheet')){clearTimeout(chromeTimer);chromeVisible.value=false;}
-  else showChrome();
-}
-function keepChrome(event){
-  if(chromeVisible.value && event.target?.closest?.('.topbar,.tabbar'))showChrome();
-}
-const barObserver=new ResizeObserver(entries=>{
-  for(const entry of entries){if(entry.target===navEl.value)navHeight.value=entry.target.getBoundingClientRect().height;}
+watch(()=>route.fullPath,async(to,from)=>{
+  if(from && contentEl.value)scrollPositions.set(from,contentEl.value.scrollTop);
+  settingsOpen.value=false;
+  await nextTick();if(contentEl.value)contentEl.value.scrollTop=scrollPositions.get(to)||0;
 });
-watch([headerEl,navEl],([header,nav])=>{barObserver.disconnect();if(header)barObserver.observe(header);if(nav)barObserver.observe(nav);});
-onMounted(()=>{document.addEventListener('click',keepChrome,true);document.addEventListener('keydown',keepChrome,true);});
-onUnmounted(()=>{clearTimeout(chromeTimer);barObserver.disconnect();document.removeEventListener('click',keepChrome,true);document.removeEventListener('keydown',keepChrome,true);});
+watch(()=>session.user,()=>{scrollPositions.clear();settingsOpen.value=false;if(contentEl.value)contentEl.value.scrollTop=0;});
+onMounted(()=>{document.addEventListener('pointerdown',closeSettings);document.addEventListener('keydown',closeSettings);});
+onUnmounted(()=>{document.removeEventListener('pointerdown',closeSettings);document.removeEventListener('keydown',closeSettings);});
 
 async function logout() {
   try {
@@ -116,7 +113,7 @@ onMounted(async () => {
 <template>
   <ConfirmDialog />
   <UpdateNotice />
-  <div class="shell" :inert="!!updateState.version" :class="{ 'chrome-auto': session.ready && !locked, 'chrome-hidden': !chromeVisible }">
+  <div data-ui="calm" class="shell" :inert="!!updateState.version">
     <div v-if="!session.ready" class="boot muted small">載入中…</div>
 
     <template v-else>
@@ -127,14 +124,18 @@ onMounted(async () => {
         <button v-if="canShowInstall" class="icon install" @click="install">📲 安裝</button>
       </header>
 
-      <header v-else id="app-topbar" ref="headerEl" class="topbar" :inert="!chromeVisible" :aria-hidden="!chromeVisible">
+      <header v-else id="app-topbar" class="topbar">
         <span class="logo"><img class="brand-icon" src="/icon-192.png?v=fitness-puppy-v1" alt="" /><span class="brand-copy"><b>健身養寵</b><span class="brand-subtitle">{{ title }}<template v-if="session.name"> · {{ session.name }}</template></span></span></span>
-        <div class="header-tools">
-        <DeleteAccount v-if="session.authed" />
-        <NewAccount v-if="session.authed" />
+        <NewAccount v-if="session.authed && session.trial" />
+        <div ref="settingsEl" class="account-settings">
+          <button ref="settingsButton" class="settings-trigger" :aria-expanded="settingsOpen" aria-controls="account-options" aria-label="帳號與設定" @click="settingsOpen=!settingsOpen"><NavIcon name="settings" /><span>{{ session.name || '設定' }}</span><span aria-hidden="true" class="settings-chevron">⌄</span></button>
+          <div v-if="settingsOpen" id="account-options" class="header-tools settings-popover" role="region" aria-label="帳號與設定"><span class="settings-caption">帳號與設定</span>
+        <NewAccount v-if="session.authed && !session.trial" />
         <NotifyToggle />
         <button v-if="canShowInstall" class="icon install" @click="install">📲 安裝</button>
         <button v-if="session.authRequired" class="icon logout" @click="logout">登出</button>
+        <DeleteAccount v-if="session.authed" />
+          </div>
         </div>
       </header>
 
@@ -156,16 +157,15 @@ onMounted(async () => {
       <LoginView v-if="locked" />
 
       <template v-else>
-        <button class="chrome-handle chrome-handle-bottom" :style="{bottom:chromeVisible ? (navHeight+8)+'px' : 'max(8px, min(var(--safe-bottom), 12px))'}" :aria-expanded="chromeVisible" :aria-label="chromeVisible ? '收起功能列' : '展開功能列'" aria-controls="app-topbar app-tabbar" @click="toggleChrome"><span aria-hidden="true">功能</span></button>
-        <main class="content" :class="{ 'chat-content': route.path === '/chat' }">
+        <main ref="contentEl" class="content" :data-page="route.path" :class="{ 'chat-content': route.path === '/chat' }">
           <RouterView v-slot="{ Component }">
             <component :is="Component" />
           </RouterView>
         </main>
 
-        <nav id="app-tabbar" ref="navEl" class="tabbar" :inert="!chromeVisible" :aria-hidden="!chromeVisible" aria-label="頁面切換">
+        <nav id="app-tabbar" class="tabbar" aria-label="頁面切換">
           <RouterLink v-for="t in tabs" :key="t.to" :to="t.to" class="tab">
-            <span class="ico">{{ t.icon }}</span>
+            <span class="ico"><NavIcon :name="t.to" /></span>
             <span class="lbl">{{ t.label }}</span>
           </RouterLink>
         </nav>
@@ -187,24 +187,6 @@ onMounted(async () => {
   border-right: 1px solid var(--border);
 }
 
-.chrome-auto .topbar {
-  position:fixed;top:0;left:max(0px, calc((100% - 820px) / 2));width:min(100%,820px);z-index:30;
-}
-.chrome-auto .tabbar {
-  position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,820px);z-index:30;
-}
-.chrome-auto .topbar,.chrome-auto .tabbar { transition:opacity .18s ease,visibility .18s; }
-.chrome-auto.chrome-hidden .topbar,.chrome-auto.chrome-hidden .tabbar { opacity:0;visibility:hidden;pointer-events:none; }
-/* 安全區域用 padding 讓，不要用 margin。
-   margin 會把捲動區「框」在中間，上下各剩一條只有底色的空白帶（iPhone 上約 50px）；
-   padding 則讓捲動區佔滿整個視窗，內容會一路穿過瀏海與 home indicator，
-   第一張卡片一樣不會被狀態列壓到。 */
-.chrome-auto .content { padding-top:calc(1rem + var(--safe-top));padding-bottom:calc(1rem + 44px + clamp(6px, var(--safe-bottom), 12px)); }
-@media(prefers-reduced-motion:reduce){.chrome-auto .topbar,.chrome-auto .tabbar{transition:none;}}
-.chrome-handle {position:fixed;left:max(calc(8px + var(--safe-left)), calc((100% - 820px) / 2 + 8px));z-index:40;width:44px;height:44px;padding:0;border-radius:50%;font-size:.75rem;font-weight:650;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-popover);touch-action:manipulation;}
-
-:global(.shell:has(.topbar .sheet) .chrome-handle) {visibility:hidden;}
-:global(html.app-keyboard .chrome-handle-bottom) {display:none;}
 .boot { display: grid; place-items: center; height: 100%; padding-top: var(--safe-top); }
 
 .topbar {
