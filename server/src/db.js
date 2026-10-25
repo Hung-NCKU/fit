@@ -153,6 +153,15 @@ CREATE TABLE IF NOT EXISTS pet_items (
   item_id     TEXT PRIMARY KEY,
   acquired_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
+-- 一週晚餐規劃（搬自「好好煮 Chef」）。
+-- 整份設定跟菜單是一個 JSON：欄位會跟著功能變，而這裡不需要查詢單一欄位，
+-- 拆成關聯式的表只是增加 migration 的麻煩。
+CREATE TABLE IF NOT EXISTS meal_plan (
+  id         INTEGER PRIMARY KEY CHECK (id = 1),
+  settings   TEXT NOT NULL DEFAULT '{}',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
 CREATE TABLE IF NOT EXISTS pet_room_decor (
   scene TEXT NOT NULL,
   item_id TEXT NOT NULL REFERENCES pet_items(item_id),

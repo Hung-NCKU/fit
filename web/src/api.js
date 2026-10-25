@@ -106,6 +106,13 @@ export const api = {
   models: () => request('/models'),
 
   pet: (user) => request('/pet' + qs({ user })),
+
+  // 一週晚餐規劃。每個寫入都回傳整份最新狀態，前端不必自己合併
+  mealPlan: (user) => request('/meal-plan' + qs({ user })),
+  updateMealPlan: (body) => request('/meal-plan', { method: 'PATCH', body }),
+  generateMealPlan: () => request('/meal-plan/generate', { method: 'POST' }),
+  swapMealPlanDay: (day) => request('/meal-plan/swap', { method: 'POST', body: { day } }),
+  cookRecipe: (recipeId) => request('/meal-plan/cook', { method: 'POST', body: { recipeId } }),
   arrangeDecor: (item, position, expected) => request('/pet/room', { method:'PATCH', body:{ item, position, expected } }),
   restoreRoom: (items, expected) => request('/pet/room', { method:'PUT', body:{ items, expected } }),
   movePet: (petKey, position) => request('/pet/position', { method:'PATCH', body:{ petKey, position } }),
@@ -118,6 +125,8 @@ export const api = {
   selectPet: (petKey) => request('/pet/select', { method: 'POST', body: { petKey } }),
   renamePet: (petKey, name) => request('/pet/name', { method: 'PATCH', body: { petKey, name } }),
   buyItem: (item, petKey) => request('/pet/buy', { method: 'POST', body: { item, petKey } }),
+  // 賣回商店，退半價
+  sellItem: (item) => request('/pet/sell', { method: 'POST', body: { item } }),
   equipItem: (item, petKey) => request('/pet/equip', { method: 'POST', body: { item, petKey } }),
   unequipSlot: (slot, petKey) => request('/pet/equip', { method: 'POST', body: { slot, petKey } }),
 

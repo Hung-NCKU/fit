@@ -49,6 +49,7 @@ const tabs = [
   { to: '/today', label: '今日', icon: '🎯' },
   { to: '/workouts', label: '訓練', icon: '🏋️' },
   { to: '/meals', label: '飲食', icon: '🍚' },
+  { to: '/cook', label: '煮飯', icon: '🍳' },
 ];
 
 const title = computed(() => tabs.find(t => t.to === route.path)?.label ?? '健身養寵');
@@ -71,9 +72,30 @@ function toggleChrome(){
 function keepChrome(event){
   if(chromeVisible.value && event.target?.closest?.('.topbar,.tabbar'))showChrome();
 }
+const headHeight=ref(0);
 const barObserver=new ResizeObserver(entries=>{
-  for(const entry of entries){if(entry.target===navEl.value)navHeight.value=entry.target.getBoundingClientRect().height;}
+  for(const entry of entries){
+    if(entry.target===navEl.value)navHeight.value=entry.target.getBoundingClientRect().height;
+    if(entry.target===headerEl.value)headHeight.value=entry.target.getBoundingClientRect().height;
+  }
 });
+
+/**
+ * 功能列展開時把內容推開。
+ *
+ * 兩條列都是 position:fixed，疊在內容上面。收起來時這樣最好——內容可以
+ * 一路填到上下邊緣，不留白。但展開時它們會蓋住內容最上方那一列，
+ * 寵物頁的「改名」「換一隻」就是這樣被蓋掉的。
+ *
+ * 所以展開時改用量到的實際高度當內距（已經含安全區域，因為那是列自己的 padding）。
+ * 收起來就回到 CSS 裡那組只讓安全區域的值。
+ */
+const chromePad=computed(()=>(
+  !session.ready||locked.value||!chromeVisible.value ? {} : {
+    paddingTop:`calc(1rem + ${Math.round(headHeight.value)}px)`,
+    paddingBottom:`calc(1rem + ${Math.round(navHeight.value)}px)`,
+  }
+));
 watch([headerEl,navEl],([header,nav])=>{barObserver.disconnect();if(header)barObserver.observe(header);if(nav)barObserver.observe(nav);});
 onMounted(()=>{document.addEventListener('click',keepChrome,true);document.addEventListener('keydown',keepChrome,true);});
 onUnmounted(()=>{clearTimeout(chromeTimer);barObserver.disconnect();document.removeEventListener('click',keepChrome,true);document.removeEventListener('keydown',keepChrome,true);});
@@ -157,7 +179,7 @@ onMounted(async () => {
 
       <template v-else>
         <button class="chrome-handle chrome-handle-bottom" :style="{bottom:chromeVisible ? (navHeight+8)+'px' : 'max(8px, min(var(--safe-bottom), 12px))'}" :aria-expanded="chromeVisible" :aria-label="chromeVisible ? '收起功能列' : '展開功能列'" aria-controls="app-topbar app-tabbar" @click="toggleChrome"><span aria-hidden="true">功能</span></button>
-        <main class="content" :class="{ 'chat-content': route.path === '/chat' }">
+        <main class="content" :class="{ 'chat-content': route.path === '/chat' }" :style="chromePad">
           <RouterView v-slot="{ Component }">
             <component :is="Component" />
           </RouterView>
@@ -199,7 +221,13 @@ onMounted(async () => {
    margin 會把捲動區「框」在中間，上下各剩一條只有底色的空白帶（iPhone 上約 50px）；
    padding 則讓捲動區佔滿整個視窗，內容會一路穿過瀏海與 home indicator，
    第一張卡片一樣不會被狀態列壓到。 */
-.chrome-auto .content { padding-top:calc(1rem + var(--safe-top));padding-bottom:calc(1rem + 44px + clamp(6px, var(--safe-bottom), 12px)); }
+.chrome-auto .content {
+  padding-top:calc(1rem + var(--safe-top));
+  padding-bottom:calc(1rem + 44px + clamp(6px, var(--safe-bottom), 12px));
+  /* 跟兩條列的淡入淡出同步，展開／收起時內容是滑開而不是跳開 */
+  transition:padding .18s ease;
+}
+@media(prefers-reduced-motion:reduce){.chrome-auto .content{transition:none;}}
 @media(prefers-reduced-motion:reduce){.chrome-auto .topbar,.chrome-auto .tabbar{transition:none;}}
 .chrome-handle {position:fixed;left:max(calc(8px + var(--safe-left)), calc((100% - 820px) / 2 + 8px));z-index:40;width:44px;height:44px;padding:0;border-radius:50%;font-size:.75rem;font-weight:650;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-popover);touch-action:manipulation;}
 
@@ -279,7 +307,9 @@ onMounted(async () => {
 .tabbar {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  /* 不要寫死欄數：加一個分頁（像「煮飯」）就會被擠到第二排去 */
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   border-top: 1px solid var(--border);
   background: var(--surface);
   padding-bottom: var(--safe-bottom);

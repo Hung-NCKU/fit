@@ -12,6 +12,7 @@ import apiRoutes from './routes/api.js';
 import chatRoutes from './routes/chat.js';
 import pushRoutes from './routes/push.js';
 import petRoutes from './routes/pet.js';
+import mealPlanRoutes from './routes/meal-plan.js';
 import { readPhoto } from './uploads.js';
 import { readThumb } from './thumbs.js';
 import { initAllDatabases } from './db.js';
@@ -80,6 +81,7 @@ await app.register(apiRoutes, { prefix: '/api' });
 await app.register(chatRoutes, { prefix: '/api' });
 await app.register(pushRoutes, { prefix: '/api' });
 await app.register(petRoutes, { prefix: '/api' });
+await app.register(mealPlanRoutes, { prefix: '/api' });
 
 /**
  * 餐點照片。?user=eli 可以看對方的照片，因為訓練與飲食紀錄本來就互看得到，

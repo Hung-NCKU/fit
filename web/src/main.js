@@ -9,6 +9,7 @@ import ChatView from './views/ChatView.vue';
 import TodayView from './views/TodayView.vue';
 import WorkoutsView from './views/WorkoutsView.vue';
 import MealsView from './views/MealsView.vue';
+import CookView from './views/CookView.vue';
 import PetView from './views/PetView.vue';
 
 const router = createRouter({
@@ -20,6 +21,7 @@ const router = createRouter({
     { path: '/today', component: TodayView },
     { path: '/workouts', component: WorkoutsView },
     { path: '/meals', component: MealsView },
+    { path: '/cook', component: CookView },
     // 舊的書籤或已安裝 PWA 可能還指著 /pet
     { path: '/pet', redirect: '/' },
     { path: '/:pathMatch(.*)*', redirect: '/' },
