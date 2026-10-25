@@ -3,7 +3,7 @@ defineProps({name:String});
 </script>
 <template>
  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-  <g v-if="name==='/'" fill="currentColor" stroke="none"><ellipse cx="7" cy="7" rx="2" ry="2.6" transform="rotate(-20 7 7)"/><ellipse cx="17" cy="7" rx="2" ry="2.6" transform="rotate(20 17 7)"/><ellipse cx="3.8" cy="12" rx="1.5" ry="2"/><ellipse cx="20.2" cy="12" rx="1.5" ry="2"/><path d="M12 11.5c-2 0-2.8 2.4-4.2 3.6-1 .9-1.6 1.8-1.3 3 .4 1.8 2.2 2.5 3.8 1.8a5 5 0 0 1 3.4 0c1.6.7 3.4 0 3.8-1.8.3-1.2-.3-2.1-1.3-3-1.4-1.2-2.2-3.6-4.2-3.6Z"/></g>
+  <g v-if="name==='/'" fill="currentColor" stroke="none"><ellipse cx="8.7" cy="4.9" rx="2.25" ry="2.9" transform="rotate(-12 8.7 4.9)"/><ellipse cx="15.3" cy="4.9" rx="2.25" ry="2.9" transform="rotate(12 15.3 4.9)"/><ellipse cx="4.1" cy="10" rx="2" ry="2.65" transform="rotate(-28 4.1 10)"/><ellipse cx="19.9" cy="10" rx="2" ry="2.65" transform="rotate(28 19.9 10)"/><path d="M12 10.5C9 10.5 8.4 13 6.7 14.7C5 16.4 4.8 18.7 6.4 20C8 21.3 10.3 19.8 12 19.8C13.7 19.8 16 21.3 17.6 20C19.2 18.7 19 16.4 17.3 14.7C15.6 13 15 10.5 12 10.5Z"/></g>
   <g v-else-if="name==='/chat'"><path d="M20 11a8 8 0 0 1-8 8H8l-5 3 1.5-6A8 8 0 1 1 20 11Z"/><path d="M8 10h8M8 14h5"/></g>
   <g v-else-if="name==='/today'"><circle cx="12" cy="12" r="9"/><path d="m7.5 12 3 3 6-6"/></g>
   <g v-else-if="name==='/workouts'"><path d="M7 12h10M4 8v8m3-10v12m10-12v12m3-10v8M2 10v4m20-4v4"/></g>

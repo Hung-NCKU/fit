@@ -4,13 +4,14 @@ import {ref,watch,nextTick} from 'vue';
 import {api,todayStr} from '../api.js';
 import {session} from '../auth.js';
 import {confirmAction} from '../confirm.js';
+const props=defineProps({defaultDate:String});
 const emit=defineEmits(['saved']);
 // 選項直接從 MET 表長出來。手寫一份清單的話，加新活動要改兩個地方，
 // 而且漏改就會變成「選得到但估不出熱量」（找不到 MET 就退回預設值 4）。
 import {ACTIVITY_GROUPS,CARDIO_METS} from '../../../shared/exercise-energy.js';
 const groups=ACTIVITY_GROUPS.filter(g=>g.items.length);
 const hintOf=name=>CARDIO_METS[name]?.label || '';
-const empty=()=>({exercise:'快走',date:todayStr(),minutes:30,rpe:'',note:'',reported:''});
+const empty=()=>({exercise:'快走',date:props.defaultDate || todayStr(),minutes:30,rpe:'',note:'',reported:''});
 const form=ref(empty()),editingId=ref(null),requestId=ref(crypto.randomUUID());
 const pending=ref(null),saving=ref(false),error=ref(''),success=ref(''),root=ref(null);
 const draftKey=()=>`fit.cardio-draft.${session.user}`;
@@ -50,6 +51,7 @@ async function save() {
   } catch(e) {error.value=e.message;if(e.status>=400 && e.status<500)pending.value=null;}
   finally {saving.value=false;}
 }
+watch(()=>props.defaultDate,(next,previous)=>{if(next && form.value.date===(previous || todayStr()) && !editingId.value && !pending.value && !saving.value)form.value.date=next;});
 </script>
 <template>
   <section ref="root" class="card stack cardio-recorder" aria-labelledby="cardio-title">

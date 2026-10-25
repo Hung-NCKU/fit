@@ -108,6 +108,9 @@ export function listWorkouts(userId, { from, to, date, limit = 500 } = {}) {
   return db.prepare('SELECT * FROM workouts ORDER BY date DESC, id DESC LIMIT ?').all(limit).map(decodeWorkout);
 }
 
+/** 日期導覽不受紀錄筆數上限限制。 */
+export const listWorkoutDates = userId => getDb(userId).prepare('SELECT date, COUNT(*) items FROM workouts GROUP BY date ORDER BY date DESC').all();
+
 export function updateWorkout(userId, id, patch) {
   const cur = getWorkout(userId, id);
   if (!cur) return null;

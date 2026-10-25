@@ -2,7 +2,7 @@
 import {loadCachedPage} from '../page-cache.js';
 import { confirmAction } from '../confirm.js';
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
-import { api, CATEGORIES } from '../api.js';
+import { api, CATEGORIES, todayStr } from '../api.js';
 import { session } from '../auth.js';
 import { useRoute } from 'vue-router';
 import UserTabs from '../components/UserTabs.vue';
@@ -13,7 +13,12 @@ import { workoutLabel, workoutEnergyLabel } from '../workout-metrics.js';
 import catalog from '../../../shared/workout-catalog.json';
 const explorer=ref(null),customExplorer=ref(null),cardioRecorder=ref(null),trainingMode=ref('strength');
 
-const rows = ref([]);
+const rows = ref([]),dates=ref([]),date=ref(todayStr()),recordsEl=ref(null);
+const olderDate=computed(()=>dates.value.find(d=>d.date<date.value)?.date);
+const newerDate=computed(()=>[...dates.value].reverse().find(d=>d.date>date.value)?.date);
+function changeDate(day){if(!day)return;date.value=day;rows.value=[];load();}
+async function savedWorkout(record){if(record?.date)date.value=record.date;rows.value=[];await load();await nextTick();recordsEl.value?.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
+
 const error = ref('');
 const viewing = ref(session.user);                       // 正在看誰的紀錄
 const isMine = computed(() => viewing.value === session.user);
@@ -30,10 +35,11 @@ async function load() {
   error.value = '';
   loading.value = true;
   try {
-    const user=viewing.value;
-    const data=await loadCachedPage(['workouts',session.user,user],()=>api.listWorkouts({limit:300,user}),cached=>{if(mine===reqId){rows.value=cached;loading.value=false;}});
+    const user=viewing.value,day=date.value;
+    const apply=value=>{rows.value=value.rows;dates.value=value.dates;};
+    const data=await loadCachedPage(['workouts',session.user,user,'page',day],()=>api.workoutPage(day,user),cached=>{if(mine===reqId){apply(cached);loading.value=false;}});
     if (mine !== reqId) return;   // 已經有更新的請求，這份丟掉
-    rows.value = data;
+    apply(data);
   } catch (e) {
     if (mine !== reqId) return;
     error.value = e.message;
@@ -42,7 +48,7 @@ async function load() {
   }
 }
 // 先清空再載入：不要讓上一個人的紀錄挂在畫面上等新資料
-watch(viewing, () => { rows.value = []; cancel(); load(); });
+watch(viewing, () => { rows.value = [];dates.value=[];date.value=todayStr(); cancel(); load(); });
 
 async function edit(w) {
   if(w.category==='cardio') {trainingMode.value='cardio';showForm.value=false;await nextTick();await cardioRecorder.value?.startEdit(w);return;}
@@ -86,31 +92,33 @@ watch(() => route.query.new, v => { if (v === '1') { cancel(); showForm.value = 
 <template>
   <div class="stack">
     <div class="spread">
-      <h1 style="margin:0">訓練</h1>
+      <h1 style="margin:0">訓練紀錄</h1>
       <button v-if="isMine" @click="showForm ? cancel() : (showForm = true)">
         {{ showForm ? '返回動作探索' : '＋ 手動新增' }}
       </button>
     </div>
 
     <UserTabs v-model="viewing" />
-    <NutritionCalculator v-if="isMine" />
-
     <div v-if="error" class="error">{{ error }}</div>
-    <div v-if="isMine && !showForm" class="row training-modes" aria-label="訓練種類"><button :class="{active:trainingMode==='strength'}" :aria-pressed="trainingMode==='strength'" @click="trainingMode='strength'">肌力訓練</button><button :class="{active:trainingMode==='cardio'}" :aria-pressed="trainingMode==='cardio'" @click="trainingMode='cardio'">有氧運動</button></div>
-    <WorkoutExplorer v-if="isMine && !showForm" v-show="trainingMode==='strength'" ref="explorer" @saved="load" />
-    <CardioRecorder v-if="isMine && !showForm" v-show="trainingMode==='cardio'" ref="cardioRecorder" @saved="load" />
-
-    <WorkoutExplorer v-if="showForm && isMine" ref="customExplorer" custom-only @close="cancel" @saved="cancel();load()" />
-
-    <div v-if="loading" class="card empty">載入中…</div>
-    <div v-else-if="!grouped.length" class="card empty">
-      <template v-if="isMine">還沒有訓練紀錄。從上方選一個部位與動作，或使用手動新增。</template>
-      <template v-else>對方還沒有訓練紀錄。</template>
+    <div class="card workout-daybar" aria-label="訓練日期導覽">
+      <div class="row">
+        <button class="icon" :disabled="!olderDate" aria-label="上一個有訓練的日期" @click="changeDate(olderDate)">←</button>
+        <input :value="date" type="date" :max="todayStr()" aria-label="訓練紀錄日期" @change="changeDate($event.target.value);$event.target.value=date" />
+        <button class="icon" :disabled="!newerDate" aria-label="下一個有訓練的日期" @click="changeDate(newerDate)">→</button>
+      </div>
+      <button v-if="date!==todayStr()" class="ghost today-shortcut" aria-label="回到今天" @click="changeDate(todayStr())">今天</button><span v-else class="badge">今天</span>
     </div>
 
-    <p v-if="grouped.length" class="small muted volume-help">訓練以累計消耗熱量（kcal）呈現。肌力未填時間時採每組平均 3 分鐘與一般強度估算；有氧依種類與總時間估算，不需記錄休息秒數。</p>
+    <section ref="recordsEl" class="stack daily-workout-records" aria-label="當日訓練紀錄">
+    <div v-if="loading" class="card empty">載入中…</div>
+    <div v-else-if="!grouped.length" class="card empty">
+      <template v-if="isMine">這天還沒有訓練紀錄。可以新增訓練，或切換日期查看。</template>
+      <template v-else>對方這天還沒有訓練紀錄。</template>
+    </div>
+
+    <details v-if="grouped.length" class="small muted volume-help"><summary>熱量如何估算</summary><p>訓練以累計消耗熱量（kcal）呈現。肌力未填時間時採每組平均 3 分鐘與一般強度估算；有氧依種類與總時間估算，不需記錄休息秒數。</p></details>
     <div v-for="g in grouped" :key="g.date" class="card">
-      <div class="spread" style="margin-bottom:.4rem">
+      <div class="spread daily-summary" style="margin-bottom:.4rem">
         <h3 style="margin:0">{{ g.date }}</h3>
         <span class="small muted">
           {{ g.items.length }} 項<template v-if="g.missing<g.items.length"> · 消耗約 {{ g.calories }} kcal</template><template v-if="g.missing"> · {{ g.missing }} 筆尚未估算</template><template v-if="g.minutes"> · 總時間 {{ g.minutes }} 分</template><template v-if="g.cardioMinutes">（有氧 {{ g.cardioMinutes }} 分）</template>
@@ -138,10 +146,22 @@ watch(() => route.query.new, v => { if (v === '1') { cancel(); showForm.value = 
           </article>
       </div>
     </div>
+    </section>
+    <NutritionCalculator v-if="isMine" />
+
+    <div v-if="isMine && !showForm" class="row training-modes" aria-label="訓練種類"><button :class="{active:trainingMode==='strength'}" :aria-pressed="trainingMode==='strength'" @click="trainingMode='strength'">肌力訓練</button><button :class="{active:trainingMode==='cardio'}" :aria-pressed="trainingMode==='cardio'" @click="trainingMode='cardio'">有氧運動</button></div>
+    <WorkoutExplorer v-if="isMine && !showForm" v-show="trainingMode==='strength'" ref="explorer" :default-date="date" @saved="savedWorkout" />
+    <CardioRecorder v-if="isMine && !showForm" v-show="trainingMode==='cardio'" ref="cardioRecorder" :default-date="date" @saved="savedWorkout" />
+
+    <WorkoutExplorer v-if="showForm && isMine" ref="customExplorer" custom-only :default-date="date" @close="cancel" @saved="cancel();savedWorkout($event)" />
+
+
   </div>
 </template>
 
 <style scoped>
+.workout-daybar{display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap}.workout-daybar input{width:136px}.workout-daybar .today-shortcut{padding:.35rem .55rem}.daily-summary{align-items:flex-start;flex-direction:column;gap:.35rem}.daily-summary h3{white-space:nowrap}.daily-workout-records{scroll-margin-top:12px}@media(max-width:360px){.workout-daybar input{width:124px}.workout-daybar{gap:.35rem}}.workout-daybar .row{gap:.25rem}.daily-workout-records:empty{display:none}.volume-help{margin:0}.volume-help p{margin:.4rem 0;line-height:1.7}
+
 .workout-logs {display:grid;gap:.6rem;}.workout-log {padding:.8rem 0;border-top:1px solid var(--border);}.workout-log:first-child {border-top:0;}.log-title {margin-bottom:.35rem;}.log-title b {overflow-wrap:anywhere;}.log-actions {flex-shrink:0;gap:.1rem;}.set-history {margin-top:.7rem;}.saved-set {display:flex;justify-content:space-between;gap:.7rem;padding:.55rem 0;border-bottom:1px solid var(--border);}.log-note {margin:.4rem 0 0;overflow-wrap:anywhere;}
 .form { grid-template-columns: repeat(3, 1fr); }
 .span2 { grid-column: span 3; }

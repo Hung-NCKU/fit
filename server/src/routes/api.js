@@ -8,7 +8,7 @@ import {
 } from '../users.js';
 import {
   addMeal, listMeals, listMealDates, updateMeal, deleteMeal,
-  addWorkout, listWorkouts, updateWorkout, deleteWorkout,
+  addWorkout, listWorkouts, listWorkoutDates, updateWorkout, deleteWorkout,
   addWeight, listWeights, deleteWeight,
   dailySummary, rangeSummary, today, daysAgo,
 } from '../records.js';
@@ -186,6 +186,12 @@ export default async function apiRoutes(app) {
   /* ---- 訓練 ---- */
 
   app.get('/workouts', async (req) => listWorkouts(viewUser(req), req.query));
+  app.get('/workouts/page', async req=>{
+    const user=viewUser(req),date=req.query?.date || today();
+    const parsed=new Date(date+'T00:00:00Z');
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(parsed.valueOf()) || parsed.toISOString().slice(0,10)!==date)throw Object.assign(new Error('日期無效'),{status:400});
+    return {date,dates:listWorkoutDates(user),rows:listWorkouts(user,{date})};
+  });
   app.post('/workouts', async (req, reply) => {
     readOnlyGuard(req);
     const row=addWorkout(req.userId, req.body);

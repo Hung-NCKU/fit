@@ -89,6 +89,7 @@ export const api = {
   deleteMeal: (id) => request(`/meals/${id}`, { method: 'DELETE' }),
 
   listWorkouts: (p) => request('/workouts' + qs(p)),
+  workoutPage: (date,user) => request('/workouts/page'+qs({date,user})),
   addWorkout: (body) => request('/workouts', { method: 'POST', body }),
   updateWorkout: (id, body) => request(`/workouts/${id}`, { method: 'PATCH', body }),
   deleteWorkout: (id) => request(`/workouts/${id}`, { method: 'DELETE' }),

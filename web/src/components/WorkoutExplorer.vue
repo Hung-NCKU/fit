@@ -6,7 +6,7 @@ import { session } from '../auth.js';
 import { confirmAction } from '../confirm.js';
 import MuscleMap from './MuscleMap.vue';
 import catalog from '../../../shared/workout-catalog.json';
-const props=defineProps({customOnly:Boolean});
+const props=defineProps({customOnly:Boolean,defaultDate:String});
 const emit=defineEmits(['saved','close']);
 const custom=ref({id:'custom',name:'',category:'other',mode:'reps',equipment:'自訂',english:'',muscles:[]});
 const energy=ref({minutes:'',reported:''});
@@ -16,7 +16,7 @@ const choicesEl=ref(null), focus=ref(''), search=ref('');
 const focuses=computed(()=>catalog.focuses.filter(f=>f.parent===muscle.value));
 const focusInfo=computed(()=>focuses.value.find(f=>f.id===focus.value));
 const equipmentOptions=computed(()=>['全部',...new Set(catalog.exercises.filter(e=>e.muscles.includes(muscle.value) && (setting.value!=='home' || e.home)).map(e=>e.equipment))]);
-const date=ref(todayStr()), note=ref(''), sets=ref([]), playing=ref(false), saving=ref(false), error=ref(''), success=ref('');
+const date=ref(props.defaultDate || todayStr()), note=ref(''), sets=ref([]), playing=ref(false), saving=ref(false), error=ref(''), success=ref('');
 const editingId=ref(null), requestId=ref(crypto.randomUUID()), pending=ref(null), detailEl=ref(null);
 const draftKey=()=>`fit.${props.customOnly?'custom-workout':'workout'}-draft.${session.user}`;
 const exercise=computed(()=>props.customOnly ? custom.value : catalog.exercises.find(e=>e.id===selectedId.value));
@@ -60,7 +60,7 @@ async function selectExercise(item) {
   if(pending.value || saving.value) return;
   if(sets.value.some(s=>s.done) && !await confirmAction('切換動作會清除這份尚未儲存的組數，要繼續嗎？')) return;
   selectedId.value=item.id;sets.value=Array.from({length:3},()=>freshSet());playing.value=false;
-  editingId.value=null;energy.value={minutes:'',reported:''};requestId.value=crypto.randomUUID();note.value='';date.value=todayStr();error.value='';success.value='';
+  editingId.value=null;energy.value={minutes:'',reported:''};requestId.value=crypto.randomUUID();note.value='';date.value=props.defaultDate || todayStr();error.value='';success.value='';
   await nextTick();scrollTo(detailEl.value);
 }
 async function startEdit(workout) {
@@ -104,6 +104,7 @@ async function saveSets() {
   } catch(e) {error.value=e.message;if(e.status>=400 && e.status<500)pending.value=null;}
   finally {saving.value=false;}
 }
+watch(()=>props.defaultDate,(next,previous)=>{if(next && date.value===(previous || todayStr()) && !editingId.value && !pending.value && !saving.value)date.value=next;});
 </script>
 <template>
   <section class="workout-explorer stack">
