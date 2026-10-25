@@ -1,5 +1,16 @@
 import {mkdtempSync} from 'node:fs';import {tmpdir} from 'node:os';import {join} from 'node:path';import {createRequire} from 'node:module';
 import {beforeAll,beforeEach,afterAll,it,expect,vi} from 'vitest';
+import {USERS} from '../server/src/users.js';
+/**
+ * 這一支測的是「兩個可用帳號之間」的行為，跟哪一位被停用無關。
+ * Martina 目前在 users.js 裡標成 disabled，所以這裡先暫時打開，測完還原——
+ * 不然每次停用／啟用某個帳號，這些跨帳號的測試就會跟著紅。
+ */
+const martina = USERS.find(u => u.id === 'martina');
+const wasDisabled = martina?.disabled;
+beforeAll(() => { if (martina) delete martina.disabled; });
+afterAll(() => { if (martina && wasDisabled) martina.disabled = true; });
+
 let pet,care,db,app;
 beforeAll(async()=>{vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(new Date('2026-10-16T12:00:00+08:00'));vi.stubEnv('FIT_DATA_DIR',mkdtempSync(join(tmpdir(),'fit-social-pet-')));pet=await import('../server/src/pet.js');care=await import('../server/src/pet-care.js');db=await import('../server/src/db.js');pet.adoptPet('eli','cat','Eli pet');pet.adoptPet('martina','dog','Martina pet');const Fastify=createRequire(new URL('../server/package.json',import.meta.url))('fastify');app=Fastify();app.addHook('onRequest',async req=>req.userId=req.headers['x-test-user']||'eli');app.setErrorHandler((e,r,reply)=>reply.code(e.status||500).send({error:e.message}));await app.register((await import('../server/src/routes/pet.js')).default);});
 beforeEach(()=>{vi.setSystemTime(new Date('2026-10-16T12:00:00+08:00'));for(const u of ['eli','martina'])db.getDb(u).exec('DELETE FROM pet_care_interactions;DELETE FROM pet_care_play_slots');});

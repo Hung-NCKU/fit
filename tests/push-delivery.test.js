@@ -3,6 +3,17 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createRequire} from 'node:module';
 import {beforeAll,beforeEach,afterAll,it,expect,vi} from 'vitest';
+import {USERS} from '../server/src/users.js';
+/**
+ * 這一支測的是「兩個可用帳號之間」的行為，跟哪一位被停用無關。
+ * Martina 目前在 users.js 裡標成 disabled，所以這裡先暫時打開，測完還原——
+ * 不然每次停用／啟用某個帳號，這些跨帳號的測試就會跟著紅。
+ */
+const martina = USERS.find(u => u.id === 'martina');
+const wasDisabled = martina?.disabled;
+beforeAll(() => { if (martina) delete martina.disabled; });
+afterAll(() => { if (martina && wasDisabled) martina.disabled = true; });
+
 vi.mock('../server/node_modules/web-push/src/index.js',()=>({default:{setVapidDetails:vi.fn(),sendNotification:vi.fn()}}));
 const require=createRequire(new URL('../server/package.json',import.meta.url)),webpush=require('web-push'),Fastify=require('fastify');
 let push,app,records,db,send;

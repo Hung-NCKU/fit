@@ -16,7 +16,10 @@ async function performRequest(path, options = {}) {
   let res;
   try {
     res = await fetch(BASE + path, {
-      signal: options.signal || AbortSignal.timeout(path === '/chat' ? 90_000 : 15_000),
+      // 問模型的兩條路徑要給久一點：教練會跑工具所以最久，料理小幫手只問一輪
+      signal: options.signal || AbortSignal.timeout(
+        path === '/chat' ? 90_000 : path === '/meal-plan/ask' ? 60_000 : 15_000,
+      ),
       credentials: 'same-origin',
       ...options,
       // 只有真的帶 body 才宣告 JSON：Fastify 對「content-type 是 JSON 但 body 空的」
@@ -106,6 +109,16 @@ export const api = {
   models: () => request('/models'),
 
   pet: (user) => request('/pet' + qs({ user })),
+
+  // 一週晚餐規劃。每個寫入都回傳整份最新狀態，前端不必自己合併
+  mealPlan: (user) => request('/meal-plan' + qs({ user })),
+  updateMealPlan: (body) => request('/meal-plan', { method: 'PATCH', body }),
+  generateMealPlan: () => request('/meal-plan/generate', { method: 'POST' }),
+  swapMealPlanDay: (day) => request('/meal-plan/swap', { method: 'POST', body: { day } }),
+  cookRecipe: (recipeId) => request('/meal-plan/cook', { method: 'POST', body: { recipeId } }),
+  // 料理小幫手：上下文由前端帶，問答不留在伺服器
+  askCook: (question, recipeId, history) =>
+    request('/meal-plan/ask', { method: 'POST', body: { question, recipeId, history } }),
   arrangeDecor: (item, position, expected) => request('/pet/room', { method:'PATCH', body:{ item, position, expected } }),
   restoreRoom: (items, expected) => request('/pet/room', { method:'PUT', body:{ items, expected } }),
   movePet: (petKey, position) => request('/pet/position', { method:'PATCH', body:{ petKey, position } }),
@@ -118,6 +131,8 @@ export const api = {
   selectPet: (petKey) => request('/pet/select', { method: 'POST', body: { petKey } }),
   renamePet: (petKey, name) => request('/pet/name', { method: 'PATCH', body: { petKey, name } }),
   buyItem: (item, petKey) => request('/pet/buy', { method: 'POST', body: { item, petKey } }),
+  // 賣回商店，退半價
+  sellItem: (item) => request('/pet/sell', { method: 'POST', body: { item } }),
   equipItem: (item, petKey) => request('/pet/equip', { method: 'POST', body: { item, petKey } }),
   unequipSlot: (slot, petKey) => request('/pet/equip', { method: 'POST', body: { slot, petKey } }),
 

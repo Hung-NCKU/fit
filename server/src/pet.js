@@ -64,8 +64,37 @@ const SCENE_ITEMS = SCENES.map(([id, name, price, desc]) => ({
   img: `/pets/scene-${id.replace(/^bg_/, '')}-v2.webp`,
 }));
 
-/** 這隻看得到的商城內容 */
-export const shopFor = (species) => [...SCENE_ITEMS, ...DECORATIONS, ...outfitsFor(species)];
+/**
+ * 商城內容。
+ *
+ * 套裝是綁物種的（狗的衣服穿不到兔子身上），所以要**養了哪幾隻就賣哪幾種**，
+ * 不是只賣目前選中那一隻的。只看當前寵物的話，切到兔子就買不到狗的套裝了。
+ *
+ * 每套會帶上它屬於哪一隻（petKey／petName）——買跟穿都要指名寵物，
+ * 不然後端那道「這件穿搭不適合這隻寵物」就會擋下來。
+ *
+ * 參數可以是 roster 陣列，也可以只給一個物種字串（舊呼叫端與測試用）。
+ */
+export const shopFor = (rosterOrSpecies) => {
+  const roster = Array.isArray(rosterOrSpecies)
+    ? rosterOrSpecies
+    : [{ species: rosterOrSpecies, petKey: null, name: null }];
+
+  const seen = new Set();
+  const outfits = [];
+  for (const p of roster) {
+    if (seen.has(p.species)) continue;   // 同物種養兩隻的話套裝不必重複上架
+    seen.add(p.species);
+    for (const set of outfitsFor(p.species)) {
+      outfits.push({
+        ...set,
+        petKey: p.petKey,
+        petName: p.name || speciesOf(p.species).name,
+      });
+    }
+  }
+  return [...SCENE_ITEMS, ...DECORATIONS, ...outfits];
+};
 
 /**
  * 查一件商品。要涵蓋所有物種的衣服，不能只看目前這隻的——
@@ -508,6 +537,53 @@ export function buyItem(userId, itemId, petKey = null) {
     const result = equipItem(userId, itemId, pet.petKey);
     db.exec('COMMIT');
     return result;
+  } catch (err) { if (db.isTransaction) db.exec('ROLLBACK'); throw err; }
+}
+
+/** 賣回商店退多少。半價，無條件捨去——賣掉再買回來一定是虧的，不能拿來套利。 */
+export const sellPrice = (item) => Math.floor((item?.price ?? 0) / 2);
+
+/**
+ * 把東西賣回商店，退半價。
+ *
+ * 賣掉之前要先從所有寵物身上脫下來，也要從房間裡收走——
+ * 不然東西已經不屬於你了，畫面上卻還穿著／擺著。
+ */
+export function sellItem(userId, itemId) {
+  const item = itemOf(itemId);
+  if (!item) throw Object.assign(new Error('沒有這個商品'), { status: 404 });
+  if (!ownedItems(userId).includes(itemId)) {
+    throw Object.assign(new Error('還沒有這個東西'), { status: 400 });
+  }
+  if (!item.price) throw Object.assign(new Error('這個不能賣'), { status: 400 });
+
+  const db = getDb(userId);
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    // 身上脫下來：每隻都要看，不是只有目前選中那一隻
+    for (const p of listPets(userId)) {
+      const equipped = { ...p.equipped };
+      let dirty = false;
+      for (const [slot, id] of Object.entries(equipped)) {
+        if (id !== itemId) continue;
+        if (slot === 'bg') throw Object.assign(new Error('正在使用的環境不能賣'), { status: 400 });
+        delete equipped[slot];
+        dirty = true;
+      }
+      if (dirty) saveEquipment(userId, p, equipped);
+    }
+    // 房間裡擺著的也收走
+    db.prepare('DELETE FROM pet_room_decor WHERE item_id = ?').run(itemId);
+
+    // 套裝可能是舊單品自動解鎖來的（outfitOwnership），那幾筆也要一起清，
+    // 不然 pet_items 裡的單品還在，下一次 ownedItems() 又把套裝算回來。
+    const rows = [itemId, ...(ALL_OUTFITS.find(s => s.id === itemId)?.legacy ?? [])];
+    for (const id of rows) db.prepare('DELETE FROM pet_items WHERE item_id = ?').run(id);
+
+    const refund = sellPrice(item);
+    db.prepare('UPDATE pet SET coins = coins + ? WHERE id = 1').run(refund);
+    db.exec('COMMIT');
+    return { ...getPet(userId), refund };
   } catch (err) { if (db.isTransaction) db.exec('ROLLBACK'); throw err; }
 }
 

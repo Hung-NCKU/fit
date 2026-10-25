@@ -52,6 +52,7 @@ const tabs = [
   { to: '/today', label: '今日', icon: '🎯' },
   { to: '/workouts', label: '訓練', icon: '🏋️' },
   { to: '/meals', label: '飲食', icon: '🍚' },
+  { to: '/cook', label: '煮飯', icon: '🍳' },
 ];
 
 const title = computed(() => tabs.find(t => t.to === route.path)?.label ?? '健身養寵');
@@ -261,7 +262,9 @@ onMounted(async () => {
 .tabbar {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  /* 不要寫死欄數：加一個分頁（像「煮飯」）就會被擠到第二排去 */
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   border-top: 1px solid var(--border);
   background: var(--surface);
   padding-bottom: var(--safe-bottom);

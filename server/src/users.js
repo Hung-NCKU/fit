@@ -40,8 +40,18 @@ const BUILTIN = [
 /**
  * 所有使用者。**就地新增，不要重新指派**——其他模組是 `import { USERS }`
  * 拿到同一個陣列參照，整個換掉的話它們會繼續看著舊的那個。
+ *
+ * 停用的帳號**留在這份名單裡**，只是不能登入、也不會顯示出來（見下面的
+ * activeUsers）。這樣 getDb('martina') 之類的資料存取仍然成立，
+ * 備份與既有測試都不受影響——停用要關掉的是「使用」，不是「資料」。
  */
 export const USERS = [...BUILTIN, ...loadGuests()];
+
+/** 這個帳號是不是停用中 */
+export const isDisabled = (id) => Boolean(getUser(id)?.disabled);
+
+/** 實際可以登入、會出現在畫面上的帳號 */
+export const activeUsers = () => USERS.filter(u => !u.disabled);
 
 /** 新增一個訪客，馬上生效（不必重啟）。回傳含明碼密碼，只有這一次拿得到。 */
 export function addGuest() {

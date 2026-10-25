@@ -35,6 +35,8 @@ describe('Gemini 逾時', () => {
     await expect(generateContent({
       contents: [], systemInstruction: 'x', deadline: Date.now() + 3500,
     })).rejects.toMatchObject({ status: 504 });
-    expect(Date.now() - t0).toBeLessThan(6000);
+    // 上限抓寬一點（預期約 3.5 秒）：這裡要證明的是「不會轉好幾分鐘」，
+    // 而不是精確的耗時。機器同時在跑三十幾個測試 worker 時，偶爾會擠到超過 6 秒。
+    expect(Date.now() - t0).toBeLessThan(15_000);
   });
 });

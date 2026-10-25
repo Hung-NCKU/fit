@@ -1,5 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { USERS, addGuest, getUser, guestUsers, passwordOf, anyPasswordSet, removeGuest } from './users.js';
+import {
+  USERS, activeUsers, addGuest, getUser, guestUsers, passwordOf, anyPasswordSet, removeGuest,
+} from './users.js';
 import { destroyDb } from './db.js';
 
 export const COOKIE = 'fit_auth';
@@ -44,6 +46,7 @@ function safeEqual(a, b) {
 export function resolveUser(input) {
   let matched = null;
   for (const u of USERS) {
+    if (u.disabled) continue;        // 停用的帳號密碼再對也不給進
     const pw = passwordOf(u);
     if (pw && safeEqual(input ?? '', pw)) matched = u;
   }
@@ -116,7 +119,8 @@ export function currentUser(req) {
   if (!raw) return null;
   const r = req.unsignCookie(raw);
   if (!r.valid) return null;
-  return getUser(r.value) ? r.value : null;
+  const u = getUser(r.value);
+  return u && !u.disabled ? r.value : null;   // 停用之後舊的登入立刻失效
 }
 
 /* ---------------- 路由 ---------------- */
@@ -132,7 +136,7 @@ export default async function authRoutes(app) {
       // 還在試用＝還沒建帳號。前端用它決定右上角要寫「建立帳號」還是「新增使用者」
       trial: Boolean(id && getUser(id)?.temp),
       guest: Boolean(id && getUser(id)?.guest),
-      users: USERS.map(u => ({ id: u.id, name: u.name })),
+      users: activeUsers().map(u => ({ id: u.id, name: u.name })),
     };
   });
 
