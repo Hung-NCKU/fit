@@ -65,6 +65,13 @@ export function updateSettings(userId, patch = {}) {
     if (!Array.isArray(patch.saved)) throw invalid('收藏格式不正確');
     next.saved = [...new Set(patch.saved.map(Number))].filter(id => recipeById(id));
   }
+  // 自己加進購物清單的項目。純文字，去掉空白與重複，長度設上限免得被塞爆
+  if (patch.extras !== undefined) {
+    if (!Array.isArray(patch.extras)) throw invalid('購物清單項目格式不正確');
+    const clean = patch.extras.map(v => String(v).trim()).filter(Boolean);
+    if (clean.some(v => v.length > 40)) throw invalid('購物清單項目每筆最多 40 個字');
+    next.extras = [...new Set(clean)].slice(0, 50);
+  }
   if (patch.checked !== undefined) {
     if (!Array.isArray(patch.checked)) throw invalid('購物清單格式不正確');
     next.checked = [...new Set(patch.checked.map(String))].slice(0, 100);
@@ -72,20 +79,27 @@ export function updateSettings(userId, patch = {}) {
   return save(userId, next);
 }
 
+/** 手動項目的勾選鍵有 + 前綴（見 shoppingFor），換菜單時留著 */
+const keepManualChecks = (checked = []) => checked.filter(k => String(k).startsWith('+'));
+
 /** 重排整週。排不出來（條件太嚴）就保留原本的菜單，不要把人清空 */
 export function regenerate(userId) {
   const settings = getPlan(userId);
   const plan = planFor(settings, targetsOf(userId));
   if (!plan) throw invalid('目前的飲食需求與設備組合沒有可用的食譜，放寬一項再試');
-  // 換了菜單，之前勾的購物清單就不算數了
-  return save(userId, { ...settings, plan, checked: [] });
+  // 換了菜單，食材那半邊的勾就不算數了；自己加的項目跟菜單無關，勾了就留著
+  return save(userId, { ...settings, plan, checked: keepManualChecks(settings.checked) });
 }
 
 export function swap(userId, day) {
   const settings = getPlan(userId);
   const d = int(day, '天數', 0, 6);
   if (!settings.plan?.length) throw invalid('還沒有菜單');
-  return save(userId, { ...settings, plan: swapDay(settings, targetsOf(userId), d), checked: [] });
+  return save(userId, {
+    ...settings,
+    plan: swapDay(settings, targetsOf(userId), d),
+    checked: keepManualChecks(settings.checked),
+  });
 }
 
 /**

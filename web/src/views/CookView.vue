@@ -19,7 +19,9 @@ const loading = ref(true);
 const error = ref('');
 const busy = ref(null);
 const open = ref(null);        // 正在看步驟的食譜
+const playing = ref(null);     // 正在播放教學影片的食譜（點了才載 iframe）
 const cooked = ref('');
+const newItem = ref('');       // 購物清單手動輸入
 
 let reqId = 0;
 async function load() {
@@ -63,10 +65,28 @@ function toggle(field, value) {
   patch({ [field]: list.includes(value) ? list.filter(v => v !== value) : [...list, value] });
 }
 
-/** 勾購物清單：存回後端，換裝置也還在 */
-function check(name) {
+/** 勾購物清單：存回後端，換裝置也還在。key 由後端給，手動項目有 + 前綴 */
+function check(key) {
   const list = settings.value.checked || [];
-  patch({ checked: list.includes(name) ? list.filter(v => v !== name) : [...list, name] });
+  patch({ checked: list.includes(key) ? list.filter(v => v !== key) : [...list, key] });
+}
+
+/** 自己加一項到購物清單。照著打的字存，不去猜數量單位 */
+function addExtra() {
+  const text = newItem.value.trim();
+  if (!text || busy.value) return;
+  const list = settings.value.extras || [];
+  newItem.value = '';
+  if (list.includes(text)) return;        // 已經有同樣一項就不重複加
+  patch({ extras: [...list, text] });
+}
+
+function removeExtra(text) {
+  patch({
+    extras: (settings.value.extras || []).filter(v => v !== text),
+    // 連勾選狀態一起清掉，不然刪了又加會記得上次勾的
+    checked: (settings.value.checked || []).filter(k => k !== `+${text}`),
+  });
 }
 
 async function cook(recipe) {
@@ -82,7 +102,9 @@ async function cook(recipe) {
 }
 
 const shoppingText = computed(() =>
-  (data.value?.shopping || []).map(r => `${r.name} ${r.qty}${r.unit}`).join('\n'));
+  (data.value?.shopping || []).map(r => r.label).join('\n'));
+const searchUrl = (r) =>
+  `https://www.youtube.com/results?search_query=${encodeURIComponent(r.videoQuery)}`;
 async function copyList() {
   try { await navigator.clipboard.writeText(shoppingText.value); cooked.value = '購物清單已複製'; }
   catch { error.value = '這個瀏覽器不給複製，請長按選取'; }
@@ -136,7 +158,7 @@ async function copyList() {
           <span v-for="t in r.tags" :key="t" class="badge soft small">{{ t }}</span>
         </div>
         <div class="row" style="gap:.5rem">
-          <button class="icon" @click="open = open?.id === r.id ? null : r">
+          <button class="icon" @click="open = open?.id === r.id ? null : r; playing = null">
             {{ open?.id === r.id ? '收起步驟' : '看步驟' }}
           </button>
           <button v-if="mine" class="primary small" :disabled="busy" @click="cook(r)">
@@ -152,26 +174,62 @@ async function copyList() {
           <ol class="small">
             <li v-for="(s, n) in r.steps" :key="n">{{ s }}</li>
           </ol>
+
+          <!-- 教學影片。點了才載 iframe，不然七道菜一展開就是七個播放器 -->
+          <b class="small">教學影片</b>
+          <div v-if="r.videoId" class="video-frame">
+            <iframe
+              v-if="playing === r.id" :key="r.videoId"
+              :src="`https://www.youtube-nocookie.com/embed/${r.videoId}?playsinline=1&rel=0&autoplay=1`"
+              :title="`${r.name} YouTube 教學`" allowfullscreen
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerpolicy="strict-origin-when-cross-origin"
+            ></iframe>
+            <button v-else class="video-preview" :aria-label="`播放${r.name}教學`" @click="playing = r.id">
+              <img :src="`https://i.ytimg.com/vi/${r.videoId}/hqdefault.jpg`" :alt="`${r.name}教學預覽`" loading="lazy" />
+              <span class="play-label">▶ 播放教學</span>
+            </button>
+          </div>
+          <div class="video-source small">
+            <span v-if="r.videoId" class="muted">{{ r.channel }}・{{ r.videoTitle }}</span>
+            <span v-else class="muted">這道還沒挑到夠貼切的影片，直接搜尋比較準</span>
+            <a :href="searchUrl(r)" target="_blank" rel="noopener noreferrer">
+              {{ r.videoId ? '找其他做法 ↗' : '在 YouTube 找做法 ↗' }}
+            </a>
+          </div>
         </div>
       </div>
 
       <!-- 購物清單 -->
-      <div v-if="data.shopping.length" class="card stack">
+      <div v-if="data.shopping.length || mine" class="card stack">
         <div class="spread">
           <h3 style="margin:0">購物清單</h3>
-          <button class="icon" @click="copyList">複製</button>
+          <button v-if="data.shopping.length" class="icon" @click="copyList">複製</button>
         </div>
-        <p class="small muted" style="margin:0">七天份已依 {{ settings.people }} 人合併同名食材。</p>
-        <label v-for="row in data.shopping" :key="row.name" class="row buy">
+        <p class="small muted" style="margin:0">
+          七天份已依 {{ settings.people }} 人合併同名食材，另外要買的可以自己加。
+        </p>
+        <div v-for="row in data.shopping" :key="row.key" class="row buy">
+          <label class="row grow">
+            <input
+              type="checkbox" :disabled="!mine || busy"
+              :checked="(settings.checked || []).includes(row.key)"
+              @change="check(row.key)"
+            />
+            <span :class="{ done: (settings.checked || []).includes(row.key) }">{{ row.label }}</span>
+          </label>
+          <button
+            v-if="row.manual && mine" class="icon" :disabled="busy"
+            :aria-label="`刪除 ${row.label}`" @click="removeExtra(row.name)"
+          >✕</button>
+        </div>
+        <form v-if="mine" class="row add-item" @submit.prevent="addExtra">
           <input
-            type="checkbox" :disabled="!mine || busy"
-            :checked="(settings.checked || []).includes(row.name)"
-            @change="check(row.name)"
+            v-model="newItem" maxlength="40" :disabled="busy"
+            placeholder="自己加一項，例如：牛奶 2 瓶" aria-label="新增購物清單項目"
           />
-          <span :class="{ done: (settings.checked || []).includes(row.name) }">
-            {{ row.name }} {{ row.qty }}{{ row.unit }}
-          </span>
-        </label>
+          <button type="submit" class="icon" :disabled="busy || !newItem.trim()">新增</button>
+        </form>
       </div>
 
       <!-- 設定 -->
@@ -214,4 +272,18 @@ async function copyList() {
 .buy { gap:.6rem; align-items:center; }
 .buy input { width:auto; }
 .buy .done { color:var(--muted); text-decoration:line-through; }
+.grow { flex:1; min-width:0; gap:.6rem; align-items:center; }
+/* 輸入框預設 width:100%，不收著的話「新增」會被擠成直排的兩個字 */
+.add-item input { flex:1; min-width:0; }
+.add-item button { flex:none; white-space:nowrap; }
+.video-frame { aspect-ratio:16/9; border-radius:14px; overflow:hidden; background:#30291f; }
+.video-frame iframe, .video-preview { display:block; width:100%; height:100%; border:0; }
+.video-preview { position:relative; padding:0; overflow:hidden; }
+.video-preview img { width:100%; height:100%; object-fit:cover; }
+.play-label {
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); white-space:nowrap;
+  background:var(--accent); color:#fff; padding:.6rem 1rem; border-radius:30px; font-weight:650;
+}
+.video-source { display:flex; flex-wrap:wrap; gap:.3rem .8rem; align-items:baseline; }
+.video-source a { color:var(--accent); text-decoration:underline; }
 </style>

@@ -16,7 +16,14 @@ import { recipes } from './recipes.js';
 export const DINNER_SHARE = 0.4;
 
 export const DIETS = ['素食', '魚素', '高蛋白', '無麩質', '無乳製品'];
-export const EQUIPMENT = ['平底鍋', '烤箱', '氣炸鍋'];
+/**
+ * 一般家庭廚房會有的器具。每一項至少要有一道對得上的食譜（tests 會檢查），
+ * 不然使用者勾了只會得到「排不出菜」。
+ */
+export const EQUIPMENT = [
+  '平底鍋', '炒鍋', '湯鍋', '電鍋', '電子鍋',
+  '烤箱', '小烤箱', '氣炸鍋', '微波爐', '果汁機', '壓力鍋',
+];
 export const STORES = ['全聯', '家樂福', 'Costco', '美廉社', '傳統市場'];
 
 export const defaultSettings = () => ({
@@ -27,6 +34,7 @@ export const defaultSettings = () => ({
   stores: ['全聯'],
   saved: [],
   checked: [],
+  extras: [],
   plan: [],
   day: 0,
 });
@@ -88,7 +96,14 @@ export function swapDay(settings, targets, day) {
   return settings.plan.map((id, i) => (i === day ? pick.id : id));
 }
 
-/** 七天的食材依人數放大後合併同名項目 */
+/**
+ * 七天的食材依人數放大後合併同名項目，後面接上自己手動加的項目。
+ *
+ * 手動項目是純文字（「牛奶 2 瓶」這種），不去猜數量也不跟食材合併——
+ * 猜錯的代價是買錯東西，照著打的字顯示最不會出事。
+ *
+ * key 是勾選狀態的鍵：手動項目加上前綴，才不會跟同名的食材互相連動。
+ */
 export function shoppingFor(settings) {
   const map = new Map();
   for (const id of settings.plan || []) {
@@ -101,7 +116,14 @@ export function shoppingFor(settings) {
     }
   }
   // 數量可能是 0.5 顆這種，留一位小數就好
-  return [...map.values()].map(r => ({ ...r, qty: Math.round(r.qty * 10) / 10 }));
+  const rows = [...map.values()].map((r) => {
+    const qty = Math.round(r.qty * 10) / 10;
+    return { ...r, qty, key: r.name, label: `${r.name} ${qty}${r.unit}`, manual: false };
+  });
+  for (const text of settings.extras || []) {
+    rows.push({ name: text, qty: '', unit: '', key: `+${text}`, label: text, manual: true });
+  }
+  return rows;
 }
 
 /** 這份菜單一週大約多少錢 */

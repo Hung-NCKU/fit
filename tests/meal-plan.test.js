@@ -2,7 +2,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, beforeEach, expect, it, vi } from 'vitest';
-import { DINNER_SHARE, eligible, scoreRecipe, shoppingFor } from '../shared/meal-plan.js';
+import { DINNER_SHARE, EQUIPMENT, eligible, scoreRecipe, shoppingFor } from '../shared/meal-plan.js';
 import { recipes } from '../shared/recipes.js';
 
 /**
@@ -77,6 +77,58 @@ it('煮完一道直接變成飲食紀錄，熱量與蛋白質照食譜帶入', (
   // 真的進了當天的飲食統計，寵物與代幣那套才看得到
   expect(records.dailySummary('eli', '2026-10-25').nutrition.items).toBe(1);
   expect(() => plan.cook('eli', 999)).toThrow(/沒有這道食譜/);
+});
+
+it('每一種設備都至少有一道菜可做', () => {
+  // 設備清單上有、食譜卻做不出來的話，使用者勾了只會拿到「排不出菜」
+  for (const e of EQUIPMENT) {
+    expect(eligible({ diets: [], equipment: [e] }).length, `${e} 沒有對應的食譜`).toBeGreaterThan(0);
+  }
+});
+
+it('每道菜都給得出教學影片的去處，有影片的欄位要完整', () => {
+  for (const r of recipes) {
+    expect(r.videoQuery, `${r.name} 少了搜尋字串`).toContain(r.name);
+    if (!r.videoId) continue;
+    // YouTube 的影片 ID 是 11 碼。長度不對就是貼錯了，會連到不存在的影片
+    expect(r.videoId, `${r.name} 的影片 ID 格式不對`).toMatch(/^[\w-]{11}$/);
+    expect(r.channel).toBeTruthy();
+    expect(r.videoTitle).toBeTruthy();
+  }
+});
+
+it('購物清單可以自己加一項，跟食材分開記勾選', () => {
+  plan.updateSettings('eli', { equipment: ['平底鍋', '烤箱', '氣炸鍋'] });
+  plan.regenerate('eli');
+  plan.updateSettings('eli', { extras: ['  牛奶 2 瓶  ', '牛奶 2 瓶', '衛生紙'] });
+
+  const rows = plan.planView('eli').shopping;
+  const manual = rows.filter(r => r.manual);
+  // 前後空白會去掉，重複的只留一筆
+  expect(manual.map(r => r.name)).toEqual(['牛奶 2 瓶', '衛生紙']);
+  expect(manual[0].key).toBe('+牛奶 2 瓶');
+  expect(manual[0].label).toBe('牛奶 2 瓶');
+  // 食材那半邊照舊帶數量
+  expect(rows.find(r => !r.manual).label).toMatch(/\d/);
+
+  // 同名的食材與手動項目不會互相連動
+  const both = shoppingFor({ plan: [1], people: 1, extras: ['鮭魚'] });
+  expect(new Set(both.map(r => r.key)).size).toBe(both.length);
+
+  expect(() => plan.updateSettings('eli', { extras: ['x'.repeat(41)] })).toThrow(/40 個字/);
+  expect(() => plan.updateSettings('eli', { extras: '牛奶' })).toThrow(/格式不正確/);
+});
+
+it('換菜單會清掉食材的勾選，自己加的項目留著', () => {
+  plan.updateSettings('eli', { equipment: ['平底鍋', '烤箱', '氣炸鍋'] });
+  plan.regenerate('eli');
+  plan.updateSettings('eli', { extras: ['醬油'] });
+  const ingredient = plan.planView('eli').shopping.find(r => !r.manual).key;
+  plan.updateSettings('eli', { checked: [ingredient, '+醬油'] });
+
+  const after = plan.regenerate('eli');
+  expect(after.checked).toEqual(['+醬油']);
+  expect(after.extras).toEqual(['醬油']);
 });
 
 it('設定只收認得的欄位與合法的值', () => {
