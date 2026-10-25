@@ -3,7 +3,9 @@ import { getDb, destroyDb, getProfile, updateProfile } from '../db.js';
 import { quotaStatus } from '../gemini.js';
 import { rewardMealSaved, rewardWorkoutSaved } from '../pet.js';
 import { lastBackup } from '../autobackup.js';
-import { addGuest, getUser, isTempGuest, promote, removeGuest, USERS } from '../users.js';
+import {
+  activeUsers, addGuest, getUser, isTempGuest, promote, removeGuest,
+} from '../users.js';
 import {
   addMeal, listMeals, listMealDates, updateMeal, deleteMeal,
   addWorkout, listWorkouts, updateWorkout, deleteWorkout,
@@ -19,7 +21,8 @@ export default async function apiRoutes(app) {
   function viewUser(req) {
     const asked = req.query?.user;
     if (!asked || asked === req.userId) return req.userId;
-    if (!getUser(asked)) {
+    // 停用的帳號跟不存在一樣——不能登入，也不能被別人讀
+    if (!getUser(asked) || getUser(asked).disabled) {
       throw Object.assign(new Error(`沒有這個使用者：${asked}`), { status: 404 });
     }
     return asked;
@@ -33,7 +36,7 @@ export default async function apiRoutes(app) {
 
   /* ---- 使用者 ---- */
 
-  app.get('/users', async (req) => USERS.map(u => ({
+  app.get('/users', async (req) => activeUsers().map(u => ({
     id: u.id,
     name: u.name,
     isMe: u.id === req.userId,

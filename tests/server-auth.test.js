@@ -1,14 +1,25 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   authRequired, clearAttempts, cookieOptions, currentUser,
   isPublicPath, rateLimit, resolveUser, sessionSecret,
 } from '../server/src/auth.js';
-import { USERS } from '../server/src/users.js';
+import { USERS, activeUsers } from '../server/src/users.js';
 
 const setPasswords = (first = '', second = '') => {
   vi.stubEnv(USERS[0].envKey, first);
   vi.stubEnv(USERS[1].envKey, second);
 };
+
+/**
+ * 這一支測的是「兩個可用帳號之間」的行為，跟哪一位被停用無關。
+ * Martina 目前在 users.js 裡標成 disabled，所以這裡先暫時打開，測完還原——
+ * 不然每次停用／啟用某個帳號，這些跨帳號的測試就會跟著紅。
+ */
+const martina = USERS.find(u => u.id === 'martina');
+const wasDisabled = martina?.disabled;
+beforeAll(() => { if (martina) delete martina.disabled; });
+afterAll(() => { if (martina && wasDisabled) martina.disabled = true; });
+
 afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
 
 describe('既有後端驗證邏輯', () => {
@@ -84,5 +95,25 @@ describe('既有後端驗證邏輯', () => {
       vi.setSystemTime(new Date('2026-01-01T00:10:01Z'));
       expect(rateLimit(ip).allowed).toBe(true);
     } finally { clearAttempts(ip); }
+  });
+});
+
+describe('停用的帳號', () => {
+  it('密碼再對也不能登入，也不會出現在清單裡', () => {
+    const target = USERS.find(u => u.id === 'martina');
+    // setPasswords 的第一組對應 USERS[0]，也就是 Martina
+    setPasswords('fake-first-password', 'fake-second-password');
+    // 先確認沒停用時是認得的
+    delete target.disabled;
+    expect(resolveUser('fake-first-password')?.id).toBe('martina');
+
+    target.disabled = true;
+    expect(resolveUser('fake-first-password')).toBeNull();
+    expect(activeUsers().some(u => u.id === 'martina')).toBe(false);
+    // 停用之後舊的 cookie 也要失效
+    expect(currentUser({ cookies: { fit_auth: 'x' },
+      unsignCookie: () => ({ valid: true, value: 'martina' }) })).toBeNull();
+
+    delete target.disabled;
   });
 });

@@ -13,7 +13,7 @@ import { notifyHours, notifyUser, allUsers, pushEnabled } from './push.js';
 let timer = null;
 let coachTimer = null;
 export async function runCoachReminders(now = new Date()) {
-  for (const u of USERS.filter(u=>!u.temp && passwordOf(u))) {
+  for (const u of USERS.filter(u=>!u.temp && !u.disabled && passwordOf(u))) {
     try { ensureCoachMessages(u.id,now); await sendCoachNotifications(u.id,now); }
     catch(err) {console.warn('[coach-reminder] '+u.id+': '+err.message);}
   }
