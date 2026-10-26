@@ -45,3 +45,20 @@
 把手再調整為左下角單一 44×44px 圓形箭頭，不顯示「功能／分頁」文字；控制上下兩列，展開後移到分頁列上方避免遮住寵物分頁。保留 aria-label 與 aria-expanded，還原上方預留的把手空間。
 
 教練輸入鍵盤修正：教練頁外層 content 不再捲動，只讓 messages 捲動；chat min-height:0、輸入列不縮小、textarea 固定至少 16px 避免 iOS 聚焦縮放。鍵盤高度與 VisualViewport.offsetTop 分開處理：高度仍只用 viewport.height，offsetTop 僅在 iOS 主畫面鍵盤出現時作 body 定位，不加進高度；監聽 viewport scroll／resize，關閉鍵盤歸零。以未輸入時高度作鍵盤判定，避免 innerHeight 也縮小時漏判。
+
+## 2026-10-26：iOS 底部額外留白
+
+截圖的導覽列下方仍有不同底色的空帶。程式檢查發現根節點高度最後一律由 `window.innerHeight` 的像素值覆寫；當主畫面 WebKit 回報的高度比 CSS 視窗小，整個 shell 會跟著縮短。此現象與 Home indicator 所需安全區應分開處理。
+
+本次調整：
+
+- iOS 主畫面模式建立一個不可見、不接收觸控的獨立 `100dvh` 探針（舊瀏覽器回退 `100vh`），取 CSS 視窗、innerHeight 與 visualViewport 的有效較大值作未開鍵盤高度。不使用 screen.height，不硬加59px，也不把 safe-area 再加進整個 App 高度。
+- 根節點既有尺寸受 --app-height 影響，不能用其 clientHeight 作探針，否則會重複採用原本錯誤數值。
+- 鍵盤仍單獨採用 visualViewport.height 與 offsetTop；沒有把完整視窗高度強套到鍵盤畫面。旋轉、返回App與延遲校正沿用原機制。
+- 狀態列 meta 改為 black-translucent，讓主畫面 App 採全螢幕佈局，既有頂部安全區繼續保護內容。iOS 窗口背景與導覽列表面顏色一致。桌機與一般 Safari 的高度規則不變。
+
+驗證：新增獨立CSS高度為844、innerHeight/visualViewport回報785的測試（差59px）；確認輸入鍵盤400px、平移70px、收鍵盤、旋轉390px與一般Safari不走全螢幕探針。實際瀏覽器模擬五個主要頁面底緣844px、鍵盤下輸入框可見、關閉後底列恢復、桌面1000px不變。這不等於實體iPhone驗證。
+
+部署後先重新載入，再完全關閉主畫面App後開啟。iOS可能保存安裝時的視窗設定；如果仍沿用舊模式，可能需要重新加入主畫面，正式帳號伺服器資料不受影響。不要僅靠刪除資料庫或清除使用者紀錄解決畫面問題。
+
+參考：[Apple狀態列設定](https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariHTMLRef/Articles/MetaTags.html)、[Apple視窗單位說明](https://developer.apple.com/videos/play/wwdc2022/10048/)、[WebKit相關視窗單位問題](https://bugs.webkit.org/show_bug.cgi?id=316008)。

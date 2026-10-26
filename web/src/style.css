@@ -210,3 +210,6 @@ html.installed-app,html.installed-app body { touch-action:pan-x pan-y; }
 html,body,#app { height:var(--app-height,100%); }
 html,body { overflow:hidden; overscroll-behavior:none; }
 body { position:fixed; inset:0; top:var(--app-viewport-top,0px); width:100%; }
+
+/* Match the installed iOS window background behind the Home indicator. */
+html.ios-installed,html.ios-installed body{background:var(--surface);}
