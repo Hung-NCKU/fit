@@ -4,7 +4,7 @@ import { ref, computed, watch, nextTick } from 'vue';
 import { api, todayStr, CATEGORIES } from '../api.js';
 import { session } from '../auth.js';
 import { confirmAction } from '../confirm.js';
-import {previousWorkoutSets} from '../workout-history.js';
+import {previousWorkoutSets,previousWorkoutPeak} from '../workout-history.js';
 import MuscleMap from './MuscleMap.vue';
 import catalog from '../../../shared/workout-catalog.json';
 const props=defineProps({customOnly:Boolean,defaultDate:String});
@@ -22,7 +22,7 @@ const date=ref(props.defaultDate || todayStr()), note=ref(''), sets=ref([]), pla
 const editingId=ref(null), requestId=ref(crypto.randomUUID()), pending=ref(null), detailEl=ref(null);
 const draftKey=()=>`fit.${props.customOnly?'custom-workout':'workout'}-draft.${session.user}`;
 const exercise=computed(()=>props.customOnly ? custom.value : catalog.exercises.find(e=>e.id===selectedId.value));
-const previousSets=computed(()=>previous.value ? previousWorkoutSets(previous.value,exercise.value?.mode) : []);
+const previousPeak=computed(()=>previous.value ? previousWorkoutPeak(previous.value,exercise.value?.mode) : null);
 const muscleName=computed(()=>catalog.muscles.find(m=>m.id===muscle.value)?.name || '');
 const choices=computed(()=>catalog.exercises.filter(e=>e.muscles.includes(muscle.value) && (setting.value!=='home' || e.home) && (!focus.value || e.focuses.includes(focus.value)) && (!search.value.trim() || `${e.name} ${e.english}`.toLowerCase().includes(search.value.trim().toLowerCase())) && (equipment.value==='全部' || e.equipment===equipment.value)).sort((a,b)=>Number(b.muscles[0]===muscle.value)-Number(a.muscles[0]===muscle.value)));
 const completed=computed(()=>sets.value.filter(s=>s.done));
@@ -153,7 +153,7 @@ watch(()=>props.defaultDate,(next,previous)=>{if(next && date.value===(previous 
     <section v-if="exercise" ref="detailEl" class="card exercise-detail stack" aria-labelledby="exercise-title" :aria-busy="historyLoading">
       <div class="spread"><div><span class="eyebrow">{{ editingId ? '編輯訓練' : '開始記錄' }}</span><h2 id="exercise-title">{{ exercise.name || '自訂訓練' }}</h2><span class="badge">{{ exercise.equipment }}</span> <span class="badge">{{ exercise.english }}</span></div><button class="icon" :disabled="saving || !!pending || historyLoading" @click="discard">關閉</button></div>
       <p v-if="historyLoading" class="small muted" role="status">讀取上次訓練紀錄…</p>
-      <div v-else-if="previous && !editingId" class="previous-workout small" role="status"><b>上次紀錄 · {{ previous.date }}</b><p>{{ previousSets.map(s=>exercise.mode==='time' ? s.duration_s+' 秒' : s.weight_kg+' kg × '+s.reps+' 下').join(' ／ ') }}</p><span class="muted">已帶入每組數值，完成後再勾選；今天的 RPE 請重新評估。</span></div>
+      <div v-else-if="previous && !editingId" class="previous-workout small" role="status"><b>上次紀錄 · {{ previous.date }}</b><p>最高重量 {{ previousPeak.weight_kg }} kg × {{ exercise.mode==='time' ? previousPeak.duration_s+' 秒' : previousPeak.reps+' 下' }}</p><span class="muted">已帶入每組數值，完成後再勾選；今天的 RPE 請重新評估。</span></div>
       <div v-if="!historyLoading && personalBest && !editingId" class="personal-best small"><span>最高重量 PR</span><strong>{{ personalBest.weight_kg }} <small>kg</small></strong><span>{{ personalBest.reps ? personalBest.reps+' 下' : personalBest.duration_s+' 秒' }} · {{ personalBest.date }} · 第 {{ personalBest.set_number }} 組</span></div>
       <p v-if="historyError" class="small muted" role="status">{{ historyError }}</p>
       <div v-if="exercise.videoId" class="video-frame">

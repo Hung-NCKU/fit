@@ -21,3 +21,9 @@ it('帶入每組不同重量與次數，重置完成與RPE，不修改舊紀錄'
  const old={sets:2,set_details:[{weight_kg:10,reps:12,rpe:9,done:true},{weight_kg:20,reps:6,rpe:10,done:true}]};const copy=structuredClone(old);expect(previousWorkoutSets(old)).toEqual([{weight_kg:10,reps:12,duration_s:30,rpe:'',done:false},{weight_kg:20,reps:6,duration_s:30,rpe:'',done:false}]);expect(old).toEqual(copy);
  expect(previousWorkoutSets({sets:3,weight_kg:15,reps:8,set_details:[]})).toHaveLength(3);expect(previousWorkoutSets({sets:2,duration_min:2,set_details:[]},'time')[0].duration_s).toBe(60);
 });
+
+it('上次紀錄摘要只取該次最高重量，重量相同保留較高次數',async()=>{
+ const {previousWorkoutPeak}=await import('../web/src/workout-history.js');
+ expect(previousWorkoutPeak({set_details:[{weight_kg:10,reps:12},{weight_kg:20,reps:6},{weight_kg:20,reps:8}]})).toMatchObject({weight_kg:20,reps:8});
+ expect(previousWorkoutPeak({sets:3,weight_kg:15,reps:10,set_details:[]})).toMatchObject({weight_kg:15,reps:10});
+});

@@ -6,3 +6,8 @@ export function previousWorkoutSets(workout,mode='reps'){
  const source=workout.set_details?.length ? workout.set_details.slice(0,50) : Array.from({length:count},()=>({weight_kg:workout.weight_kg,reps:workout.reps,duration_s:mode==='time'?legacySeconds:30}));
  return source.map(s=>({weight_kg:number(s.weight_kg,0),reps:number(s.reps,10)||10,duration_s:number(s.duration_s,30)||30,rpe:'',done:false}));
 }
+
+// Summarize the most recent session by its heaviest set, not its first set.
+export function previousWorkoutPeak(workout,mode='reps'){
+ return previousWorkoutSets(workout,mode).reduce((best,set)=>!best || set.weight_kg>best.weight_kg || set.weight_kg===best.weight_kg && (mode==='time'?set.duration_s>best.duration_s:set.reps>best.reps) ? set:best,null);
+}
