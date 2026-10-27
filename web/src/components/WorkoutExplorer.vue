@@ -4,11 +4,13 @@ import { ref, computed, watch, nextTick } from 'vue';
 import { api, todayStr, CATEGORIES } from '../api.js';
 import { session } from '../auth.js';
 import { confirmAction } from '../confirm.js';
+import {previousWorkoutSets} from '../workout-history.js';
 import MuscleMap from './MuscleMap.vue';
 import catalog from '../../../shared/workout-catalog.json';
 const props=defineProps({customOnly:Boolean,defaultDate:String});
 const emit=defineEmits(['saved','close']);
 const custom=ref({id:'custom',name:'',category:'other',mode:'reps',equipment:'自訂',english:'',muscles:[]});
+const previous=ref(null),personalBest=ref(null),historyLoading=ref(false),historyError=ref('');let historyRequest=0;
 const energy=ref({minutes:'',reported:''});
 const setting=ref('all');
 const muscle=ref('chest'), equipment=ref('全部'), selectedId=ref('');
@@ -20,6 +22,7 @@ const date=ref(props.defaultDate || todayStr()), note=ref(''), sets=ref([]), pla
 const editingId=ref(null), requestId=ref(crypto.randomUUID()), pending=ref(null), detailEl=ref(null);
 const draftKey=()=>`fit.${props.customOnly?'custom-workout':'workout'}-draft.${session.user}`;
 const exercise=computed(()=>props.customOnly ? custom.value : catalog.exercises.find(e=>e.id===selectedId.value));
+const previousSets=computed(()=>previous.value ? previousWorkoutSets(previous.value,exercise.value?.mode) : []);
 const muscleName=computed(()=>catalog.muscles.find(m=>m.id===muscle.value)?.name || '');
 const choices=computed(()=>catalog.exercises.filter(e=>e.muscles.includes(muscle.value) && (setting.value!=='home' || e.home) && (!focus.value || e.focuses.includes(focus.value)) && (!search.value.trim() || `${e.name} ${e.english}`.toLowerCase().includes(search.value.trim().toLowerCase())) && (equipment.value==='全部' || e.equipment===equipment.value)).sort((a,b)=>Number(b.muscles[0]===muscle.value)-Number(a.muscles[0]===muscle.value)));
 const completed=computed(()=>sets.value.filter(s=>s.done));
@@ -34,20 +37,20 @@ async function selectMuscle(id) {
 function persistDraft() {
   try {
     if(!selectedId.value) {sessionStorage.removeItem(draftKey());return;}
-    sessionStorage.setItem(draftKey(),JSON.stringify({custom:custom.value,energy:energy.value,selectedId:selectedId.value,date:date.value,note:note.value,sets:sets.value,requestId:requestId.value,editingId:editingId.value,pending:pending.value}));
+    sessionStorage.setItem(draftKey(),JSON.stringify({previous:previous.value,personalBest:personalBest.value,custom:custom.value,energy:energy.value,selectedId:selectedId.value,date:date.value,note:note.value,sets:sets.value,requestId:requestId.value,editingId:editingId.value,pending:pending.value}));
   } catch {}
 }
 try {
   const saved=JSON.parse(sessionStorage.getItem(draftKey()) || 'null');
   if(saved && (props.customOnly ? saved.selectedId==='custom' : catalog.exercises.some(e=>e.id===saved.selectedId)) && Array.isArray(saved.sets) && saved.sets.length<=50) {
-    selectedId.value=saved.selectedId;date.value=saved.date;note.value=saved.note;sets.value=saved.sets;
+    previous.value=saved.previous || null;personalBest.value=saved.personalBest || null;selectedId.value=saved.selectedId;date.value=saved.date;note.value=saved.note;sets.value=saved.sets;
     if(props.customOnly && saved.custom) custom.value=saved.custom;
     else muscle.value=catalog.exercises.find(e=>e.id===saved.selectedId).muscles[0];
     energy.value=saved.energy || {minutes:'',reported:''};
     requestId.value=saved.requestId || crypto.randomUUID();editingId.value=saved.editingId || null;pending.value=saved.pending || null;
   }
 } catch {}
-watch([custom,energy,selectedId,date,note,sets,requestId,editingId,pending],persistDraft,{deep:true});
+watch([previous,personalBest,custom,energy,selectedId,date,note,sets,requestId,editingId,pending],persistDraft,{deep:true});
 watch(setting,()=>{equipment.value='全部';});
 watch(muscle,()=>{equipment.value='全部';focus.value='';search.value='';});
 function rowError(set,index) {
@@ -56,12 +59,29 @@ function rowError(set,index) {
   return '';
 }
 function markSet(set,index) {error.value=rowError(set,index);if(error.value)set.done=false;}
+async function readPrevious(item){
+  const token=++historyRequest,owner=session.user,day=date.value;
+  previous.value=null;personalBest.value=null;historyError.value='';historyLoading.value=true;
+  try{
+   const {workout,personalBest:best}=await api.workoutHistory({exercise:item.name,category:item.category,before:day});
+   if(token!==historyRequest || session.user!==owner || selectedId.value!==item.id || editingId.value || date.value!==day)return;
+   personalBest.value=best;
+   if(workout){previous.value=workout;sets.value=previousWorkoutSets(workout,item.mode);}
+  }catch(e){if(token===historyRequest)historyError.value='無法讀取上次紀錄，可以直接填寫本次重量。';}
+  finally{if(token===historyRequest)historyLoading.value=false;}
+}
+async function loadCustomHistory(){
+  if(!custom.value.name.trim() || historyLoading.value || saving.value || pending.value || editingId.value)return;
+  if(sets.value.some(s=>s.done || Number(s.weight_kg)>0) && !await confirmAction('帶入上次紀錄會取代目前未儲存的組數，確定繼續？'))return;
+  await readPrevious({...custom.value,id:'custom'});
+}
 async function selectExercise(item) {
   if(pending.value || saving.value) return;
   if(sets.value.some(s=>s.done) && !await confirmAction('切換動作會清除這份尚未儲存的組數，要繼續嗎？')) return;
   selectedId.value=item.id;sets.value=Array.from({length:3},()=>freshSet());playing.value=false;
   editingId.value=null;energy.value={minutes:'',reported:''};requestId.value=crypto.randomUUID();note.value='';date.value=props.defaultDate || todayStr();error.value='';success.value='';
   await nextTick();scrollTo(detailEl.value);
+  await readPrevious(item);
 }
 async function startEdit(workout) {
   const item=props.customOnly ? {...custom.value,name:workout.exercise,category:workout.category,mode:workout.set_details?.some(s=>s.duration_s>0) || !workout.reps && workout.duration_min>0 ? 'time':'reps'} : catalog.exercises.find(e=>e.name===workout.exercise);
@@ -69,6 +89,7 @@ async function startEdit(workout) {
   if(pending.value || saving.value) {error.value='請先完成目前的儲存或重試';return false;}
   if(sets.value.some(s=>s.done) && !await confirmAction('先離開目前尚未儲存的組數，改為編輯這份紀錄？')) return false;
   if(props.customOnly)custom.value=item;
+  historyRequest++;historyLoading.value=false;previous.value=null;personalBest.value=null;historyError.value='';
   selectedId.value=item.id;if(!props.customOnly)muscle.value=item.muscles[0];editingId.value=workout.id;
   energy.value={minutes:workout.calorie_meta?.duration_source==='average_sets' ? '' : workout.duration_min || '',reported:workout.calorie_meta?.source==='reported' ? workout.calories_kcal : ''};
   date.value=workout.date;note.value=workout.note;sets.value=workout.set_details?.length ? workout.set_details.map(s=>({...s,done:true})) : Array.from({length:Math.max(1,Math.min(50,Number(workout.sets)||1))},()=>({weight_kg:workout.weight_kg || 0,reps:workout.reps || 0,duration_s:!workout.reps && workout.duration_min>0 ? workout.duration_min*60/Math.max(1,Number(workout.sets)||1) : 0,rpe:workout.rpe || '',done:true}));
@@ -80,11 +101,12 @@ function addSet() {if(sets.value.length<50)sets.value.push(freshSet(sets.value.a
 async function discard() {
   if(saving.value || pending.value) return;
   if(sets.value.some(s=>s.done) && !await confirmAction('清除尚未儲存的組數？已存入紀錄的資料會保留。')) return;
+  historyRequest++;historyLoading.value=false;previous.value=null;personalBest.value=null;historyError.value='';
   selectedId.value='';sets.value=[];editingId.value=null;error.value='';playing.value=false;
   if(props.customOnly)emit('close');
 }
 async function saveSets() {
-  if(!exercise.value || saving.value) return;
+  if(!exercise.value || saving.value || historyLoading.value) return;
   error.value='';success.value='';
   if(!pending.value) {
     if(!exercise.value.name.trim()) {error.value='請填自訂動作名稱';return;}
@@ -128,8 +150,12 @@ watch(()=>props.defaultDate,(next,previous)=>{if(next && date.value===(previous 
         <p class="small muted list-foot">點選動作後，下方會出現教學影片與組數記錄。</p>
       </div>
     </div>
-    <section v-if="exercise" ref="detailEl" class="card exercise-detail stack" aria-labelledby="exercise-title">
-      <div class="spread"><div><span class="eyebrow">{{ editingId ? '編輯訓練' : '開始記錄' }}</span><h2 id="exercise-title">{{ exercise.name || '自訂訓練' }}</h2><span class="badge">{{ exercise.equipment }}</span> <span class="badge">{{ exercise.english }}</span></div><button class="icon" :disabled="saving || !!pending" @click="discard">關閉</button></div>
+    <section v-if="exercise" ref="detailEl" class="card exercise-detail stack" aria-labelledby="exercise-title" :aria-busy="historyLoading">
+      <div class="spread"><div><span class="eyebrow">{{ editingId ? '編輯訓練' : '開始記錄' }}</span><h2 id="exercise-title">{{ exercise.name || '自訂訓練' }}</h2><span class="badge">{{ exercise.equipment }}</span> <span class="badge">{{ exercise.english }}</span></div><button class="icon" :disabled="saving || !!pending || historyLoading" @click="discard">關閉</button></div>
+      <p v-if="historyLoading" class="small muted" role="status">讀取上次訓練紀錄…</p>
+      <div v-else-if="previous && !editingId" class="previous-workout small" role="status"><b>上次紀錄 · {{ previous.date }}</b><p>{{ previousSets.map(s=>exercise.mode==='time' ? s.duration_s+' 秒' : s.weight_kg+' kg × '+s.reps+' 下').join(' ／ ') }}</p><span class="muted">已帶入每組數值，完成後再勾選；今天的 RPE 請重新評估。</span></div>
+      <div v-if="!historyLoading && personalBest && !editingId" class="personal-best small"><span>最高重量 PR</span><strong>{{ personalBest.weight_kg }} <small>kg</small></strong><span>{{ personalBest.reps ? personalBest.reps+' 下' : personalBest.duration_s+' 秒' }} · {{ personalBest.date }} · 第 {{ personalBest.set_number }} 組</span></div>
+      <p v-if="historyError" class="small muted" role="status">{{ historyError }}</p>
       <div v-if="exercise.videoId" class="video-frame">
         <iframe v-if="playing" :key="exercise.videoId" :src="`https://www.youtube-nocookie.com/embed/${exercise.videoId}?playsinline=1&rel=0&autoplay=1&start=${exercise.videoStart || 0}`" :title="`${exercise.name} YouTube 教學`" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
         <button v-else class="video-preview" @click="playing=true" :aria-label="`播放${exercise.name}教學`"><img :src="`https://i.ytimg.com/vi/${exercise.videoId}/hqdefault.jpg`" :alt="`${exercise.name}教學預覽`" loading="lazy" /><span class="play-label">▶ 播放動作教學</span></button>
@@ -137,24 +163,25 @@ watch(()=>props.defaultDate,(next,previous)=>{if(next && date.value===(previous 
       <div v-if="exercise.videoId" class="video-source small"><span class="muted">{{ exercise.channel }} · {{ exercise.videoLanguage || '英文教學' }}</span><a :href="`https://www.youtube.com/watch?v=${exercise.videoId}&t=${exercise.videoStart || 0}s`" target="_blank" rel="noopener noreferrer">到 YouTube 觀看 ↗</a><a :href="`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.name+' 中文 動作教學')}`" target="_blank" rel="noopener noreferrer">找中文教學 ↗</a></div>
       <div v-if="exercise.steps" class="technique-grid"><section><h3>怎麼做</h3><ol><li v-for="step in exercise.steps" :key="step">{{ step }}</li></ol></section><section><h3>常見錯誤</h3><ul><li v-for="mistake in exercise.mistakes" :key="mistake">{{ mistake }}</li></ul><p class="small muted">先以能控制的重量熟悉動作，再逐步增加。</p></section></div>
       <form class="stack" @submit.prevent="saveSets">
-        <template v-if="customOnly"><label>動作名稱<input v-model="custom.name" placeholder="例如：槓鈴深蹲" required maxlength="120" :disabled="saving || !!pending" /></label><label>部位<select v-model="custom.category" :disabled="saving || !!pending"><option v-for="(label,key) in Object.fromEntries(Object.entries(CATEGORIES).filter(([k])=>k!=='cardio'))" :key="key" :value="key">{{ label }}</option></select></label><label>記錄方式<select v-model="custom.mode" :disabled="saving || !!pending || completed.length>0"><option value="reps">每組次數</option><option value="time">每組秒數</option></select></label></template>
-        <div class="spread record-heading"><label>訓練日期<input v-model="date" type="date" required :disabled="saving || !!pending" /></label><b class="small" role="status">{{ completed.length }} / {{ sets.length }} 組完成</b></div>
+        <template v-if="customOnly"><label>動作名稱<input v-model="custom.name" placeholder="例如：槓鈴深蹲" required maxlength="120" :disabled="saving || !!pending || historyLoading" /></label><label>部位<select v-model="custom.category" :disabled="saving || !!pending || historyLoading"><option v-for="(label,key) in Object.fromEntries(Object.entries(CATEGORIES).filter(([k])=>k!=='cardio'))" :key="key" :value="key">{{ label }}</option></select></label><label>記錄方式<select v-model="custom.mode" :disabled="saving || !!pending || historyLoading || completed.length>0"><option value="reps">每組次數</option><option value="time">每組秒數</option></select></label></template>
+        <button v-if="customOnly && !editingId" type="button" :disabled="historyLoading || saving || !!pending || !custom.name.trim()" @click="loadCustomHistory">帶入上次紀錄／查看最高重量</button>
+      <div class="spread record-heading"><label>訓練日期<input v-model="date" type="date" required :disabled="saving || !!pending || historyLoading" /></label><b class="small" role="status">{{ completed.length }} / {{ sets.length }} 組完成</b></div>
         <div class="set-progress" role="progressbar" :aria-valuenow="completed.length" :aria-valuemin="0" :aria-valuemax="sets.length || 1" aria-label="已完成組數"><span :style="{width:`${sets.length ? completed.length/sets.length*100 : 0}%`}"></span></div>
         <p class="small muted set-hint">每組可填不同重量與次數（徒手填 0）；完成後勾選，儲存時只記錄已勾選的組。已勾選的組可取消勾選後修改；每天累積完成 3 組可得 +{{ coins.strength }} 代幣，同日限一次。</p>
         <div class="set-columns small muted"><span>組</span><span>重量 kg</span><span>{{ exercise.mode==='time'?'時間 秒':'次數' }}</span><span>RPE</span><span>完成</span><span>刪除</span></div>
         <div v-for="(set,index) in sets" :key="index" class="set-row" :class="{finished:set.done}">
           <b class="set-number">{{ index+1 }}</b>
-          <input v-model="set.weight_kg" type="number" min="0" max="1000" step="0.5" inputmode="decimal" :aria-label="`第 ${index+1} 組重量`" :disabled="saving || !!pending || set.done" />
-          <input v-if="exercise.mode==='time'" v-model="set.duration_s" type="number" min="1" max="86400" step="1" inputmode="numeric" :aria-label="`第 ${index+1} 組秒數`" :disabled="saving || !!pending || set.done" />
-          <input v-else v-model="set.reps" type="number" min="1" max="1000" step="1" inputmode="numeric" :aria-label="`第 ${index+1} 組次數`" :disabled="saving || !!pending || set.done" />
-          <input v-model="set.rpe" type="number" min="0" max="10" step="0.5" placeholder="—" inputmode="decimal" :aria-label="`第 ${index+1} 組 RPE`" :disabled="saving || !!pending || set.done" />
-          <label class="done-box"><input v-model="set.done" type="checkbox" :aria-label="`第 ${index+1} 組完成`" :disabled="saving || !!pending" @change="markSet(set,index)" /></label>
-          <button type="button" class="remove-set" :aria-label="`刪除第 ${index+1} 組`" :disabled="saving || !!pending" @click="sets.splice(index,1)">×</button>
+          <input v-model="set.weight_kg" type="number" min="0" max="1000" step="0.5" inputmode="decimal" :aria-label="`第 ${index+1} 組重量`" :disabled="saving || !!pending || historyLoading || set.done" />
+          <input v-if="exercise.mode==='time'" v-model="set.duration_s" type="number" min="1" max="86400" step="1" inputmode="numeric" :aria-label="`第 ${index+1} 組秒數`" :disabled="saving || !!pending || historyLoading || set.done" />
+          <input v-else v-model="set.reps" type="number" min="1" max="1000" step="1" inputmode="numeric" :aria-label="`第 ${index+1} 組次數`" :disabled="saving || !!pending || historyLoading || set.done" />
+          <input v-model="set.rpe" type="number" min="0" max="10" step="0.5" placeholder="—" inputmode="decimal" :aria-label="`第 ${index+1} 組 RPE`" :disabled="saving || !!pending || historyLoading || set.done" />
+          <label class="done-box"><input v-model="set.done" type="checkbox" :aria-label="`第 ${index+1} 組完成`" :disabled="saving || !!pending || historyLoading" @change="markSet(set,index)" /></label>
+          <button type="button" class="remove-set" :aria-label="`刪除第 ${index+1} 組`" :disabled="saving || !!pending || historyLoading" @click="sets.splice(index,1)">×</button>
         </div>
-        <div class="row wrap"><button type="button" :disabled="saving || !!pending || sets.length>=50" @click="addSet">＋ 新增一組</button><span class="small muted">已完成 {{ completed.length }} 組 · 熱量以平均強度估算</span></div>
+        <div class="row wrap"><button type="button" :disabled="saving || !!pending || historyLoading || sets.length>=50" @click="addSet">＋ 新增一組</button><span class="small muted">已完成 {{ completed.length }} 組 · 熱量以平均強度估算</span></div>
         <details class="small muted"><summary>RPE 是什麼？</summary><p>可選填的主觀費力程度，範圍 1–10；留空表示未評分。</p></details>
-        <details class="small"><summary>調整熱量估算（選填）</summary><p class="muted">未填時間時，以每個完成組平均 3 分鐘、一般肌力強度估算；不需要記錄組間休息。各動作時間請分開，不要重複填入同一整場時長。</p><label>本動作總時間（分鐘）<input v-model="energy.minutes" type="number" min="0" max="1440" step="0.5" :disabled="saving || !!pending" /></label><label>手錶／器材熱量（kcal）<input v-model="energy.reported" type="number" min="0" max="20000" :disabled="saving || !!pending" /></label></details>
-        <label>備註<input v-model="note" maxlength="1000" placeholder="這次訓練的感受、器材或其他紀錄" :disabled="saving || !!pending" /></label>
+        <details class="small"><summary>調整熱量估算（選填）</summary><p class="muted">未填時間時，以每個完成組平均 3 分鐘、一般肌力強度估算；不需要記錄組間休息。各動作時間請分開，不要重複填入同一整場時長。</p><label>本動作總時間（分鐘）<input v-model="energy.minutes" type="number" min="0" max="1440" step="0.5" :disabled="saving || !!pending || historyLoading" /></label><label>手錶／器材熱量（kcal）<input v-model="energy.reported" type="number" min="0" max="20000" :disabled="saving || !!pending || historyLoading" /></label></details>
+        <label>備註<input v-model="note" maxlength="1000" placeholder="這次訓練的感受、器材或其他紀錄" :disabled="saving || !!pending || historyLoading" /></label>
         <p v-if="error" class="error" role="alert">{{ error }}</p>
         <p v-if="pending && !saving" class="small muted">儲存結果尚未確認，請重試同一份資料；重試不會重複新增。這份草稿會在此分頁暫存。</p>
         <button class="primary save-sets" type="submit" :disabled="saving || (!completed.length && !pending)">{{ saving ? '儲存中…' : pending ? '重試儲存' : editingId ? `更新 ${completed.length} 組紀錄` : `儲存已完成的 ${completed.length} 組` }}</button>
@@ -163,6 +190,10 @@ watch(()=>props.defaultDate,(next,previous)=>{if(next && date.value===(previous 
   </section>
 </template>
 <style scoped>
+.personal-best{display:flex;flex-wrap:wrap;align-items:baseline;gap:.4rem .8rem;padding:.8rem 1rem;border:1px solid var(--border);border-radius:12px;background:var(--surface)}.personal-best strong{font-size:1.35rem;color:var(--accent);font-variant-numeric:tabular-nums}.personal-best strong small{font-size:.75rem;font-weight:500}.personal-best>span:last-child{color:var(--muted)}
+
+.previous-workout{padding:.8rem 1rem;background:var(--accent-soft);border-radius:12px;line-height:1.7}.previous-workout p{margin:.3rem 0;overflow-wrap:anywhere}
+
 .explore-intro h2 {font-size:1.3rem;margin:.15rem 0;}.explore-intro p {margin:.25rem 0;}.eyebrow {font-size:.72rem;color:var(--muted);letter-spacing:.08em;}.explore-grid {display:grid;gap:.8rem;}.exercise-list h3 {font-size:1.15rem;margin:.2rem 0;}.exercise-list {align-self:start;}.exercise-choice {display:flex;align-items:center;text-align:left;gap:.7rem;padding:.8rem;min-height:76px;}.exercise-choice>span:nth-child(2) {flex:1;min-width:0;}.exercise-choice small {display:block;color:var(--muted);font-size:.72rem;margin-top:.2rem;}.exercise-choice.chosen {border-color:var(--accent);background:var(--accent-soft);}.exercise-symbol {display:grid;place-items:center;width:38px;height:38px;flex-shrink:0;border-radius:12px;background:var(--surface);font-size:1.6rem;color:var(--accent);}.list-foot {margin:.2rem 0 0;}.exercise-detail {scroll-margin-top:1rem;min-width:0;}.exercise-detail h2 {font-size:1.3rem;margin:.15rem 0 .5rem;}.video-frame {aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#30291f;}.video-frame iframe,.video-preview {display:block;width:100%;height:100%;border:0;}.video-preview {position:relative;padding:0;overflow:hidden;}.video-preview img {width:100%;height:100%;object-fit:cover;}.play-label {position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);white-space:nowrap;background:var(--accent);color:white;padding:.65rem 1rem;border-radius:30px;font-weight:650;box-shadow:0 3px 12px #0003;}.video-source {display:flex;flex-wrap:wrap;gap:.4rem 1rem;}.video-source a {color:var(--accent);text-decoration:underline;}.record-heading {align-items:end;}.record-heading label {max-width:180px;margin:0;}.set-progress {height:6px;border-radius:10px;background:var(--surface-2);overflow:hidden;}.set-progress span {display:block;height:100%;background:var(--accent);transition:width .2s;}.set-hint {margin:0;}.set-columns,.set-row {display:grid;grid-template-columns:24px minmax(0,1.2fr) minmax(0,1fr) minmax(0,.85fr) 32px 28px;gap:.4rem;align-items:center;text-align:center;}.set-row {padding:.6rem .3rem;border-radius:12px;background:var(--surface-2);}.set-row input {padding:.55rem .2rem;text-align:center;min-width:0;}.set-row input:disabled {opacity:1;color:var(--text);-webkit-text-fill-color:var(--text);}.set-row.finished {background:var(--accent-soft);}.set-number {font-size:.85rem;}.done-box {margin:0;display:grid;place-items:center;min-height:42px;}.done-box input {width:23px;height:23px;cursor:pointer;}.success {padding:.7rem 1rem;background:var(--accent-soft);color:var(--accent);border-radius:12px;margin:0;}.save-sets {width:100%;}
 @media(min-width:680px){.explore-grid {grid-template-columns:minmax(210px,.9fr) minmax(0,1.1fr);}}
 @media(max-width:360px){.set-columns,.set-row {grid-template-columns:20px minmax(0,1fr) minmax(0,.9fr) minmax(0,.75fr) 28px 26px;gap:.25rem;}.set-columns {font-size:.72rem;}}

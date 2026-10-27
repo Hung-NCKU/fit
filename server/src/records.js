@@ -111,6 +111,25 @@ export function listWorkouts(userId, { from, to, date, limit = 500 } = {}) {
 /** 日期導覽不受紀錄筆數上限限制。 */
 export const listWorkoutDates = userId => getDb(userId).prepare('SELECT date, COUNT(*) items FROM workouts GROUP BY date ORDER BY date DESC').all();
 
+/** 最近一次相同動作，含同日已儲存紀錄；補登時不讀未來日期。 */
+export function workoutHistory(userId,{exercise,category,before=today()}={}){
+ const parsed=new Date(before+'T00:00:00Z');
+ if(typeof exercise!=='string' || !exercise.trim() || exercise.length>120 || typeof category!=='string' || typeof before!=='string' || !/^\d{4}-\d{2}-\d{2}$/.test(before) || Number.isNaN(parsed.valueOf()) || parsed.toISOString().slice(0,10)!==before)throw Object.assign(new Error('動作或日期無效'),{status:400});
+ const db=getDb(userId),filters=[exercise.trim(),category,before];
+ const workout=decodeWorkout(db.prepare('SELECT * FROM workouts WHERE exercise=? AND category=? AND date<=? ORDER BY date DESC,id DESC LIMIT 1').get(...filters)) || null;
+ const personalBest=db.prepare(`WITH candidates AS (
+  SELECT w.id,w.date,
+   CASE WHEN j.key IS NOT NULL THEN CAST(json_extract(j.value,'$.weight_kg') AS REAL) ELSE w.weight_kg END weight_kg,
+   CASE WHEN j.key IS NOT NULL THEN CAST(json_extract(j.value,'$.reps') AS INTEGER) ELSE w.reps END reps,
+   CASE WHEN j.key IS NOT NULL THEN CAST(json_extract(j.value,'$.duration_s') AS REAL) WHEN w.reps>0 THEN 0 ELSE w.duration_min*60/MAX(1,w.sets) END duration_s,
+   COALESCE(CAST(j.key AS INTEGER)+1,1) set_number
+  FROM workouts w LEFT JOIN json_each(w.set_details) j
+  WHERE w.exercise=? AND w.category=? AND w.date<=?
+ ) SELECT * FROM candidates WHERE weight_kg>0 AND (reps>0 OR duration_s>0)
+ ORDER BY weight_kg DESC,reps DESC,date DESC,id DESC,set_number ASC LIMIT 1`).get(...filters) || null;
+ return {workout,personalBest};
+}
+
 export function updateWorkout(userId, id, patch) {
   const cur = getWorkout(userId, id);
   if (!cur) return null;

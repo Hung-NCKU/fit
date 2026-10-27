@@ -8,7 +8,7 @@ import {
 } from '../users.js';
 import {
   addMeal, listMeals, listMealDates, updateMeal, deleteMeal,
-  addWorkout, listWorkouts, listWorkoutDates, updateWorkout, deleteWorkout,
+  addWorkout, listWorkouts, listWorkoutDates, workoutHistory, updateWorkout, deleteWorkout,
   addWeight, listWeights, deleteWeight,
   dailySummary, rangeSummary, today, daysAgo,
 } from '../records.js';
@@ -186,6 +186,7 @@ export default async function apiRoutes(app) {
   /* ---- 訓練 ---- */
 
   app.get('/workouts', async (req) => listWorkouts(viewUser(req), req.query));
+  app.get('/workouts/history', async req=>workoutHistory(req.userId,req.query));
   app.get('/workouts/page', async req=>{
     const user=viewUser(req),date=req.query?.date || today();
     const parsed=new Date(date+'T00:00:00Z');
