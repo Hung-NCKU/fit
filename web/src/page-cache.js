@@ -21,6 +21,7 @@ export function loadCachedPage(parts,fetcher,onCached=()=>{}){
 export function invalidatePageCache(path){
  let affected;
  if(/^\/(meals|workouts|weights)(\/|$)/.test(path))affected=['pet','today','chat',path.split('/')[1]];
+ else if(path.startsWith('/expenses'))affected=['ledger'];
  else if(path.startsWith('/profile'))affected=['pet','today','chat'];
  else if(path.startsWith('/pet'))affected=['pet'];
  else if(path.startsWith('/chat'))affected=['chat','today','pet','meals','workouts'];

@@ -16,9 +16,10 @@ async function performRequest(path, options = {}) {
   let res;
   try {
     res = await fetch(BASE + path, {
-      // 問模型的兩條路徑要給久一點：教練會跑工具所以最久，料理小幫手只問一輪
+      // 問模型的路徑要給久一點：教練會跑工具所以最久，料理小幫手與記帳解析只問一輪
       signal: options.signal || AbortSignal.timeout(
-        path === '/chat' ? 90_000 : path === '/meal-plan/ask' ? 60_000 : 15_000,
+        path === '/chat' ? 90_000
+          : ['/meal-plan/ask', '/expenses/parse'].includes(path) ? 60_000 : 15_000,
       ),
       credentials: 'same-origin',
       ...options,
@@ -111,6 +112,16 @@ export const api = {
   models: () => request('/models'),
 
   pet: (user) => request('/pet' + qs({ user })),
+
+  // 記帳。寫入都回傳整頁（當天明細＋本月統計），前端不必自己把月統計加回去
+  expensePage: (date, user) => request('/expenses/page' + qs({ date, user })),
+  addExpense: (body) => request('/expenses', { method: 'POST', body }),
+  addExpenses: (rows, date) => request('/expenses/batch', { method: 'POST', body: { rows, date } }),
+  updateExpense: (id, body) => request(`/expenses/${id}`, { method: 'PATCH', body }),
+  deleteExpense: (id, date) => request(`/expenses/${id}` + qs({ date }), { method: 'DELETE' }),
+  saveExpenseSettings: (body) => request('/expenses/settings', { method: 'PUT', body }),
+  // 用講的記帳：只回草稿，確認後才寫入
+  parseExpenses: (text, date) => request('/expenses/parse', { method: 'POST', body: { text, date } }),
 
   // 一週晚餐規劃。每個寫入都回傳整份最新狀態，前端不必自己合併
   mealPlan: (user) => request('/meal-plan' + qs({ user })),

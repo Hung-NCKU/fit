@@ -230,6 +230,29 @@ CREATE TABLE IF NOT EXISTS coach_push_deliveries (
   last_attempt INTEGER NOT NULL,
   PRIMARY KEY(kind,delivery_key,endpoint)
 );
+-- 記帳。金額一律正數，收入或支出看 kind（理由見 shared/expenses.js）。
+CREATE TABLE IF NOT EXISTS expenses (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  date       TEXT NOT NULL,
+  kind       TEXT NOT NULL DEFAULT 'expense',
+  category   TEXT NOT NULL DEFAULT 'other',
+  item       TEXT NOT NULL,
+  amount     REAL NOT NULL DEFAULT 0,
+  pay        TEXT NOT NULL DEFAULT 'cash',
+  source     TEXT NOT NULL DEFAULT 'manual',
+  note       TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date);
+
+-- 月預算之類的設定。跟 meal_plan 一樣存成一個 JSON：欄位會跟著功能變，
+-- 而這裡不需要查詢單一欄位，拆成關聯式的表只是增加 migration 的麻煩。
+CREATE TABLE IF NOT EXISTS expense_settings (
+  id         INTEGER PRIMARY KEY CHECK (id = 1),
+  settings   TEXT NOT NULL DEFAULT '{}',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
 CREATE TABLE IF NOT EXISTS pet_reward_ledger (
   reward_key TEXT PRIMARY KEY,
   date TEXT NOT NULL,

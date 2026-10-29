@@ -53,6 +53,7 @@ const tabs = [
   { to: '/workouts', label: '訓練', icon: '🏋️' },
   { to: '/meals', label: '飲食', icon: '🍚' },
   { to: '/cook', label: '煮飯', icon: '🍳' },
+  { to: '/ledger', label: '記帳', icon: '💰' },
 ];
 
 const title = computed(() => tabs.find(t => t.to === route.path)?.label ?? '健身養寵');
