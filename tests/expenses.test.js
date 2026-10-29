@@ -5,6 +5,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import {
   budgetStatus, byCategory, monthRange, normalizeAmount, normalizeCategory, summarize,
 } from '../shared/expenses.js';
+import { encodeWav, toBase64 } from '../web/src/audio-wav.js';
 
 let expenses, chat, db;
 beforeAll(async () => {
@@ -196,11 +197,76 @@ describe('用講的記帳', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('截圖與錄音都能當輸入，素材排在文字前面送給模型', async () => {
+    const fetchMock = vi.fn(async () => reply([call({ item: '全家', amount: 88, category: 'grocery', pay: 'mobile' })]));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const png = 'data:image/png;base64,aGVsbG8=';
+    const out = await chat.parseExpenses('eli', { image: png, date: '2026-10-29' });
+    expect(out.rows[0]).toMatchObject({ item: '全家', amount: 88, pay: 'mobile' });
+
+    const sent = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(sent.contents[0].parts[0].inlineData).toEqual({ mimeType: 'image/png', data: 'aGVsbG8=' });
+    // 沒打字時也要有一句文字，不然模型不知道要做什麼
+    expect(sent.contents[0].parts[1].text).toContain('截圖');
+    // 看圖時才給看圖的規則，純打字不必浪費這些 token
+    expect(sent.systemInstruction.parts[0].text).toContain('卡號末四碼');
+
+    fetchMock.mockClear();
+    await chat.parseExpenses('eli', { audio: 'data:audio/wav;base64,aGVsbG8=' });
+    const heard = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(heard.contents[0].parts[0].inlineData.mimeType).toBe('audio/wav');
+    expect(heard.systemInstruction.parts[0].text).toContain('錄音');
+    expect(heard.systemInstruction.parts[0].text).not.toContain('卡號末四碼');
+  });
+
+  it('不是圖也不是聲音的東西不會被送出去', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(chat.parseExpenses('eli', { image: 'https://example.com/a.png' })).rejects.toThrow(/格式/);
+    await expect(chat.parseExpenses('eli', { image: 'data:application/pdf;base64,aGk=' })).rejects.toThrow(/不支援/);
+    // Chrome 錄的 webm 要前端轉成 WAV 再上來，直接送原始容器會被擋下
+    await expect(chat.parseExpenses('eli', { audio: 'data:audio/webm;base64,aGk=' })).rejects.toThrow(/不支援/);
+    const big = `data:image/png;base64,${'A'.repeat(9 * 1024 * 1024)}`;
+    await expect(chat.parseExpenses('eli', { image: big })).rejects.toThrow(/太大/);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('提示裡帶今天的日期與這個人常記的項目，分類才會跟上次一致', () => {
     expenses.addExpense('eli', { date: today(), category: 'drink', item: '手搖', amount: 60 });
     expenses.addExpense('eli', { date: today(), category: 'drink', item: '手搖', amount: 65 });
     const prompt = chat.expenseSystemPrompt('eli', '2026-10-29');
     expect(prompt).toContain('2026-10-29');
     expect(prompt).toContain('手搖 → 飲料點心');
+  });
+});
+
+describe('錄音轉檔', () => {
+  it('WAV 檔頭是 16-bit 單聲道 PCM，取樣率照給的值', () => {
+    const samples = Float32Array.from([0, 0.5, -0.5, 1, -1]);
+    const view = new DataView(encodeWav(samples, 16_000));
+    const text = (at, n) => String.fromCharCode(...new Uint8Array(view.buffer, at, n));
+    expect(text(0, 4)).toBe('RIFF');
+    expect(text(8, 4)).toBe('WAVE');
+    expect(text(12, 4)).toBe('fmt ');
+    expect(view.getUint16(20, true)).toBe(1);        // 未壓縮 PCM
+    expect(view.getUint16(22, true)).toBe(1);        // 單聲道
+    expect(view.getUint32(24, true)).toBe(16_000);
+    expect(view.getUint32(28, true)).toBe(32_000);   // 16kHz × 2 bytes
+    expect(view.getUint16(34, true)).toBe(16);
+    expect(text(36, 4)).toBe('data');
+    expect(view.getUint32(40, true)).toBe(samples.length * 2);
+    expect(view.byteLength).toBe(44 + samples.length * 2);
+  });
+
+  it('超出範圍的取樣會夾住，不會繞回去變成爆音', () => {
+    const view = new DataView(encodeWav(Float32Array.from([1.8, -1.8]), 16_000));
+    expect(view.getInt16(44, true)).toBe(0x7fff);
+    expect(view.getInt16(46, true)).toBe(-0x8000);
+  });
+
+  it('base64 不會因為取樣點太多而爆呼叫堆疊', () => {
+    const wav = encodeWav(new Float32Array(200_000), 16_000);
+    expect(toBase64(wav).length).toBeGreaterThan(100_000);
   });
 });

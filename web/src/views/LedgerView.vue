@@ -1,6 +1,7 @@
 <script setup>
-import { computed, ref, watch, onMounted } from 'vue';
-import { api, todayStr } from '../api.js';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
+import { api, compressImage, todayStr } from '../api.js';
+import { blobToWav, canRecord, wavDataUrl } from '../audio-wav.js';
 import { session } from '../auth.js';
 import { loadCachedPage } from '../page-cache.js';
 import { confirmAction } from '../confirm.js';
@@ -149,27 +150,98 @@ function useFrequent(f) {
 const said = ref('');
 const draft = ref([]);
 const draftNote = ref('');
-const parsing = ref(false);
+const parsing = ref('');          // '' | 'text' | 'audio' | 'image'，順便當作進行中的旗標
 const savingDraft = ref(false);
+const shotInput = ref(null);
 
 function clearDraft() { draft.value = []; draftNote.value = ''; said.value = ''; }
 
-async function parse() {
-  const text = said.value.trim();
-  if (!text || parsing.value) return;
-  parsing.value = true;
+const EMPTY_HINT = {
+  text: '沒有看懂，換個說法試試，例如「早餐 60 咖啡 85」。',
+  audio: '沒有聽出可以記的帳。講慢一點、把金額唸清楚，或改用打字的。',
+  image: '這張圖裡沒看到可以記的消費。換一張看得到品項與金額的截圖試試。',
+};
+
+async function runParse(payload, kind) {
+  if (parsing.value) return;
+  parsing.value = kind;
   error.value = '';
   draft.value = [];
+  draftNote.value = '';
   try {
-    const res = await api.parseExpenses(text, date.value);
+    const res = await api.parseExpenses({ ...payload, date: date.value });
     draft.value = res.rows;
     // 模型不一定會附說明（實測常常只呼叫工具就結束），沒有就自己講一句
     draftNote.value = res.rows.length
-      ? res.note || `整理出 ${res.rows.length} 筆${res.skipped ? `，另外 ${res.skipped} 筆沒講到金額先略過` : ''}。`
-      : '沒有聽出可以記的帳，換個說法試試，例如「早餐 60 咖啡 85」。';
+      ? res.note || `整理出 ${res.rows.length} 筆${res.skipped ? `，另外 ${res.skipped} 筆沒金額先略過` : ''}。`
+      : EMPTY_HINT[kind];
   } catch (e) { error.value = e.message; }
-  finally { parsing.value = false; }
+  finally { parsing.value = ''; }
 }
+
+const parse = () => said.value.trim() && runParse({ text: said.value.trim() }, 'text');
+
+/**
+ * 截圖記帳：LINE Pay／Apple Pay 的交易明細、銀行刷卡通知、電子發票、收據。
+ *
+ * 這是「自動讀刷卡紀錄」唯一做得到的方式——Apple Pay 與 LINE Pay 都沒有
+ * 給第三方讀取消費明細的 API（詳見 server/src/expense-chat.js）。
+ * 圖只送去解析、不存檔：上面有卡號末四碼跟交易序號。
+ */
+async function pickShot(event) {
+  const file = event.target.files?.[0];
+  event.target.value = '';           // 同一張圖想再試一次也要觸發 change
+  if (!file) return;
+  try {
+    const dataUrl = await compressImage(file);
+    await runParse({ image: dataUrl }, 'image');
+  } catch (e) { error.value = e.message; }
+}
+
+/* ---------------- 錄音 ---------------- */
+
+const recordable = canRecord();
+const recording = ref(false);
+const seconds = ref(0);
+let recorder = null, chunks = [], ticker = null;
+
+// 太長的錄音一來模型未必聽得完整，二來上傳久；一分鐘足夠講完一天的帳
+const MAX_SECONDS = 60;
+
+async function toggleRecord() {
+  if (recording.value) { recorder?.stop(); return; }
+  if (parsing.value) return;
+  error.value = '';
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch {
+    error.value = '沒有麥克風權限。瀏覽器網址列旁可以開啟，或改用打字的。';
+    return;
+  }
+  chunks = [];
+  recorder = new MediaRecorder(stream);
+  recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
+  recorder.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop());
+    clearInterval(ticker);
+    recording.value = false;
+    const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+    if (blob.size < 1200) { error.value = '錄到的聲音太短，再試一次。'; return; }
+    try {
+      await runParse({ audio: wavDataUrl(await blobToWav(blob)) }, 'audio');
+    } catch { error.value = '這段錄音轉檔失敗，再錄一次，或改用打字的。'; }
+  };
+  recorder.start();
+  recording.value = true;
+  seconds.value = 0;
+  ticker = setInterval(() => {
+    if (++seconds.value >= MAX_SECONDS) recorder?.stop();
+  }, 1000);
+}
+
+// 離開頁面時還在錄就收掉，不然麥克風會一直亮著
+onUnmounted(() => { clearInterval(ticker); if (recording.value) recorder?.stop(); });
 
 const draftTotal = computed(() => draft.value.reduce(
   (sum, r) => sum + (r.kind === 'income' ? 0 : Number(r.amount) || 0), 0));
@@ -277,18 +349,40 @@ onMounted(load);
     <div v-if="isMine" class="card stack">
       <div class="spread">
         <b>用講的記帳</b>
-        <span class="small muted">一句話可以拆成好幾筆</span>
+        <span class="small muted">打字、錄音或丟截圖都可以</span>
       </div>
       <div class="row add-item">
         <input
-          v-model="said" maxlength="300" :disabled="parsing"
+          v-model="said" maxlength="300" :disabled="!!parsing || recording"
           placeholder="例如：早餐 60、咖啡 85、中午便當 120" aria-label="用一句話記帳"
           @keyup.enter="parse"
         />
-        <button class="primary" :disabled="parsing || !said.trim()" @click="parse">
-          {{ parsing ? '整理中…' : '整理' }}
+        <button class="primary" :disabled="!!parsing || recording || !said.trim()" @click="parse">
+          {{ parsing === 'text' ? '整理中…' : '整理' }}
         </button>
       </div>
+
+      <div class="row inputs">
+        <button
+          v-if="recordable" class="icon wide" :class="{ rec: recording }"
+          :disabled="!!parsing" :aria-pressed="recording" @click="toggleRecord"
+        >
+          <template v-if="recording">● 錄音中 {{ seconds }}s・點一下結束</template>
+          <template v-else-if="parsing === 'audio'">聽打中…</template>
+          <template v-else>🎤 用唸的</template>
+        </button>
+        <button class="icon wide" :disabled="!!parsing || recording" @click="shotInput.click()">
+          {{ parsing === 'image' ? '看截圖中…' : '🧾 丟截圖' }}
+        </button>
+        <input
+          ref="shotInput" type="file" accept="image/*" class="hidden-file"
+          aria-label="上傳交易截圖" @change="pickShot"
+        />
+      </div>
+      <p class="small muted" style="margin:0">
+        截圖可以是 LINE Pay／Apple Pay 的交易明細、銀行刷卡通知、電子發票或收據，一張有幾筆就記幾筆。
+        圖只用來辨識，不會存起來。
+      </p>
 
       <template v-if="draft.length">
         <p class="small muted" style="margin:0">{{ draftNote }}　確認金額與分類後再記下來：</p>
@@ -418,6 +512,11 @@ onMounted(load);
 /* 輸入框預設 width:100%，不收著的話右邊的按鈕會被擠成直排 */
 .add-item input { flex:1; min-width:0; }
 .add-item button { flex:none; white-space:nowrap; }
+
+.inputs { gap:.5rem; }
+.inputs .wide { flex:1; white-space:nowrap; }
+.inputs .rec { background:#c0523f; color:#fff; border-color:#c0523f; }
+.hidden-file { display:none; }
 
 .two-big { display:grid; grid-template-columns:1fr 1fr; gap:.8rem; }
 .two-big > div { display:flex; flex-direction:column; gap:.1rem; min-width:0; }

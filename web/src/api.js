@@ -120,8 +120,8 @@ export const api = {
   updateExpense: (id, body) => request(`/expenses/${id}`, { method: 'PATCH', body }),
   deleteExpense: (id, date) => request(`/expenses/${id}` + qs({ date }), { method: 'DELETE' }),
   saveExpenseSettings: (body) => request('/expenses/settings', { method: 'PUT', body }),
-  // 用講的記帳：只回草稿，確認後才寫入
-  parseExpenses: (text, date) => request('/expenses/parse', { method: 'POST', body: { text, date } }),
+  // 用講的記帳：打字、錄音或截圖都走這裡，只回草稿，確認後才寫入
+  parseExpenses: (body) => request('/expenses/parse', { method: 'POST', body }),
 
   // 一週晚餐規劃。每個寫入都回傳整份最新狀態，前端不必自己合併
   mealPlan: (user) => request('/meal-plan' + qs({ user })),
