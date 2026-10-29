@@ -88,6 +88,8 @@ export const api = {
   addMeal: (body) => request('/meals', { method: 'POST', body }),
   updateMeal: (id, body) => request(`/meals/${id}`, { method: 'PATCH', body }),
   deleteMeal: (id) => request(`/meals/${id}`, { method: 'DELETE' }),
+  // turns：1 順時針、-1 逆時針。回傳新的照片 id（舊 id 的快取永遠不會變，所以換 id）
+  rotatePhoto: (id, turns) => request(`/photos/${encodeURIComponent(id)}/rotate`, { method: 'POST', body: { turns } }),
 
   listWorkouts: (p) => request('/workouts' + qs(p)),
   workoutHistory: (p) => request('/workouts/history'+qs(p)),
@@ -184,6 +186,31 @@ export function compressImage(file, maxSide = 1280, quality = 0.82) {
       img.src = reader.result;
     };
     reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * 待送出的照片轉 90 度（turns：1 順時針、-1 逆時針）。
+ *
+ * 手機平放俯拍時常拍歪，而且檔案裡沒有線索能自動修（見 server/src/photo-rotate.js），
+ * 所以在送出前讓人自己轉。傳進來的是 compressImage 產生的圖，已經沒有 EXIF，
+ * 不會發生「瀏覽器自己又轉一次」的問題。
+ */
+export function rotateDataUrl(dataUrl, turns, quality = 0.9) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onerror = () => reject(new Error('照片讀取失敗'));
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.height;
+      canvas.height = img.width;
+      const ctx = canvas.getContext('2d');
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate((turns * Math.PI) / 2);
+      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataUrl;
   });
 }
 

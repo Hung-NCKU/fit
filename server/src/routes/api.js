@@ -3,6 +3,7 @@ import { getDb, destroyDb, getProfile, updateProfile } from '../db.js';
 import { quotaStatus } from '../gemini.js';
 import { rewardMealSaved, rewardWorkoutSaved } from '../pet.js';
 import { lastBackup } from '../autobackup.js';
+import { rotatePhoto } from '../photo-rotate.js';
 import {
   activeUsers, addGuest, getUser, isTempGuest, promote, removeGuest,
 } from '../users.js';
@@ -181,6 +182,13 @@ export default async function apiRoutes(app) {
     readOnlyGuard(req);
     return deleteMeal(req.userId, Number(req.params.id))
       ? { ok: true } : reply.code(404).send({ error: '找不到紀錄' });
+  });
+
+  // 照片轉正。手機平放俯拍時常常拍歪，而且檔案裡沒有線索可以自動修（見 photo-rotate.js）。
+  // 只能轉自己的；轉完換新的照片 id，回傳給前端重新載入。
+  app.post('/photos/:id/rotate', async (req) => {
+    readOnlyGuard(req);
+    return rotatePhoto(req.userId, req.params.id, req.body?.turns);
   });
 
   /* ---- 訓練 ---- */

@@ -1,7 +1,7 @@
 <script setup>
 import {loadCachedPage,patchCachedPage} from '../page-cache.js';
 import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue';
-import { api, compressImage, photoUrl, MEAL_TYPES, CATEGORIES } from '../api.js';
+import { api, compressImage, rotateDataUrl, photoUrl, MEAL_TYPES, CATEGORIES } from '../api.js';
 import { openPhoto } from '../components/PhotoViewer.vue';
 import ModelPicker from '../components/ModelPicker.vue';
 import { session } from '../auth.js';
@@ -205,6 +205,13 @@ async function pickImage(e) {
   }
 }
 
+/** 送出前轉正：手機平放俯拍時常拍歪，在這裡轉好，存進去的就是正的 */
+async function turnPending(turns) {
+  if (!pending.value) return;
+  try { pending.value = { ...pending.value, dataUrl: await rotateDataUrl(pending.value.dataUrl, turns) }; }
+  catch (err) { error.value = err.message; }
+}
+
 async function send(text = draft.value) {
   const msg = String(text).trim();
   const image = pending.value?.dataUrl || null;
@@ -362,8 +369,10 @@ onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visi
       <img :src="pending.dataUrl" alt="待送出的照片" />
       <div class="stack" style="gap:.2rem; flex:1; min-width:0">
         <span class="small">照片已準備好</span>
-        <span class="small muted">送出後教練會辨識裡面的食物並估算熱量</span>
+        <span class="small muted">拍歪了可以先轉正再送出</span>
       </div>
+      <button class="icon turn" title="往左轉" aria-label="照片逆時針轉 90 度" @click="turnPending(-1)">↺</button>
+      <button class="icon turn" title="往右轉" aria-label="照片順時針轉 90 度" @click="turnPending(1)">↻</button>
       <button class="icon" title="移除" @click="pending = null">✕</button>
     </div>
 
@@ -504,6 +513,7 @@ onUnmounted(()=>{clearInterval(reminderTimer);document.removeEventListener('visi
   border: 1px solid var(--accent-dim);
   border-radius: var(--radius);
 }
+.pending .turn { font-size: 1.25rem; }   /* ↺ ↻ 在預設字級下又小又淡，幾乎看不出是按鈕 */
 .pending img {
   width: 52px; height: 52px;
   object-fit: cover;

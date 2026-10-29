@@ -124,6 +124,20 @@ async function remove(m) {
   await load();
 }
 
+/**
+ * 看大圖。自己的照片可以轉正：手機平放俯拍時常會拍歪（原因見 server/src/photo-rotate.js）。
+ * 轉完照片換了新 id，同一張照片底下的每一道菜都跟著換，所以重新載入這一天。
+ */
+function showPhoto(m) {
+  const rotate = isMine.value ? async (turns) => {
+    const { photo } = await api.rotatePhoto(m.photo, turns);
+    m.photo = photo;          // 連按第二次時要轉的是新的那張
+    load();
+    return photoUrl(photo, viewing.value);
+  } : null;
+  openPhoto(photoUrl(m.photo, viewing.value), `${m.name}　${Math.round(m.kcal)} kcal`, { rotate });
+}
+
 function cancel() {
   form.value = blank();
   editingId.value = null;
@@ -226,7 +240,7 @@ watch(() => route.query.new, v => { if (v === '1') { cancel(); showForm.value = 
             <td>
               <div class="item">
                 <button v-if="m.photo" class="thumb-btn" :title="`查看「${m.name}」的照片`"
-                        @click="openPhoto(photoUrl(m.photo, viewing), `${m.name}　${Math.round(m.kcal)} kcal`)">
+                        @click="showPhoto(m)">
                   <img class="thumb" :src="photoUrl(m.photo, viewing, 'thumb')" :alt="m.name"
                        loading="lazy" decoding="async" />
                 </button>
