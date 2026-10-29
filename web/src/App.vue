@@ -52,10 +52,14 @@ const tabs = [
   { to: '/today', label: '今日', icon: '🎯' },
   { to: '/workouts', label: '訓練', icon: '🏋️' },
   { to: '/meals', label: '飲食', icon: '🍚' },
-  { to: '/cook', label: '煮飯', icon: '🍳' },
+  // 煮飯先收起來：分頁列不顯示，但頁面、資料與 /cook 網址都還在，
+  // 想恢復只要拿掉 hidden。不刪是因為一週菜單與購物清單之後可能還會用到。
+  { to: '/cook', label: '煮飯', icon: '🍳', hidden: true },
   { to: '/ledger', label: '記帳', icon: '💰' },
 ];
 
+const visibleTabs = tabs.filter(t => !t.hidden);
+// 標題照全部的分頁找：直接打 /cook 進來時頂端仍然寫「煮飯」
 const title = computed(() => tabs.find(t => t.to === route.path)?.label ?? '健身養寵');
 const locked = computed(() => session.authRequired && !session.authed);
 const settingsOpen=ref(false),settingsEl=ref(null),settingsButton=ref(null),contentEl=ref(null);
@@ -166,7 +170,7 @@ onMounted(async () => {
         </main>
 
         <nav id="app-tabbar" class="tabbar" aria-label="頁面切換">
-          <RouterLink v-for="t in tabs" :key="t.to" :to="t.to" class="tab">
+          <RouterLink v-for="t in visibleTabs" :key="t.to" :to="t.to" class="tab">
             <span class="ico"><NavIcon :name="t.to" /></span>
             <span class="lbl">{{ t.label }}</span>
           </RouterLink>
